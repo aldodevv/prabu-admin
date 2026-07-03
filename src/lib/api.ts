@@ -1,4 +1,17 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+const getBaseUrl = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      return 'https://prabu-service.vercel.app/api';
+    }
+  }
+  return 'http://localhost:8080/api';
+};
+
+const BASE_URL = getBaseUrl();
 
 export interface ApiResponse<T> {
   success: boolean;
