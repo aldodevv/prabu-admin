@@ -32,6 +32,17 @@
   --color-white: #F5F5F5;
   --color-white-muted: #E0E0E0;
 
+  /* Redesigned Dashboard Color Palette */
+  --color-brand-red: #DC3545;
+  --color-brand-blue: #007BFF;
+  --color-brand-green: #28A745;
+  --color-brand-orange: #FD7E14;
+  --color-brand-purple: #6F42C1;
+  --color-brand-cyan: #17A2B8;
+  --color-brand-dark: #343A40;
+  --color-brand-sidebar: #2A2F35;
+  --color-brand-bg: #F4F6F9;
+
   /* Fonts */
   --font-heading: 'Bebas Neue', 'Impact', sans-serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
