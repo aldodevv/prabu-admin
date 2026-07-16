@@ -1,35 +1,12 @@
 'use client';
 
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import api from '@/lib/api';
-import { 
-  Home, 
-  LayoutGrid, 
-  Folder, 
-  FileText,
-  CreditCard,
-  Users,
-  ClipboardCheck,
-  ShoppingBag,
-  LogOut,
-  ChevronDown,
-  Menu,
-  X,
-  Building2,
-  ChevronRight
-} from 'lucide-react';
-
-interface CheckinState {
-  action: string;
-  is_late?: boolean;
-  checkin?: {
-    id: string;
-    check_in_at: string;
-  };
-}
+import { employeesApi } from '@/core/api';
+import { ROUTES, NAVIGATION_MENU } from '@/core/constants';
+import * as Icons from 'lucide-react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, activeBranchID, selectBranch, branches, logout, loading } = useAuth();
@@ -44,69 +21,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const [mobileActiveGroup, setMobileActiveGroup] = useState<string | null>(null);
 
-  // Group menu items logically by domain matching the reference images
-  const menuConfig = [
-    {
-      id: 'beranda',
-      label: 'Beranda',
-      href: '/dashboard',
-      icon: Home,
-      items: []
-    },
-    {
-      id: 'transaksi',
-      label: 'Transaksi',
-      icon: LayoutGrid,
-      items: [
-        { label: 'Scan Barcode', href: '/dashboard/transactions/scan-barcode', icon: FileText },
-        { label: 'Pendaftaran Anggota', href: '/dashboard/transactions/member-registration', icon: Users },
-        { label: 'Pendaftaran Latihan', href: '/dashboard/transactions/workout-registration', icon: Users },
-        { label: 'Pembayaran Anggota', href: '/dashboard/transactions/member-payment', icon: CreditCard },
-        { label: 'Sesi Pelatih', href: '/dashboard/transactions/trainer-sessions', icon: ClipboardCheck },
-        { label: 'Rekap Kelas', href: '/dashboard/transactions/class-recap', icon: ClipboardCheck },
-        { label: 'Pergantian Kartu', href: '/dashboard/transactions/card-replacement', icon: CreditCard },
-      ]
-    },
-    {
-      id: 'transaksi-penjualan',
-      label: 'Transaksi Penjualan',
-      icon: LayoutGrid,
-      items: [
-        { label: 'Transaksi Tunai', href: '/dashboard/sales/cash', icon: CreditCard },
-        { label: 'Transaksi Pembelian', href: '/dashboard/sales/purchase', icon: ShoppingBag },
-        { label: 'Data Barang', href: '/dashboard/sales/items', icon: FileText },
-        { label: 'Data Distributor', href: '/dashboard/sales/distributors', icon: Users },
-        { label: 'Laporan Penjualan', href: '/dashboard/sales/reports', icon: FileText },
-        { label: 'Riwayat Transaksi', href: '/dashboard/sales/history', icon: ClipboardCheck },
-      ]
-    },
-    {
-      id: 'data-anggota',
-      label: 'Data Anggota',
-      icon: Folder,
-      items: [
-        { label: 'Anggota One Club', href: '/dashboard/members/one-club', icon: Users },
-        { label: 'Anggota All Club', href: '/dashboard/members/all-club', icon: Users },
-        { label: 'Kunjungan Anggota', href: '/dashboard/members/visits', icon: ClipboardCheck },
-      ]
-    },
-    {
-      id: 'laporan-fitnes',
-      label: 'Laporan Fitnes',
-      icon: FileText,
-      items: [
-        { label: 'Laporan Anggota', href: '/dashboard/reports/members', icon: FileText },
-        { label: 'Laporan Latihan', href: '/dashboard/reports/workouts', icon: FileText },
-        { label: 'Laporan Sesi PT', href: '/dashboard/reports/pt-sessions', icon: FileText },
-        { label: 'Laporan Komisi Kelas', href: '/dashboard/reports/class-commissions', icon: FileText },
-        { label: 'Laporan Pergantian Kartu', href: '/dashboard/reports/card-replacements', icon: FileText },
-      ]
-    }
-  ];
+  // Helper to dynamically resolve lucide icon components by their string name
+  const resolveIcon = (name: string) => {
+    const IconComponent = (Icons as any)[name];
+    return IconComponent || Icons.HelpCircle;
+  };
 
   // Auto-expand menu group on page load/navigation based on pathname
   useEffect(() => {
-    const matched = menuConfig.find(group => 
+    const matched = NAVIGATION_MENU.find(group => 
       group.items.some(item => pathname === item.href || pathname.startsWith(item.href + '/'))
     );
     if (matched) {
@@ -120,7 +43,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push('/login');
+      router.push(ROUTES.LOGIN);
     }
   }, [user, loading, router]);
 
@@ -132,7 +55,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const fetchCheckinStatus = async () => {
     try {
-      const res = await api.get<any>('/admin/my-checkin');
+      const res = await employeesApi.activeCheckin();
       if (res.success) {
         setCheckinStatus(res.data);
       }
@@ -144,8 +67,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const handleKaryawanCheckin = async () => {
     setCheckingIn(true);
     try {
-      const res = await api.post<CheckinState>('/admin/checkin', {});
-      if (res.success && res.data) {
+      const res = await employeesApi.checkin();
+      if (res.success) {
         await fetchCheckinStatus();
       }
     } catch (err) {
@@ -167,7 +90,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   const hasSubmenu = activeGroup && activeGroup !== 'beranda';
-  const activeGroupConfig = menuConfig.find(g => g.id === activeGroup);
+  const activeGroupConfig = NAVIGATION_MENU.find(g => g.id === activeGroup);
+
+  const MenuIcon = resolveIcon('Menu');
+  const XIcon = resolveIcon('X');
+  const BuildingIcon = resolveIcon('Building2');
+  const LogOutIcon = resolveIcon('LogOut');
+  const ChevronDownIcon = resolveIcon('ChevronDown');
 
   return (
     <div className="min-h-screen bg-[#F4F6F9] flex font-sans text-slate-800">
@@ -184,11 +113,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* Navigation Icon List */}
           <nav className="flex-1 flex flex-col pt-4 overflow-y-auto">
-            {menuConfig.map((group) => {
-              const Icon = group.icon;
+            {NAVIGATION_MENU.map((group) => {
+              const Icon = resolveIcon(group.iconName);
               const isBeranda = group.id === 'beranda';
               const isGroupActive = isBeranda 
-                ? pathname === '/dashboard' 
+                ? pathname === ROUTES.DASHBOARD 
                 : activeGroup === group.id;
 
               return (
@@ -196,7 +125,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   key={group.id}
                   onClick={() => {
                     if (isBeranda) {
-                      router.push('/dashboard');
+                      router.push(ROUTES.DASHBOARD);
                     } else {
                       setActiveGroup(activeGroup === group.id ? null : group.id);
                     }
@@ -236,7 +165,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
             {activeGroupConfig.items.map((item) => {
               const isItemActive = pathname === item.href || pathname.startsWith(item.href + '/');
-              const SubIcon = item.icon;
+              const SubIcon = resolveIcon(item.iconName);
 
               return (
                 <Link
@@ -287,7 +216,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               onClick={logout}
               className="w-full py-2 bg-slate-700/40 hover:bg-[#DC3545] text-slate-350 hover:text-white text-[10px] font-bold uppercase tracking-widest transition-all rounded cursor-pointer flex items-center justify-center gap-1.5"
             >
-              <LogOut className="w-3 h-3" />
+              <LogOutIcon className="w-3 h-3" />
               <span>LOG OUT</span>
             </button>
           </div>
@@ -307,7 +236,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             onClick={() => setMobileSidebar(true)}
             className="p-1 text-slate-500 hover:text-slate-800 lg:hidden cursor-pointer"
           >
-            <Menu className="w-6 h-6" />
+            <MenuIcon className="w-6 h-6" />
           </button>
 
           <div className="flex items-center gap-6 ml-auto">
@@ -315,7 +244,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {branches.length > 0 && (
               <div className="relative">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-650 bg-slate-50 border border-slate-200 px-3.5 py-2 rounded-lg shadow-sm">
-                  <Building2 className="w-3.5 h-3.5 text-[#DC3545]" />
+                  <BuildingIcon className="w-3.5 h-3.5 text-[#DC3545]" />
                   <span className="uppercase tracking-wider">Cabang:</span>
                   <select
                     value={activeBranchID || ''}
@@ -345,7 +274,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <h4 className="text-xs font-bold text-slate-700 leading-none group-hover:text-slate-900">{user.full_name}</h4>
                   <span className="text-[10px] font-accent text-slate-400 font-bold uppercase tracking-wider">{user.role}</span>
                 </div>
-                <ChevronDown className="w-3 h-3 text-slate-400 group-hover:text-slate-600 transition-colors" />
+                <ChevronDownIcon className="w-3 h-3 text-slate-400 group-hover:text-slate-600 transition-colors" />
               </button>
 
               {userDropdown && (
@@ -358,7 +287,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     onClick={logout}
                     className="w-full text-left px-4 py-2 hover:bg-slate-50 text-red-650 hover:text-red-700 flex items-center gap-2 cursor-pointer font-semibold"
                   >
-                    <LogOut className="w-3.5 h-3.5" />
+                    <LogOutIcon className="w-3.5 h-3.5" />
                     <span>Log Out</span>
                   </button>
                 </div>
@@ -391,26 +320,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   onClick={() => setMobileSidebar(false)}
                   className="p-1 text-slate-400 hover:text-white cursor-pointer"
                 >
-                  <X className="w-5 h-5" />
+                  <XIcon className="w-5 h-5" />
                 </button>
               </div>
 
               <nav className="space-y-2 flex-1">
-                {menuConfig.map((group) => {
-                  const Icon = group.icon;
+                {NAVIGATION_MENU.map((group) => {
+                  const Icon = resolveIcon(group.iconName);
                   const isBeranda = group.id === 'beranda';
                   const isMobileActive = isBeranda 
-                    ? pathname === '/dashboard' 
+                    ? pathname === ROUTES.DASHBOARD 
                     : mobileActiveGroup === group.id;
 
                   if (isBeranda) {
                     return (
                       <Link
                         key={group.id}
-                        href="/dashboard"
+                        href={ROUTES.DASHBOARD}
                         onClick={() => setMobileSidebar(false)}
                         className={`flex items-center gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wider transition-all rounded ${
-                          pathname === '/dashboard'
+                          pathname === ROUTES.DASHBOARD
                             ? 'bg-[#DC3545] text-white border-l-4 border-white'
                             : 'text-slate-300 hover:bg-[#2A2F35]/50'
                         }`}
@@ -435,14 +364,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                           <Icon className="w-4 h-4" />
                           <span>{group.label}</span>
                         </div>
-                        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${mobileActiveGroup === group.id ? 'rotate-180' : ''}`} />
+                        <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform duration-200 ${mobileActiveGroup === group.id ? 'rotate-180' : ''}`} />
                       </button>
                       
                       {mobileActiveGroup === group.id && (
                         <div className="pl-6 space-y-1 py-1">
                           {group.items.map((item) => {
                             const isSubActive = pathname === item.href || pathname.startsWith(item.href + '/');
-                            const SubIcon = item.icon;
+                            const SubIcon = resolveIcon(item.iconName);
                             return (
                               <Link
                                 key={item.label}
@@ -484,7 +413,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 }}
                 className="w-full py-2 bg-slate-700/40 hover:bg-[#DC3545] text-slate-350 hover:text-white text-xs font-bold uppercase tracking-widest transition-all rounded cursor-pointer flex items-center justify-center gap-2"
               >
-                <LogOut className="w-3.5 h-3.5" />
+                <LogOutIcon className="w-3.5 h-3.5" />
                 <span>LOG OUT</span>
               </button>
             </div>
