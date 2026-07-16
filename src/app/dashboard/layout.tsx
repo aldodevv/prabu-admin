@@ -7,19 +7,19 @@ import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { 
   Home, 
-  CreditCard, 
-  ShoppingBag, 
-  Users, 
-  FileText, 
-  ClipboardCheck, 
-  Globe, 
-  UserCheck, 
-  ShieldAlert, 
-  LogOut, 
-  ChevronDown, 
-  Menu, 
-  X, 
-  Building2
+  LayoutGrid, 
+  Folder, 
+  FileText,
+  CreditCard,
+  Users,
+  ClipboardCheck,
+  ShoppingBag,
+  LogOut,
+  ChevronDown,
+  Menu,
+  X,
+  Building2,
+  ChevronRight
 } from 'lucide-react';
 
 interface CheckinState {
@@ -38,20 +38,91 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const [checkinStatus, setCheckinStatus] = useState<any | null>(null);
   const [checkingIn, setCheckingIn] = useState(false);
-  const [isTransaksiOpen, setIsTransaksiOpen] = useState(false);
   const [userDropdown, setUserDropdown] = useState(false);
+  
+  // Compact sidebar active group dropdown state
+  const [activeGroup, setActiveGroup] = useState<string | null>(null);
+  const [mobileActiveGroup, setMobileActiveGroup] = useState<string | null>(null);
+
+  // Group menu items logically by domain matching the reference images
+  const menuConfig = [
+    {
+      id: 'beranda',
+      label: 'Beranda',
+      href: '/dashboard',
+      icon: Home,
+      items: []
+    },
+    {
+      id: 'transaksi',
+      label: 'Transaksi',
+      icon: LayoutGrid,
+      items: [
+        { label: 'Scan Barcode', href: '/dashboard/transactions/scan-barcode', icon: FileText },
+        { label: 'Pendaftaran Anggota', href: '/dashboard/transactions/member-registration', icon: Users },
+        { label: 'Pendaftaran Latihan', href: '/dashboard/transactions/workout-registration', icon: Users },
+        { label: 'Pembayaran Anggota', href: '/dashboard/transactions/member-payment', icon: CreditCard },
+        { label: 'Sesi Pelatih', href: '/dashboard/transactions/trainer-sessions', icon: ClipboardCheck },
+        { label: 'Rekap Kelas', href: '/dashboard/transactions/class-recap', icon: ClipboardCheck },
+        { label: 'Pergantian Kartu', href: '/dashboard/transactions/card-replacement', icon: CreditCard },
+      ]
+    },
+    {
+      id: 'transaksi-penjualan',
+      label: 'Transaksi Penjualan',
+      icon: LayoutGrid,
+      items: [
+        { label: 'Transaksi Tunai', href: '/dashboard/sales/cash', icon: CreditCard },
+        { label: 'Transaksi Pembelian', href: '/dashboard/sales/purchase', icon: ShoppingBag },
+        { label: 'Data Barang', href: '/dashboard/sales/items', icon: FileText },
+        { label: 'Data Distributor', href: '/dashboard/sales/distributors', icon: Users },
+        { label: 'Laporan Penjualan', href: '/dashboard/sales/reports', icon: FileText },
+        { label: 'Riwayat Transaksi', href: '/dashboard/sales/history', icon: ClipboardCheck },
+      ]
+    },
+    {
+      id: 'data-anggota',
+      label: 'Data Anggota',
+      icon: Folder,
+      items: [
+        { label: 'Anggota One Club', href: '/dashboard/members/one-club', icon: Users },
+        { label: 'Anggota All Club', href: '/dashboard/members/all-club', icon: Users },
+        { label: 'Kunjungan Anggota', href: '/dashboard/members/visits', icon: ClipboardCheck },
+      ]
+    },
+    {
+      id: 'laporan-fitnes',
+      label: 'Laporan Fitnes',
+      icon: FileText,
+      items: [
+        { label: 'Laporan Anggota', href: '/dashboard/reports/members', icon: FileText },
+        { label: 'Laporan Latihan', href: '/dashboard/reports/workouts', icon: FileText },
+        { label: 'Laporan Sesi PT', href: '/dashboard/reports/pt-sessions', icon: FileText },
+        { label: 'Laporan Komisi Kelas', href: '/dashboard/reports/class-commissions', icon: FileText },
+        { label: 'Laporan Pergantian Kartu', href: '/dashboard/reports/card-replacements', icon: FileText },
+      ]
+    }
+  ];
+
+  // Auto-expand menu group on page load/navigation based on pathname
+  useEffect(() => {
+    const matched = menuConfig.find(group => 
+      group.items.some(item => pathname === item.href || pathname.startsWith(item.href + '/'))
+    );
+    if (matched) {
+      setActiveGroup(matched.id);
+      setMobileActiveGroup(matched.id);
+    } else {
+      setActiveGroup(null);
+      setMobileActiveGroup(null);
+    }
+  }, [pathname]);
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
     }
   }, [user, loading, router]);
-
-  useEffect(() => {
-    if (pathname.includes('/transactions')) {
-      setIsTransaksiOpen(true);
-    }
-  }, [pathname]);
 
   useEffect(() => {
     if (user) {
@@ -95,278 +166,200 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
-  const activeBranch = branches.find((b) => b.id === activeBranchID);
-  const currentBranchName = activeBranch ? activeBranch.name.replace('Prabu Gym ', '') : 'GROGOL';
-
-  // Group menu items logically by domain
-  const menuGroups = [
-    {
-      title: 'UTAMA',
-      items: [
-        { label: 'Beranda', href: '/dashboard', icon: Home },
-      ]
-    },
-    {
-      title: 'TRANSAKSI & PENJUALAN',
-      items: [
-        { label: 'Transaksi', href: '/dashboard/transactions', icon: CreditCard },
-        { label: 'Transaksi Penjualan', href: '/dashboard/products', icon: ShoppingBag },
-        { label: 'Laporan Fitnes', href: '/dashboard/reports', icon: FileText },
-      ]
-    },
-    {
-      title: 'DATA MASTER',
-      items: [
-        { label: 'Data Anggota', href: '/dashboard/members', icon: Users },
-        { label: 'Data Pelatih / Trainer', href: '/dashboard/trainers', icon: Users },
-        { label: 'Presensi Member', href: '/dashboard/checkins', icon: ClipboardCheck },
-      ]
-    },
-    {
-      title: 'KARYAWAN & SISTEM',
-      items: user.role === 'owner' ? [
-        { label: 'Kelola Karyawan', href: '/dashboard/employees', icon: UserCheck },
-        { label: 'Audit Log Aktivitas', href: '/dashboard/activity-logs', icon: ShieldAlert },
-      ] : []
-    },
-    {
-      title: 'WEBSITE CMS',
-      items: [
-        { label: 'Content CMS', href: '/dashboard/content', icon: Globe },
-      ]
-    }
-  ].filter(group => group.items.length > 0);
+  const hasSubmenu = activeGroup && activeGroup !== 'beranda';
+  const activeGroupConfig = menuConfig.find(g => g.id === activeGroup);
 
   return (
     <div className="min-h-screen bg-[#F4F6F9] flex font-sans text-slate-800">
-      {/* Sidebar - Desktop */}
-      <aside className="w-64 bg-[#2A2F35] flex flex-col justify-between max-lg:hidden fixed h-screen z-40 select-none shadow-lg">
-        <div className="flex flex-col h-[calc(100vh-10rem)]">
-          {/* Brand header - solid red background matching screenshot */}
-          <div className="h-16 bg-[#DC3545] flex items-center justify-between px-4 text-white flex-shrink-0">
-            <div className="flex items-center gap-2">
-              <span className="font-heading text-2xl tracking-widest font-bold">
-                PRABU GYM
-              </span>
-            </div>
-            <Menu className="w-5 h-5 text-white opacity-80" />
+      
+      {/* 1. Main Sidebar - Compact Desktop (110px width) */}
+      <aside className="w-[110px] bg-[#343A40] flex flex-col justify-between max-lg:hidden fixed h-screen z-40 select-none shadow-md">
+        <div className="flex flex-col h-full">
+          {/* Prabu Gym Brand Banner */}
+          <div className="h-16 bg-[#DC3545] flex items-center justify-center text-white flex-shrink-0">
+            <span className="font-heading text-base tracking-widest font-extrabold text-center leading-tight">
+              PRABU
+            </span>
           </div>
 
-          {/* Navigation links */}
-          <nav className="p-3 space-y-4 overflow-y-auto flex-1">
-            {menuGroups.map((group) => (
-              <div key={group.title} className="space-y-1.5">
-                <h5 className="px-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest opacity-60">
-                  {group.title}
-                </h5>
-                <div className="space-y-1">
-                  {group.items.map((item) => {
-                    if (item.label === 'Transaksi') {
-                      const isSubActive = pathname.startsWith('/dashboard/transactions');
-                      return (
-                        <div key={item.label} className="space-y-1">
-                          <button
-                            onClick={() => setIsTransaksiOpen(!isTransaksiOpen)}
-                            className={`w-full flex items-center justify-between px-4.5 py-2.5 text-xs font-semibold uppercase tracking-wider transition-all duration-150 rounded cursor-pointer ${
-                              isSubActive
-                                ? 'bg-[#1E2227] text-white font-bold border-l-4 border-[#DC3545]'
-                                : 'text-slate-300 hover:text-white hover:bg-slate-700/30'
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <item.icon className="w-4 h-4" />
-                              <span>{item.label}</span>
-                            </div>
-                            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isTransaksiOpen ? 'rotate-180' : ''}`} />
-                          </button>
-                          {isTransaksiOpen && (
-                            <div className="pl-6 space-y-1.5 py-1">
-                              <Link
-                                href="/dashboard/transactions/scan-barcode"
-                                className={`flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all rounded ${
-                                  pathname === '/dashboard/transactions/scan-barcode'
-                                    ? 'text-white font-extrabold bg-[#1E2227] border-l-2 border-[#DC3545]'
-                                    : 'text-slate-400 hover:text-white'
-                                }`}
-                              >
-                                <span>🔍 Scan Barcode</span>
-                              </Link>
-                              <Link
-                                href="/dashboard/transactions/member-registration"
-                                className={`flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all rounded ${
-                                  pathname === '/dashboard/transactions/member-registration'
-                                    ? 'text-white font-extrabold bg-[#1E2227] border-l-2 border-[#DC3545]'
-                                    : 'text-slate-400 hover:text-white'
-                                }`}
-                              >
-                                <span>👤 Pendaftaran Anggota</span>
-                              </Link>
-                              <Link
-                                href="/dashboard/transactions/pt-registration"
-                                className={`flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all rounded ${
-                                  pathname === '/dashboard/transactions/pt-registration'
-                                    ? 'text-white font-extrabold bg-[#1E2227] border-l-2 border-[#DC3545]'
-                                    : 'text-slate-400 hover:text-white'
-                                }`}
-                              >
-                                <span>🏋️ Pendaftaran Latihan</span>
-                              </Link>
-                              <Link
-                                href="/dashboard/transactions"
-                                className={`flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all rounded ${
-                                  pathname === '/dashboard/transactions'
-                                    ? 'text-white font-extrabold bg-[#1E2227] border-l-2 border-[#DC3545]'
-                                    : 'text-slate-400 hover:text-white'
-                                }`}
-                              >
-                                <span>🛒 Kasir (POS Retail)</span>
-                              </Link>
-                            </div>
-                          )}
-                        </div>
-                      );
+          {/* Navigation Icon List */}
+          <nav className="flex-1 flex flex-col pt-4 overflow-y-auto">
+            {menuConfig.map((group) => {
+              const Icon = group.icon;
+              const isBeranda = group.id === 'beranda';
+              const isGroupActive = isBeranda 
+                ? pathname === '/dashboard' 
+                : activeGroup === group.id;
+
+              return (
+                <button
+                  key={group.id}
+                  onClick={() => {
+                    if (isBeranda) {
+                      router.push('/dashboard');
+                    } else {
+                      setActiveGroup(activeGroup === group.id ? null : group.id);
                     }
-
-                    const Icon = item.icon;
-                    const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className={`flex items-center gap-2.5 px-4.5 py-2.5 text-xs font-semibold uppercase tracking-wider transition-all duration-150 rounded ${
-                          isActive
-                            ? 'bg-[#1E2227] text-white shadow-inner font-bold border-l-4 border-[#DC3545]'
-                            : 'text-slate-300 hover:text-white hover:bg-slate-700/30'
-                        }`}
-                      >
-                        <Icon className="w-4 h-4" />
-                        <span>{item.label}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+                  }}
+                  className={`w-full flex flex-col items-center justify-center py-5 text-center transition-all duration-150 relative cursor-pointer border-b border-slate-700/10 ${
+                    isGroupActive
+                      ? 'bg-[#2A2F35] text-white'
+                      : 'text-slate-300 hover:bg-[#2A2F35]/50 hover:text-white'
+                  }`}
+                >
+                  {/* Arrow Indicator pointing right to sub-menu */}
+                  {isGroupActive && !isBeranda && (
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-r-[6px] border-r-[#2A2F35] z-50" />
+                  )}
+                  
+                  <Icon className="w-5 h-5 mb-1.5" />
+                  <span className="text-[9px] font-bold uppercase tracking-wider leading-tight text-center px-1 block break-words max-w-[95%] font-accent">
+                    {group.label}
+                  </span>
+                </button>
+              );
+            })}
           </nav>
-        </div>
-
-        {/* Sidebar Footer */}
-        <div className="p-4 border-t border-slate-700/50 space-y-3.5 bg-slate-900/10">
-          {/* User info */}
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded bg-[#DC3545] flex items-center justify-center text-sm font-bold text-white uppercase select-none shadow-sm">
-              {user.full_name[0]}
-            </div>
-            <div className="overflow-hidden">
-              <h4 className="text-xs font-bold text-white truncate">{user.full_name}</h4>
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-                {user.role}
-              </span>
-            </div>
-          </div>
-
-          {/* Daily checkin for Karyawan */}
-          {user.role === 'karyawan' && (
-            <button
-              onClick={handleKaryawanCheckin}
-              disabled={checkingIn}
-              className={`w-full py-2 px-3 text-[10px] font-bold uppercase tracking-widest text-center border transition-all rounded cursor-pointer ${
-                checkinStatus
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
-                  : 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20'
-              }`}
-            >
-              {checkingIn
-                ? 'MEMPROSES...'
-                : checkinStatus
-                ? 'PRESENSI: MASUK'
-                : 'PRESENSI HARIAN'}
-            </button>
-          )}
-
-          <button
-            onClick={logout}
-            className="w-full py-2.5 bg-slate-700/40 hover:bg-[#DC3545] text-slate-300 hover:text-white text-xs font-bold uppercase tracking-widest transition-all rounded cursor-pointer flex items-center justify-center gap-2"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>LOG OUT</span>
-          </button>
         </div>
       </aside>
 
-      {/* Main Container */}
-      <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
-        {/* Top Header - White Background matching screenshots */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-30 shadow-sm">
-          <div className="flex items-center gap-4">
-            {/* Hamburger button for mobile */}
+      {/* 2. Secondary Sidebar Drawer - Desktop (Sub-items) */}
+      {hasSubmenu && activeGroupConfig && (
+        <aside className="w-64 bg-[#2A2F35] text-slate-300 fixed left-[110px] top-0 bottom-0 z-30 flex flex-col shadow-lg border-r border-slate-800 max-lg:hidden animate-fade-in select-none">
+          {/* Top header to align with primary header */}
+          <div className="h-16 border-b border-slate-800 flex items-center px-5 flex-shrink-0 bg-slate-900/10">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest font-accent">
+              Menu {activeGroupConfig.label}
+            </span>
+          </div>
+
+          <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
+            {activeGroupConfig.items.map((item) => {
+              const isItemActive = pathname === item.href || pathname.startsWith(item.href + '/');
+              const SubIcon = item.icon;
+
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className={`flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold uppercase tracking-wider transition-all rounded ${
+                    isItemActive
+                      ? 'bg-[#DC3545] text-white font-extrabold shadow-sm'
+                      : 'hover:bg-slate-700/40 text-slate-350 hover:text-white'
+                  }`}
+                >
+                  <SubIcon className="w-3.5 h-3.5" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* User check-in and logout controls inside secondary drawer bottom */}
+          <div className="p-4 border-t border-slate-800 space-y-3 bg-slate-900/10">
+            <div className="flex items-center gap-3 px-1">
+              <div className="w-8 h-8 rounded bg-[#DC3545] flex items-center justify-center text-xs font-bold text-white uppercase select-none">
+                {user.full_name[0]}
+              </div>
+              <div className="overflow-hidden">
+                <h4 className="text-xs font-bold text-white truncate">{user.full_name}</h4>
+                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">
+                  {user.role}
+                </span>
+              </div>
+            </div>
+
+            {user.role === 'karyawan' && (
+              <button
+                onClick={handleKaryawanCheckin}
+                disabled={checkingIn}
+                className={`w-full py-2 px-3 text-[9px] font-bold uppercase tracking-widest text-center border transition-all rounded cursor-pointer ${
+                  checkinStatus
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+                    : 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20'
+                }`}
+              >
+                {checkingIn ? '...' : checkinStatus ? 'PRESENSI: MASUK' : 'PRESENSI HARIAN'}
+              </button>
+            )}
+
             <button
-              onClick={() => setMobileSidebar(!mobileSidebar)}
-              className="lg:hidden p-2 text-slate-700 hover:text-slate-900 text-xl cursor-pointer"
-              aria-label="Open sidebar"
+              onClick={logout}
+              className="w-full py-2 bg-slate-700/40 hover:bg-[#DC3545] text-slate-350 hover:text-white text-[10px] font-bold uppercase tracking-widest transition-all rounded cursor-pointer flex items-center justify-center gap-1.5"
             >
-              <Menu className="w-5 h-5" />
+              <LogOut className="w-3 h-3" />
+              <span>LOG OUT</span>
             </button>
-            
-            {/* Branch display pill matching the red outline screenshot */}
-            <div className="flex items-center gap-3">
-              {user.role === 'owner' ? (
-                <div className="flex items-center gap-2.5">
-                  <div className="flex items-center gap-1.5 px-3.5 py-1.5 border-2 border-red-500/80 rounded-full text-red-600 bg-red-50/30 text-xs font-bold uppercase tracking-wider select-none">
-                    <Building2 className="w-3.5 h-3.5" />
-                    <span>Club {currentBranchName}</span>
-                  </div>
-                  
+          </div>
+        </aside>
+      )}
+
+      {/* 3. Main Content Wrapper */}
+      <div 
+        className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${
+          hasSubmenu ? 'lg:pl-[366px]' : 'lg:pl-[110px]'
+        }`}
+      >
+        {/* Top Header */}
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-30 shadow-sm">
+          {/* Mobile hamburger menu toggle */}
+          <button
+            onClick={() => setMobileSidebar(true)}
+            className="p-1 text-slate-500 hover:text-slate-800 lg:hidden cursor-pointer"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+
+          <div className="flex items-center gap-6 ml-auto">
+            {/* Branch Selector Dropdown */}
+            {branches.length > 0 && (
+              <div className="relative">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-650 bg-slate-50 border border-slate-200 px-3.5 py-2 rounded-lg shadow-sm">
+                  <Building2 className="w-3.5 h-3.5 text-[#DC3545]" />
+                  <span className="uppercase tracking-wider">Cabang:</span>
                   <select
                     value={activeBranchID || ''}
                     onChange={(e) => selectBranch(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-600 hover:border-slate-300 font-semibold text-[11px] uppercase tracking-wider py-1.5 px-2.5 rounded focus:outline-none focus:ring-1 focus:ring-slate-300 cursor-pointer transition-all"
+                    className="bg-transparent focus:outline-none cursor-pointer uppercase text-slate-800 font-extrabold pr-1"
                   >
                     {branches.map((b) => (
                       <option key={b.id} value={b.id}>
-                        {b.name}
+                        {b.name.replace('Prabu Gym ', '')}
                       </option>
                     ))}
                   </select>
                 </div>
-              ) : (
-                <div className="flex items-center gap-1.5 px-3.5 py-1.5 border-2 border-[#DC3545] rounded-full text-[#DC3545] bg-red-50/10 text-xs font-bold uppercase tracking-wider select-none">
-                  <Building2 className="w-3.5 h-3.5" />
-                  <span>Club {currentBranchName}</span>
-                </div>
-              )}
-            </div>
-          </div>
+              </div>
+            )}
 
-          {/* Right Section: User Profile Dropdown and Date */}
-          <div className="flex items-center gap-5">
-            {/* Date Display */}
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest max-md:hidden">
-              📅 {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-            </div>
-
-            {/* User Dropdown Profile block */}
+            {/* Profile Dropdown */}
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setUserDropdown(!userDropdown)}
-                className="flex items-center gap-1.5 text-xs font-bold text-slate-650 hover:text-slate-900 transition-colors uppercase tracking-wider cursor-pointer py-2 select-none"
+                className="flex items-center gap-2.5 focus:outline-none cursor-pointer group"
               >
-                <span>{user.role === 'karyawan' ? 'Kasir Prabu GYM' : user.full_name}</span>
-                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${userDropdown ? 'rotate-180' : ''}`} />
+                <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-600 text-xs shadow-sm uppercase group-hover:border-[#DC3545] transition-all">
+                  {user.full_name[0]}
+                </div>
+                <div className="text-left max-sm:hidden">
+                  <h4 className="text-xs font-bold text-slate-700 leading-none group-hover:text-slate-900">{user.full_name}</h4>
+                  <span className="text-[10px] font-accent text-slate-400 font-bold uppercase tracking-wider">{user.role}</span>
+                </div>
+                <ChevronDown className="w-3 h-3 text-slate-400 group-hover:text-slate-600 transition-colors" />
               </button>
-              
+
               {userDropdown && (
-                <div className="absolute right-0 mt-1 w-44 bg-white border border-slate-200 rounded shadow-md py-1 animate-fadeIn">
+                <div className="absolute right-0 mt-2.5 w-48 bg-white border border-slate-250 rounded-lg shadow-xl py-1.5 z-50 text-xs animate-fade-in font-body">
                   <div className="px-4 py-2 border-b border-slate-100">
-                    <p className="text-xs font-bold text-slate-800 truncate">{user.full_name}</p>
-                    <p className="text-[10px] text-slate-400 font-semibold uppercase">{user.role}</p>
+                    <p className="font-semibold text-slate-700 truncate">{user.username}</p>
+                    <p className="text-slate-400 text-[10px] truncate">{user.email || '-'}</p>
                   </div>
                   <button
                     onClick={logout}
-                    className="w-full text-left px-4 py-2.5 text-xs text-red-500 hover:bg-red-50 font-bold transition-all flex items-center gap-2 cursor-pointer"
+                    className="w-full text-left px-4 py-2 hover:bg-slate-50 text-red-650 hover:text-red-700 flex items-center gap-2 cursor-pointer font-semibold"
                   >
                     <LogOut className="w-3.5 h-3.5" />
-                    <span>LOG OUT</span>
+                    <span>Log Out</span>
                   </button>
                 </div>
               )}
@@ -374,138 +367,109 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        {/* Content Area - light grey background */}
-        <main className="flex-1 p-6 max-md:p-4 overflow-y-auto">{children}</main>
+        {/* Page Content area */}
+        <main className="flex-1 p-8 max-md:p-4">
+          {children}
+        </main>
       </div>
 
-      {/* Mobile Sidebar overlay */}
+      {/* 4. Mobile Navigation Drawer (Floating Overlay Drawer) */}
       {mobileSidebar && (
-        <div
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 lg:hidden"
-          onClick={() => setMobileSidebar(false)}
-        >
-          <aside
-            className="w-64 bg-[#2A2F35] h-full flex flex-col justify-between p-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div>
-              <div className="h-14 flex items-center justify-between border-b border-slate-700/50 mb-4 text-white">
-                <span className="font-heading text-2xl tracking-widest font-bold">
-                  PRABU GYM
-                </span>
-                <button 
-                  onClick={() => setMobileSidebar(false)} 
-                  className="text-slate-400 hover:text-white cursor-pointer"
+        <div className="fixed inset-0 z-50 flex lg:hidden animate-fade-in">
+          {/* Backdrop overlay */}
+          <div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs"
+            onClick={() => setMobileSidebar(false)}
+          />
+
+          {/* Drawer content panel */}
+          <aside className="relative w-72 max-w-[85vw] bg-[#343A40] flex flex-col justify-between h-full p-6 text-slate-300 shadow-2xl z-50 animate-slide-right select-none">
+            <div className="space-y-6 flex-1 flex flex-col overflow-y-auto">
+              <div className="flex items-center justify-between border-b border-slate-700/50 pb-4">
+                <span className="font-heading text-lg font-bold text-white tracking-widest">PRABU GYM</span>
+                <button
+                  onClick={() => setMobileSidebar(false)}
+                  className="p-1 text-slate-400 hover:text-white cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <nav className="space-y-4">
-                {menuGroups.map((group) => (
-                  <div key={group.title} className="space-y-1.5">
-                    <h5 className="px-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest opacity-60">
-                      {group.title}
-                    </h5>
-                    <div className="space-y-1">
-                      {group.items.map((item) => {
-                        if (item.label === 'Transaksi') {
-                          const isSubActive = pathname.startsWith('/dashboard/transactions');
-                          return (
-                            <div key={item.label} className="space-y-1">
-                              <button
-                                onClick={() => setIsTransaksiOpen(!isTransaksiOpen)}
-                                className={`w-full flex items-center justify-between px-4.5 py-2.5 text-xs font-semibold uppercase tracking-wider transition-all rounded cursor-pointer ${
+              <nav className="space-y-2 flex-1">
+                {menuConfig.map((group) => {
+                  const Icon = group.icon;
+                  const isBeranda = group.id === 'beranda';
+                  const isMobileActive = isBeranda 
+                    ? pathname === '/dashboard' 
+                    : mobileActiveGroup === group.id;
+
+                  if (isBeranda) {
+                    return (
+                      <Link
+                        key={group.id}
+                        href="/dashboard"
+                        onClick={() => setMobileSidebar(false)}
+                        className={`flex items-center gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wider transition-all rounded ${
+                          pathname === '/dashboard'
+                            ? 'bg-[#DC3545] text-white border-l-4 border-white'
+                            : 'text-slate-300 hover:bg-[#2A2F35]/50'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4" />
+                        <span>{group.label}</span>
+                      </Link>
+                    );
+                  }
+
+                  return (
+                    <div key={group.id} className="space-y-1">
+                      <button
+                        onClick={() => setMobileActiveGroup(mobileActiveGroup === group.id ? null : group.id)}
+                        className={`w-full flex items-center justify-between px-4 py-3 text-xs font-semibold uppercase tracking-wider transition-all rounded cursor-pointer ${
+                          isMobileActive
+                            ? 'bg-[#2A2F35] text-white border-l-4 border-[#DC3545]'
+                            : 'text-slate-300 hover:bg-[#2A2F35]/50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Icon className="w-4 h-4" />
+                          <span>{group.label}</span>
+                        </div>
+                        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${mobileActiveGroup === group.id ? 'rotate-180' : ''}`} />
+                      </button>
+                      
+                      {mobileActiveGroup === group.id && (
+                        <div className="pl-6 space-y-1 py-1">
+                          {group.items.map((item) => {
+                            const isSubActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                            const SubIcon = item.icon;
+                            return (
+                              <Link
+                                key={item.label}
+                                href={item.href}
+                                onClick={() => setMobileSidebar(false)}
+                                className={`flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-wider transition-all rounded ${
                                   isSubActive
-                                    ? 'bg-[#1E2227] text-white font-bold border-l-4 border-[#DC3545]'
-                                    : 'text-slate-300 hover:text-white'
+                                    ? 'text-white bg-[#DC3545]'
+                                    : 'text-slate-400 hover:text-white'
                                 }`}
                               >
-                                <div className="flex items-center gap-3">
-                                  <item.icon className="w-4 h-4" />
-                                  <span>{item.label}</span>
-                                </div>
-                                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isTransaksiOpen ? 'rotate-180' : ''}`} />
-                              </button>
-                              {isTransaksiOpen && (
-                                <div className="pl-6 space-y-1.5 py-1">
-                                  <Link
-                                    href="/dashboard/transactions/scan-barcode"
-                                    onClick={() => setMobileSidebar(false)}
-                                    className={`flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all rounded ${
-                                      pathname === '/dashboard/transactions/scan-barcode'
-                                        ? 'text-white bg-[#1E2227] border-l-2 border-[#DC3545]'
-                                        : 'text-slate-400 hover:text-white'
-                                    }`}
-                                  >
-                                    <span>🔍 Scan Barcode</span>
-                                  </Link>
-                                  <Link
-                                    href="/dashboard/transactions/member-registration"
-                                    onClick={() => setMobileSidebar(false)}
-                                    className={`flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all rounded ${
-                                      pathname === '/dashboard/transactions/member-registration'
-                                        ? 'text-white bg-[#1E2227] border-l-2 border-[#DC3545]'
-                                        : 'text-slate-400 hover:text-white'
-                                    }`}
-                                  >
-                                    <span>👤 Pendaftaran Anggota</span>
-                                  </Link>
-                                  <Link
-                                    href="/dashboard/transactions/pt-registration"
-                                    onClick={() => setMobileSidebar(false)}
-                                    className={`flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all rounded ${
-                                      pathname === '/dashboard/transactions/pt-registration'
-                                        ? 'text-white bg-[#1E2227] border-l-2 border-[#DC3545]'
-                                        : 'text-slate-400 hover:text-white'
-                                    }`}
-                                  >
-                                    <span>🏋️ Pendaftaran Latihan</span>
-                                  </Link>
-                                  <Link
-                                    href="/dashboard/transactions"
-                                    onClick={() => setMobileSidebar(false)}
-                                    className={`flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all rounded ${
-                                      pathname === '/dashboard/transactions'
-                                        ? 'text-white bg-[#1E2227] border-l-2 border-[#DC3545]'
-                                        : 'text-slate-400 hover:text-white'
-                                    }`}
-                                  >
-                                    <span>🛒 Kasir (POS Retail)</span>
-                                  </Link>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        }
-
-                        const Icon = item.icon;
-                        const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
-                        return (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={() => setMobileSidebar(false)}
-                            className={`flex items-center gap-3 px-4.5 py-2.5 text-xs font-semibold uppercase tracking-wider transition-all rounded ${
-                              isActive 
-                                ? 'bg-[#1E2227] text-white border-l-4 border-[#DC3545]' 
-                                : 'text-slate-300 hover:text-white'
-                            }`}
-                          >
-                            <Icon className="w-4 h-4" />
-                            <span>{item.label}</span>
-                          </Link>
-                        );
-                      })}
+                                <SubIcon className="w-3.5 h-3.5" />
+                                <span>{item.label}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </nav>
             </div>
 
             <div className="border-t border-slate-700/50 pt-4 space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded bg-[#DC3545] flex items-center justify-center text-sm font-bold text-white uppercase">
+                <div className="w-8 h-8 rounded bg-[#DC3545] flex items-center justify-center text-xs font-bold text-white uppercase">
                   {user.full_name[0]}
                 </div>
                 <div>
@@ -514,8 +478,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </div>
               </div>
               <button
-                onClick={logout}
-                className="w-full py-2 bg-slate-750 text-slate-300 hover:text-white text-xs font-bold uppercase tracking-widest transition-all rounded cursor-pointer flex items-center justify-center gap-2"
+                onClick={() => {
+                  setMobileSidebar(false);
+                  logout();
+                }}
+                className="w-full py-2 bg-slate-700/40 hover:bg-[#DC3545] text-slate-350 hover:text-white text-xs font-bold uppercase tracking-widest transition-all rounded cursor-pointer flex items-center justify-center gap-2"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span>LOG OUT</span>

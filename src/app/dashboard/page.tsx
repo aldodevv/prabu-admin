@@ -320,8 +320,8 @@ export default function SummaryPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700 font-semibold">
-              {summary.expiring_members.length > 0 ? (
-                summary.expiring_members.map((member, idx) => {
+              {(summary?.expiring_members || []).length > 0 ? (
+                (summary?.expiring_members || []).map((member, idx) => {
                   const daysLeft = getDaysRemaining(member.membership_end);
                   return (
                     <tr key={member.id} className="hover:bg-slate-50/50 transition-colors">
