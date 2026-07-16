@@ -126,10 +126,11 @@ export default function TrainerSessionsPage() {
 
     // Fallback: derive total sessions from package name
     let total = 1;
-    if (packageName.includes('2 Sesi')) total = 2;
-    else if (packageName.includes('3 Sesi')) total = 3;
+    if (packageName.includes('12 Sesi')) total = 12;
     else if (packageName.includes('6 Sesi')) total = 6;
-    else if (packageName.includes('12 Sesi')) total = 12;
+    else if (packageName.includes('3 Sesi')) total = 3;
+    else if (packageName.includes('2 Sesi')) total = 2;
+    else if (packageName.includes('1 Sesi')) total = 1;
 
     return {
       total_sessions: total,
@@ -722,7 +723,7 @@ export default function TrainerSessionsPage() {
 
       {/* Session Member Print Receipt popup (Image 5 Layout) */}
       {printReg && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 no-print overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:p-0 print:bg-white print:fixed print:inset-0 overflow-y-auto">
           <div className="w-full max-w-4xl bg-white border border-slate-200 p-8 rounded shadow-2xl relative text-black">
             <button
               onClick={() => setPrintReg(null)}

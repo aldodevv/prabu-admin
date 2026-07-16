@@ -205,21 +205,7 @@ export default function ScanBarcodePage() {
                           <span className="text-slate-850">{member.email || '-'}</span>
                         </div>
                       </div>
-                      {result.health && (
-                        <div className="bg-slate-50 p-3.5 border border-slate-200 rounded">
-                          <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Metrik Latihan Minggu Ini</h4>
-                          <div className="grid grid-cols-2 gap-2 text-[11px]">
-                            <div>
-                              <span className="text-slate-400 font-semibold block">Rata-rata Durasi</span>
-                              <span className="font-bold text-slate-800">{Math.round(result.health.average_minutes_week)} Menit</span>
-                            </div>
-                            <div>
-                              <span className="text-slate-400 font-semibold block">Level Latihan</span>
-                              <span className="font-bold text-[#DC3545] uppercase">{result.health.level}</span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
+
                     </div>
                   </div>
                 );
