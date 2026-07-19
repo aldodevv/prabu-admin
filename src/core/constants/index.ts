@@ -195,7 +195,7 @@ export const NAVIGATION_MENU: NavigationGroup[] = [
       { label: 'Pembayaran Anggota', href: ROUTES.MEMBER_PAYMENT, iconName: 'CreditCard' },
       { label: 'Sesi Pelatih', href: ROUTES.TRAINER_SESSIONS, iconName: 'ClipboardCheck' },
       { label: 'Rekap Kelas', href: ROUTES.CLASS_RECAP, iconName: 'ClipboardCheck' },
-      { label: 'Pergantian Kartu', href: ROUTES.CARD_REPLACEMENT, iconName: 'CreditCard' },
+      { label: 'Pergantian Cabang', href: ROUTES.CARD_REPLACEMENT, iconName: 'RefreshCw' },
     ]
   },
   {
@@ -230,7 +230,7 @@ export const NAVIGATION_MENU: NavigationGroup[] = [
       { label: 'Laporan Latihan', href: ROUTES.REPORT_WORKOUTS, iconName: 'FileText' },
       { label: 'Laporan Sesi PT', href: ROUTES.REPORT_PT_SESSIONS, iconName: 'FileText' },
       { label: 'Laporan Komisi Kelas', href: ROUTES.REPORT_CLASS_COMMISSIONS, iconName: 'FileText' },
-      { label: 'Laporan Pergantian Kartu', href: ROUTES.REPORT_CARD_REPLACEMENTS, iconName: 'FileText' },
+      { label: 'Laporan Pergantian Cabang', href: ROUTES.REPORT_CARD_REPLACEMENTS, iconName: 'FileText' },
     ]
   }
 ];

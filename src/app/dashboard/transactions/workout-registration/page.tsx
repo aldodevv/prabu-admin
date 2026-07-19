@@ -534,7 +534,7 @@ export default function PTRegistrationPage() {
                 </thead>
                 <tbody>
                   <tr className="font-semibold text-slate-800">
-                    <td className="py-3 px-3 border-r border-black font-mono">@{successTx.member_username}</td>
+                    <td className="py-3 px-3 border-r border-black font-mono">{successTx.member_username}</td>
                     <td className="py-3 px-3 border-r border-black font-bold">{successTx.member_name}</td>
                     <td className="py-3 px-3 border-r border-black uppercase text-[10px]">{successTx.package_name}</td>
                     <td className="py-3 px-3 border-r border-black text-center">{sessionCount}</td>

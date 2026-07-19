@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { Search, UserPlus, Trash, ArrowLeft, Save, Printer, FileText } from 'lucide-react';
 
@@ -51,6 +52,7 @@ const PACKAGES = [
 
 export default function MemberPaymentPage() {
   const { activeBranchID, user } = useAuth();
+  const router = useRouter();
 
   // Steps: 'list' | 'pay'
   const [step, setStep] = useState<'list' | 'pay'>('list');
@@ -93,6 +95,24 @@ export default function MemberPaymentPage() {
     }
   }, [activeBranchID, memberScope]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined' && members.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const payMemberId = params.get('pay_member_id');
+      if (payMemberId) {
+        const found = members.find(m => m.id === payMemberId);
+        if (found) {
+          // Temporarily bypass activeBranchID check if we came from summary
+          // but wait, handleOpenPayment already has activeBranchID check
+          // and members on summary page are already in activeBranchID, so it will pass.
+          handleOpenPayment(found);
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, '', newUrl);
+        }
+      }
+    }
+  }, [members]);
+
   const fetchMembers = async () => {
     setLoading(true);
     try {
@@ -111,6 +131,16 @@ export default function MemberPaymentPage() {
   };
 
   const handleOpenPayment = (m: Member) => {
+    if (m.branch_id !== activeBranchID) {
+      const confirmChange = window.confirm(
+        `Pembayaran tidak diperkenankan. Member tersebut terdaftar di cabang ${m.branch_name || 'lain'}.\n\nApakah Anda ingin melakukan Pergantian Cabang untuk member ini?`
+      );
+      if (confirmChange) {
+        router.push('/dashboard/transactions/card-replacement');
+      }
+      return;
+    }
+
     setSelectedMember(m);
     setSelectedPackageName('');
     setPaymentMethod('');
@@ -446,7 +476,7 @@ export default function MemberPaymentPage() {
                                 <td className="py-4 px-4 border-r border-slate-100 font-mono text-slate-600">
                                   {formatDateLabel(m.membership_end)}
                                 </td>
-                                <td className="py-4 px-4 border-r border-slate-100 font-mono text-slate-800">@{m.username}</td>
+                                <td className="py-4 px-4 border-r border-slate-100 font-mono text-slate-800">{m.username}</td>
                                 <td className="py-4 px-4 border-r border-slate-100 text-slate-800 font-bold">{m.full_name}</td>
                                 <td className="py-4 px-4 border-r border-slate-100 font-mono text-slate-600">{m.phone || '-'}</td>
                                 <td className="py-4 px-4 border-r border-slate-100 text-slate-700 uppercase text-[10px]">{m.membership_type}</td>
@@ -734,7 +764,7 @@ export default function MemberPaymentPage() {
                 </thead>
                 <tbody>
                   <tr className="font-semibold text-slate-800">
-                    <td className="py-3 px-3 border-r border-black font-mono">@{selectedMember.username}</td>
+                    <td className="py-3 px-3 border-r border-black font-mono">{selectedMember.username}</td>
                     <td className="py-3 px-3 border-r border-black font-bold">{selectedMember.full_name}</td>
                     <td className="py-3 px-3 border-r border-black uppercase text-[10px]">{successTx.packageName}</td>
                     <td className="py-3 px-3 border-r border-black font-mono text-[10px]">

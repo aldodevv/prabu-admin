@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import api from '@/lib/api';
+import { checkinsApi } from '@/core/api';
+import * as Icons from 'lucide-react';
 
 interface MemberData {
   id: string;
@@ -73,13 +75,12 @@ export default function ScanBarcodePage() {
     }
   }, []);
 
-  const handleScanSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleScanSearch = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!barcode.trim()) return;
 
     setLoading(true);
     setErrorMsg('');
-    setResult(null);
 
     try {
       const res = await api.get<ScanResponse>(`/admin/scan-barcode?code=${encodeURIComponent(barcode.trim())}`);
@@ -88,250 +89,353 @@ export default function ScanBarcodePage() {
         setBarcode(''); // Reset input for next scan
       } else {
         setErrorMsg(res.error || 'Data barcode tidak ditemukan.');
+        setResult(null);
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'Terjadi kesalahan saat memverifikasi barcode.');
+      setResult(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const getMembershipStatus = (endStr: string) => {
-    const end = new Date(endStr);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (end < today) return { label: 'Expired', style: 'bg-red-100 text-red-800' };
-    return { label: 'Aktif', style: 'bg-emerald-105 text-emerald-800' };
+  const reloadMemberData = async (code: string) => {
+    try {
+      const res = await api.get<ScanResponse>(`/admin/scan-barcode?code=${encodeURIComponent(code)}`);
+      if (res.success && res.data) {
+        setResult(res.data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
+  const handleCheckin = async (memberId: string) => {
+    if (!result || result.type !== 'member') return;
+    const member = result.data as MemberData;
+    
+    setLoading(true);
+    try {
+      const res = await checkinsApi.checkin(memberId);
+      if (res.success) {
+        await reloadMemberData(member.username);
+      } else {
+        alert(res.error || 'Gagal melakukan check-in');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Terjadi kesalahan saat check-in');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCheckout = async (memberId: string) => {
+    if (!result || result.type !== 'member') return;
+    const member = result.data as MemberData;
+
+    setLoading(true);
+    try {
+      const res = await checkinsApi.checkout(memberId);
+      if (res.success) {
+        await reloadMemberData(member.username);
+      } else {
+        alert(res.error || 'Gagal melakukan check-out');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Terjadi kesalahan saat check-out');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getDaysRemaining = (endDateStr: string) => {
+    if (!endDateStr) return 0;
+    const endDate = new Date(endDateStr);
+    const today = new Date();
+    endDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    const diffTime = endDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const getMemberStatusText = (endDateStr: string) => {
+    const daysLeft = getDaysRemaining(endDateStr);
+    return daysLeft >= 0 ? 'Aktif' : 'Tidak Aktif';
+  };
+
+  // Find if there is an active checkin (no checkout time)
+  const activeCheckin = result?.type === 'member' 
+    ? (result.checkins as MemberCheckin[])?.find(c => !c.check_out_at)
+    : null;
+
   return (
-    <div className="space-y-8 font-sans">
-      <div>
-        <h2 className="text-3xl font-heading text-slate-800">SCAN BARCODE</h2>
-        <p className="text-slate-500 text-sm mt-1 uppercase tracking-widest font-accent">
-          Scan QR / Barcode member atau kartu karyawan untuk melihat profil & data kehadiran
-        </p>
+    <div className="space-y-6 font-sans">
+      {/* Breadcrumb path */}
+      <div className="bg-white border border-slate-200 px-4 py-3 text-xs text-slate-500 rounded font-sans shadow-sm select-none">
+        Transaksi Fitnes &nbsp;&gt;&nbsp; Scan Barcode
       </div>
 
-      {/* Scanner Input Panel */}
-      <div className="bg-white border border-slate-200 p-8 max-w-2xl rounded shadow-sm">
-        <form onSubmit={handleScanSearch} className="flex gap-3">
-          <div className="relative flex-1">
+      <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
+        {/* Cyan Heading Title Bar */}
+        <div className="bg-[#3bbbc8] px-6 py-4 flex items-center gap-2 text-white">
+          <Icons.Search className="w-5 h-5" />
+          <h2 className="text-sm font-bold uppercase tracking-wider font-sans">Scan Barcode</h2>
+        </div>
+
+        {/* Panel Content */}
+        <div className="p-6 space-y-6">
+          {/* Scanner Input Form */}
+          <form onSubmit={handleScanSearch} className="flex gap-2 max-w-xl">
             <input
               ref={inputRef}
               type="text"
               required
               value={barcode}
               onChange={(e) => setBarcode(e.target.value)}
-              placeholder="Arahkan Barcode Scanner / Masukkan Kode Barcode di sini..."
-              className="w-full bg-slate-50 border-2 border-slate-200 rounded px-4 py-3 text-sm focus:outline-none focus:border-[#DC3545] font-mono tracking-wider text-slate-800"
+              placeholder="Masukkan Kode Barcode di sini..."
+              className="flex-1 bg-slate-50 border border-slate-350 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#3bbbc8] text-slate-800"
             />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-6 py-3 bg-[#DC3545] hover:bg-[#c82333] text-white text-xs font-accent font-bold uppercase tracking-widest rounded shadow-sm disabled:opacity-50 transition-colors cursor-pointer"
-          >
-            {loading ? 'MENCARI...' : 'CARI'}
-          </button>
-        </form>
-      </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-4 py-2 bg-[#3bbbc8] hover:bg-[#31a5b0] text-white text-xs font-bold rounded flex items-center justify-center transition-colors cursor-pointer disabled:opacity-55"
+            >
+              <Icons.Search className="w-4 h-4" />
+            </button>
+          </form>
 
-      {errorMsg && (
-        <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-bold uppercase tracking-wider max-w-2xl animate-fadeIn">
-          ⚠️ {errorMsg}
-        </div>
-      )}
+          {errorMsg && (
+            <div className="p-3 bg-red-55 border-l-4 border-red-500 text-red-700 text-xs font-bold uppercase tracking-wider rounded">
+              ⚠️ {errorMsg}
+            </div>
+          )}
 
-      {/* Result Panel */}
-      {result && (
-        <div className="grid grid-cols-[1fr_2fr] gap-6 max-lg:grid-cols-1 animate-fadeIn">
-          {/* Left Panel: Profile Detail */}
-          <div className="bg-white border border-slate-200 p-8 h-fit rounded shadow-sm">
-            <h3 className="font-heading text-lg text-slate-800 mb-6 uppercase tracking-wider border-b border-slate-100 pb-3">
-              Profil {result.type === 'member' ? 'Member' : 'Karyawan'}
-            </h3>
-
-            {result.type === 'member' ? (
-              // Member detail UI
-              (() => {
+          {/* Result Panel */}
+          {result && (
+            <div className="space-y-6">
+              {/* Warning/Info Banner */}
+              {result.type === 'member' && (() => {
                 const member = result.data as MemberData;
-                const status = getMembershipStatus(member.membership_end);
-                return (
-                  <div className="space-y-6">
-                    {member.photo_url && (
-                      <div className="flex justify-center">
-                        <img
-                          src={member.photo_url}
-                          alt={member.full_name}
-                          className="w-32 h-32 rounded-full object-cover border-2 border-slate-200"
+                const daysLeft = getDaysRemaining(member.membership_end);
+                if (daysLeft >= 0 && daysLeft <= 7) {
+                  return (
+                    <div className="w-full bg-[#d9edf7] border border-[#bce8f1] text-[#31708f] px-4 py-6 rounded text-center relative font-sans text-2xl font-bold uppercase tracking-wider select-none">
+                      MASA AKTIF TINGGAL {daysLeft} HARI
+                      <button 
+                        type="button" 
+                        onClick={() => setResult(null)} 
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[#31708f] opacity-50 hover:opacity-100 text-lg cursor-pointer"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  );
+                } else if (daysLeft < 0) {
+                  return (
+                    <div className="w-full bg-red-100 border border-red-200 text-red-700 px-4 py-6 rounded text-center relative font-sans text-2xl font-bold uppercase tracking-wider select-none">
+                      MEMBERSHIP EXPIRED (LEWAT {Math.abs(daysLeft)} HARI)
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              <div>
+                <h3 className="text-slate-700 font-bold text-base mb-4 font-sans border-b border-slate-200 pb-2">
+                  Data {result.type === 'member' ? 'Anggota' : 'Karyawan'}
+                </h3>
+
+                <div className="grid grid-cols-[1fr_2fr] gap-6 max-md:grid-cols-1">
+                  {/* Left Column: Avatar Photo Placeholder */}
+                  <div>
+                    <div className="w-full bg-[#4A4A4A] aspect-[4/3] flex items-center justify-center rounded overflow-hidden border border-slate-200">
+                      {result.type === 'member' && (result.data as MemberData).photo_url ? (
+                        <img 
+                          src={(result.data as MemberData).photo_url} 
+                          alt={result.data.full_name} 
+                          className="w-full h-full object-cover" 
                         />
-                      </div>
+                      ) : (
+                        <svg className="w-32 h-32 text-slate-300" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right Column: Member Profile Details Table */}
+                  <div>
+                    {result.type === 'member' ? (
+                      (() => {
+                        const member = result.data as MemberData;
+                        const daysLeft = getDaysRemaining(member.membership_end);
+                        return (
+                          <div className="overflow-x-auto">
+                            <table className="w-full border-collapse border border-slate-200 text-xs">
+                              <tbody>
+                                <tr className="border-b border-slate-200">
+                                  <td className="bg-[#4f709c] text-white font-bold px-4 py-2 w-1/3 border border-slate-200 select-none">Nomor Anggota</td>
+                                  <td className="text-slate-800 px-4 py-2 border border-slate-200 bg-white font-mono">{member.username}</td>
+                                </tr>
+                                <tr className="border-b border-slate-200">
+                                  <td className="bg-[#4f709c] text-white font-bold px-4 py-2 border border-slate-200 select-none">Nama Anggota</td>
+                                  <td className="text-slate-800 px-4 py-2 border border-slate-200 bg-white font-semibold">{member.full_name}</td>
+                                </tr>
+                                <tr className="border-b border-slate-200">
+                                  <td className="bg-[#4f709c] text-white font-bold px-4 py-2 border border-slate-200 select-none">Tanggal Lahir</td>
+                                  <td className="text-slate-800 px-4 py-2 border border-slate-200 bg-white font-mono">
+                                    {member.date_of_birth ? new Date(member.date_of_birth).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-') : '-'}
+                                  </td>
+                                </tr>
+                                <tr className="border-b border-slate-200">
+                                  <td className="bg-[#4f709c] text-white font-bold px-4 py-2 border border-slate-200 select-none">Paket Anggota</td>
+                                  <td className="text-slate-800 px-4 py-2 border border-slate-200 bg-white">{member.membership_type}</td>
+                                </tr>
+                                <tr className="border-b border-slate-200">
+                                  <td className="bg-[#4f709c] text-white font-bold px-4 py-2 border border-slate-200 select-none">Masa Aktif</td>
+                                  <td className="text-slate-800 px-4 py-2 border border-slate-200 bg-white font-mono">
+                                    {member.membership_start ? new Date(member.membership_start).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-') : '-'} s/d {member.membership_end ? new Date(member.membership_end).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-') : '-'}
+                                  </td>
+                                </tr>
+                                <tr className="border-b border-slate-200">
+                                  <td className="bg-[#4f709c] text-white font-bold px-4 py-2 border border-slate-200 select-none">Sisa Hari</td>
+                                  <td className="text-slate-800 px-4 py-2 border border-slate-200 bg-white font-mono font-bold">
+                                    {daysLeft >= 0 ? `${daysLeft} hari` : 'Expired'}
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td className="bg-[#4f709c] text-white font-bold px-4 py-2 border border-slate-200 select-none">Status Anggota</td>
+                                  <td className="text-slate-800 px-4 py-2 border border-slate-200 bg-white font-semibold">
+                                    {getMemberStatusText(member.membership_end)}
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+                      })()
+                    ) : (
+                      // Employee view
+                      (() => {
+                        const emp = result.data as EmployeeData;
+                        return (
+                          <div className="overflow-x-auto">
+                            <table className="w-full border-collapse border border-slate-200 text-xs">
+                              <tbody>
+                                <tr className="border-b border-slate-200">
+                                  <td className="bg-[#4f709c] text-white font-bold px-4 py-2 w-1/3 border border-slate-200 select-none">Nama Lengkap</td>
+                                  <td className="text-slate-800 px-4 py-2 border border-slate-200 bg-white">{emp.full_name}</td>
+                                </tr>
+                                <tr className="border-b border-slate-200">
+                                  <td className="bg-[#4f709c] text-white font-bold px-4 py-2 border border-slate-200 select-none">Role</td>
+                                  <td className="text-slate-800 px-4 py-2 border border-slate-200 bg-white font-bold text-red-650">{emp.role.toUpperCase()}</td>
+                                </tr>
+                                <tr className="border-b border-slate-200">
+                                  <td className="bg-[#4f709c] text-white font-bold px-4 py-2 border border-slate-200 select-none">Username</td>
+                                  <td className="text-slate-800 px-4 py-2 border border-slate-200 bg-white font-mono">@{emp.username}</td>
+                                </tr>
+                                <tr>
+                                  <td className="bg-[#4f709c] text-white font-bold px-4 py-2 border border-slate-200 select-none">Jam Shift</td>
+                                  <td className="text-slate-800 px-4 py-2 border border-slate-200 bg-white font-mono">{emp.work_start_time || '08:00'}</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+                      })()
                     )}
-                    <div className="space-y-3.5 text-xs text-slate-650">
-                      <div>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Nama Lengkap</span>
-                        <span className="text-sm font-bold text-slate-800">{member.full_name}</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Username</span>
-                          <span className="font-medium text-slate-800">@{member.username}</span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">ID Member</span>
-                          <span className="font-mono text-slate-700 truncate block">{member.id.substring(0, 8)}...</span>
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Status Membership</span>
-                        <span className={`inline-flex px-2 py-0.5 mt-1 rounded text-[10px] font-bold uppercase tracking-wider ${status.style}`}>
-                          {status.label}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Masa Berlaku</span>
-                        <span className="font-semibold text-slate-800">
-                          {new Date(member.membership_start).toLocaleDateString('id-ID')} s/d {new Date(member.membership_end).toLocaleDateString('id-ID')}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Nomor HP</span>
-                          <span className="font-mono text-slate-800">{member.phone || '-'}</span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Email</span>
-                          <span className="text-slate-850">{member.email || '-'}</span>
-                        </div>
-                      </div>
-
-                    </div>
                   </div>
-                );
-              })()
-            ) : (
-              // Employee detail UI
-              (() => {
-                const emp = result.data as EmployeeData;
-                return (
-                  <div className="space-y-4 text-xs text-slate-650">
-                    <div>
-                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Nama Lengkap</span>
-                      <span className="text-sm font-bold text-slate-800">{emp.full_name}</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Role</span>
-                        <span className="font-bold text-[#DC3545] uppercase">{emp.role}</span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">ID Karyawan</span>
-                        <span className="font-mono text-slate-700 block truncate">{emp.id.substring(0, 8)}...</span>
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Username</span>
-                      <span className="font-medium text-slate-800">@{emp.username}</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Jam Masuk Shift</span>
-                      <span className="font-mono font-semibold text-slate-800">{emp.work_start_time || '08:00'}</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Nomor HP</span>
-                      <span className="font-mono text-slate-800">{emp.phone || '-'}</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Email</span>
-                      <span className="text-slate-850">{emp.email || '-'}</span>
-                    </div>
+                </div>
+              </div>
+
+              {/* Check In Action & Logs Panel */}
+              {result.type === 'member' && (
+                <div className="space-y-4">
+                  <h3 className="text-slate-700 font-bold text-base border-b border-slate-200 pb-2 select-none">
+                    Check In Anggota Bulan Ini ({(result.data as MemberData).username})
+                  </h3>
+
+                  {/* Manual Checkin/Checkout Action Button */}
+                  <div>
+                    {activeCheckin ? (
+                      <button
+                        type="button"
+                        onClick={() => handleCheckout(result.data.id)}
+                        disabled={loading}
+                        className="px-4 py-2.5 bg-[#DC3545] hover:bg-[#c82333] text-white text-xs font-bold uppercase tracking-wider rounded flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm disabled:opacity-50"
+                      >
+                        <Icons.LogOut className="w-4 h-4" />
+                        <span>Check Out</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleCheckin(result.data.id)}
+                        disabled={loading}
+                        className="px-4 py-2.5 bg-[#337ab7] hover:bg-[#286090] text-white text-xs font-bold uppercase tracking-wider rounded flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm disabled:opacity-50"
+                      >
+                        <Icons.LogIn className="w-4 h-4" />
+                        <span>Check In</span>
+                      </button>
+                    )}
                   </div>
-                );
-              })()
-            )}
-          </div>
 
-          {/* Right Panel: Check-in Log History */}
-          <div className="bg-white border border-slate-200 p-8 rounded shadow-sm">
-            <h3 className="font-heading text-lg text-slate-800 mb-6 uppercase tracking-wider border-b border-slate-100 pb-3">
-              Riwayat Kunjungan / Absensi (10 Terakhir)
-            </h3>
-
-            <div className="overflow-x-auto">
-              {result.checkins && result.checkins.length > 0 ? (
-                result.type === 'member' ? (
-                  <table className="w-full text-left text-xs text-slate-650">
-                    <thead className="text-[10px] uppercase font-accent text-slate-400 bg-slate-50 border-b border-slate-200">
-                      <tr>
-                        <th className="py-2.5 px-4 border-r border-slate-200/50">Tanggal Check-In</th>
-                        <th className="py-2.5 px-4 border-r border-slate-200/50">Tanggal Check-Out</th>
-                        <th className="py-2.5 px-4 border-r border-slate-200/50">Cabang</th>
-                        <th className="py-2.5 px-4 text-right">Durasi Latihan</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {(result.checkins as MemberCheckin[]).map((c) => (
-                        <tr key={c.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="py-3 px-4 font-mono text-slate-800 border-r border-slate-100">
-                            {new Date(c.check_in_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}
-                          </td>
-                          <td className="py-3 px-4 font-mono text-slate-800 border-r border-slate-100">
-                            {c.check_out_at
-                              ? new Date(c.check_out_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })
-                              : <span className="text-orange-500 font-bold uppercase text-[9px] tracking-wider bg-orange-50 px-1.5 py-0.5 rounded">Dalam Club</span>}
-                          </td>
-                          <td className="py-3 px-4 border-r border-slate-100 text-slate-600">{c.branch_name}</td>
-                          <td className="py-3 px-4 text-right font-bold text-slate-800">
-                            {c.duration_minutes ? `${c.duration_minutes} Menit` : '-'}
-                          </td>
+                  {/* Visit Log Table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse border border-slate-200 text-xs text-slate-800">
+                      <thead>
+                        <tr className="bg-[#4f709c] text-white text-left font-bold select-none">
+                          <th className="py-2.5 px-3 border border-slate-200 w-12 text-center">No</th>
+                          <th className="py-2.5 px-3 border border-slate-200">Tanggal Check In</th>
+                          <th className="py-2.5 px-3 border border-slate-200">Waktu Check In</th>
+                          <th className="py-2.5 px-3 border border-slate-200">Tanggal Check Out</th>
+                          <th className="py-2.5 px-3 border border-slate-200">Waktu Check Out</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <table className="w-full text-left text-xs text-slate-650">
-                    <thead className="text-[10px] uppercase font-accent text-slate-400 bg-slate-50 border-b border-slate-200">
-                      <tr>
-                        <th className="py-2.5 px-4 border-r border-slate-200/50">Jam Presensi Masuk</th>
-                        <th className="py-2.5 px-4 border-r border-slate-200/50">Jam Presensi Pulang</th>
-                        <th className="py-2.5 px-4">Status Keterlambatan</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-slate-700">
-                      {(result.checkins as EmployeeCheckin[]).map((c) => (
-                        <tr key={c.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="py-3 px-4 font-mono text-slate-800 border-r border-slate-100">
-                            {new Date(c.check_in_at).toLocaleString('id-ID')}
-                          </td>
-                          <td className="py-3 px-4 font-mono text-slate-800 border-r border-slate-100">
-                            {c.check_out_at ? new Date(c.check_out_at).toLocaleString('id-ID') : '-'}
-                          </td>
-                          <td className="py-3 px-4">
-                            <span
-                              className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
-                                c.is_late
-                                  ? 'bg-red-55 text-red-700'
-                                  : 'bg-emerald-50 text-emerald-700'
-                              }`}
-                            >
-                              {c.is_late ? 'Terlambat' : 'Tepat Waktu'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )
-              ) : (
-                <div className="text-center py-10 text-slate-400 text-[11px] uppercase tracking-wider font-accent">
-                  Belum ada log riwayat kunjungan.
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 bg-white">
+                        {result.checkins && result.checkins.length > 0 ? (
+                          (result.checkins as MemberCheckin[]).map((c, index) => {
+                            const checkInDate = new Date(c.check_in_at);
+                            const checkOutDate = c.check_out_at ? new Date(c.check_out_at) : null;
+                            return (
+                              <tr key={c.id} className="hover:bg-slate-50">
+                                <td className="py-2.5 px-3 border border-slate-200 text-center font-mono">{index + 1}</td>
+                                <td className="py-2.5 px-3 border border-slate-200 font-mono">
+                                  {checkInDate.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')}
+                                </td>
+                                <td className="py-2.5 px-3 border border-slate-200 font-mono">
+                                  {checkInDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+                                </td>
+                                <td className="py-2.5 px-3 border border-slate-200 font-mono">
+                                  {checkOutDate 
+                                    ? checkOutDate.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-') 
+                                    : '-'}
+                                </td>
+                                <td className="py-2.5 px-3 border border-slate-200 font-mono">
+                                  {checkOutDate 
+                                    ? checkOutDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) 
+                                    : <span className="text-orange-600 font-bold uppercase text-[9px] tracking-wider bg-orange-50 px-2 py-0.5 rounded border border-orange-100">Dalam Club</span>}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        ) : (
+                          <tr>
+                            <td colSpan={5} className="py-8 text-center text-slate-400 select-none">
+                              BELUM ADA DATA PRESENSI KUNJUNGAN.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

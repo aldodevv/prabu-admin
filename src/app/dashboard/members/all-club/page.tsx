@@ -324,7 +324,7 @@ export default function AllClubMembersPanel() {
                   <tbody>
                     <tr className="border-b border-slate-100">
                       <td className="py-2.5 px-4 font-bold bg-slate-50 border-r border-slate-200 w-[25%]">Nomor Anggota</td>
-                      <td className="py-2.5 px-4 font-mono text-slate-800">@{selectedMember.username}</td>
+                      <td className="py-2.5 px-4 font-mono text-slate-800">{selectedMember.username}</td>
                     </tr>
                     <tr className="border-b border-slate-100">
                       <td className="py-2.5 px-4 font-bold bg-slate-50 border-r border-slate-200">Nama Anggota</td>

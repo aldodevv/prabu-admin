@@ -414,7 +414,7 @@ export default function TransactionsPage() {
                     <option value="">-- Pelanggan Umum --</option>
                     {members.map((m) => (
                       <option key={m.id} value={m.id}>
-                        {m.full_name} (@{m.username})
+                        {m.full_name} ({m.username})
                       </option>
                     ))}
                   </select>

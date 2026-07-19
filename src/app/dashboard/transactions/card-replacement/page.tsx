@@ -29,8 +29,8 @@ export default function CardReplacementPage() {
   // Form Fields
   const [selectedMemberId, setSelectedMemberId] = useState('');
   const [newUsername, setNewUsername] = useState('');
-  const [cardPrice, setCardPrice] = useState('25000');
-  const [reason, setReason] = useState('Kartu Hilang');
+  const [cardPrice, setCardPrice] = useState('0');
+  const [reason, setReason] = useState('Mutasi Anggota');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
@@ -44,8 +44,8 @@ export default function CardReplacementPage() {
 
   const fetchMembers = async () => {
     try {
+      // Fetch members from ALL clubs
       const res = await membersApi.list({
-        branch_id: activeBranchID || undefined,
         per_page: 200
       });
       if (res.success && res.data) {
@@ -59,20 +59,18 @@ export default function CardReplacementPage() {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      // DB-level optimized query filtering by notes prefix
       const res = await transactionsApi.list({
         branch_id: activeBranchID || undefined,
-        notes: 'Pergantian Kartu:',
         per_page: 200
       });
       if (res.success && res.data) {
         const list: CardReplacementLog[] = [];
         res.data.forEach((tx: any) => {
-          if (tx.notes && tx.notes.startsWith('Pergantian Kartu:')) {
-            // Notes format: "Pergantian Kartu: Lama: {old} | Baru: {new} | Alasan: {reason}"
+          if (tx.notes && (tx.notes.startsWith('Pergantian Kartu:') || tx.notes.startsWith('Pergantian Cabang:'))) {
+            const isCabang = tx.notes.startsWith('Pergantian Cabang:');
             let oldUser = '-';
             let newUser = '-';
-            let reasonText = 'Kartu Hilang';
+            let reasonText = isCabang ? 'Mutasi Anggota' : 'Kartu Hilang';
 
             const oldMatch = tx.notes.match(/Lama:\s*([^|]+)/);
             const newMatch = tx.notes.match(/Baru:\s*([^|]+)/);
@@ -84,7 +82,7 @@ export default function CardReplacementPage() {
 
             list.push({
               id: tx.id,
-              transaction_number: tx.transaction_number || `PRABU-CR-${tx.id.substring(0,6).toUpperCase()}`,
+              transaction_number: tx.transaction_number || `PRABU-CC-${tx.id.substring(0,6).toUpperCase()}`,
               date: tx.transaction_date.substring(0, 10),
               member_id: tx.member_id || '',
               member_name: tx.member_name || 'Member',
@@ -108,16 +106,48 @@ export default function CardReplacementPage() {
   const handleOpenAdd = () => {
     setSelectedMemberId('');
     setNewUsername('');
-    setCardPrice('25000');
-    setReason('Kartu Hilang');
+    setCardPrice('0');
+    setReason('Mutasi Anggota');
     setFormError('');
     setFormSuccess('');
     setStep('add');
   };
 
+  const handleSelectMember = async (memberId: string) => {
+    setSelectedMemberId(memberId);
+    setNewUsername('');
+    setFormError('');
+    if (!memberId) return;
+
+    const mObj = members.find(m => m.id === memberId);
+    if (!mObj) return;
+
+    if (mObj.branch_id === activeBranchID) {
+      setFormError('Anggota tersebut sudah terdaftar di cabang ini!');
+      return;
+    }
+
+    if (!activeBranchID) {
+      setFormError('ID cabang aktif tidak ditemukan');
+      return;
+    }
+
+    try {
+      const nextCodeRes = await membersApi.getNextCode(activeBranchID);
+      if (nextCodeRes.success && nextCodeRes.data) {
+        setNewUsername(nextCodeRes.data.next_code);
+      } else {
+        setFormError('Gagal mengambil nomor anggota baru untuk cabang terpilih');
+      }
+    } catch (err) {
+      console.error(err);
+      setFormError('Gagal menghubungkan ke server untuk mendapatkan nomor anggota baru');
+    }
+  };
+
   const handleSaveReplacement = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedMemberId || !newUsername || !cardPrice) {
+    if (!selectedMemberId || !newUsername) {
       setFormError('Semua field wajib diisi!');
       return;
     }
@@ -132,24 +162,30 @@ export default function CardReplacementPage() {
       return;
     }
 
+    if (member.branch_id === activeBranchID) {
+      setFormError('Anggota tersebut sudah terdaftar di cabang ini!');
+      setSubmitting(false);
+      return;
+    }
+
     // Step 1: Create transaction record mapping
-    const txNotes = `Pergantian Kartu: Lama: ${member.username} | Baru: ${newUsername} | Alasan: ${reason}`;
+    const txNotes = `Pergantian Cabang: Lama: ${member.username} | Baru: ${newUsername} | Alasan: ${reason}`;
     const txBody = {
       member_id: member.id,
       notes: txNotes,
-      total_amount: Number(cardPrice),
+      total_amount: 0, // Tanpa biaya apapun
       items: [],
     };
 
     try {
       const txRes = await transactionsApi.create(txBody);
       if (!txRes.success) {
-        setFormError(txRes.error || 'Gagal menyimpan transaksi pergantian kartu.');
+        setFormError(txRes.error || 'Gagal menyimpan transaksi pergantian cabang.');
         setSubmitting(false);
         return;
       }
 
-      // Step 2: Update member username to the new username in the database
+      // Step 2: Update member username & branch to the new branch in the database
       const memberUpdateBody = {
         full_name: member.full_name,
         email: member.email || '',
@@ -162,11 +198,12 @@ export default function CardReplacementPage() {
         membership_end: member.membership_end,
         is_active: member.is_active,
         username: newUsername, // Save the new QR username
+        branch_id: activeBranchID || undefined, // Update to new branch!
       };
 
       const memberRes = await membersApi.update(member.id, memberUpdateBody);
       if (memberRes.success) {
-        setFormSuccess(`Sukses! Kartu berhasil diganti & barcode baru telah dikirimkan ke email: ${member.email || 'user@prabugym.com'}`);
+        setFormSuccess(`Sukses! Anggota berhasil dipindahkan ke cabang ini dengan nomor anggota baru: ${newUsername}`);
         fetchMembers();
         fetchLogs();
         setTimeout(() => {
@@ -220,15 +257,15 @@ export default function CardReplacementPage() {
     },
     {
       key: 'old_username',
-      header: 'Kartu Lama',
+      header: 'No. Anggota Lama',
       className: 'font-mono text-red-650',
-      render: (log) => `@${log.old_username}`
+      render: (log) => log.old_username
     },
     {
       key: 'new_username',
-      header: 'Kartu Baru',
+      header: 'No. Anggota Baru',
       className: 'font-mono text-emerald-800',
-      render: (log) => `@${log.new_username}`
+      render: (log) => log.new_username
     },
     {
       key: 'reason',
@@ -237,7 +274,7 @@ export default function CardReplacementPage() {
     },
     {
       key: 'fee',
-      header: 'Biaya Cetak',
+      header: 'Biaya',
       align: 'right',
       className: 'font-extrabold text-slate-800',
       render: (log) => formatIDR(log.fee)
@@ -274,15 +311,15 @@ export default function CardReplacementPage() {
         {step === 'list' && (
           <div className="space-y-6 animate-fadeIn">
             <PageHeader
-              title="Pergantian Kartu Fisik / QR"
-              description="Administrasi & Cetak Ulang Kartu Anggota Hilang atau Rusak"
+              title="Pergantian Cabang / Mutasi"
+              description="Mutasi Anggota antar Cabang Prabu Gym"
               action={
                 <button
                   onClick={handleOpenAdd}
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>Tambah Kartu</span>
+                  <span>Pindah Cabang</span>
                 </button>
               }
             />
@@ -297,12 +334,12 @@ export default function CardReplacementPage() {
 
             {/* Logs Table */}
             <DataTable
-              title="Log Pergantian Kartu"
+              title="Log Pergantian Cabang"
               columns={columns}
               data={filteredLogs}
               loading={loading}
               loadingMessage="Loading logs..."
-              emptyMessage="Belum ada riwayat pergantian kartu."
+              emptyMessage="Belum ada riwayat pergantian cabang."
             />
           </div>
         )}
@@ -311,7 +348,7 @@ export default function CardReplacementPage() {
         {step === 'add' && (
           <div className="space-y-6 animate-fadeIn max-w-3xl mx-auto">
             <PageHeader
-              title="Form Pergantian Kartu"
+              title="Form Pergantian Cabang"
               action={
                 <button
                   onClick={() => setStep('list')}
@@ -344,24 +381,13 @@ export default function CardReplacementPage() {
                   <select
                     required
                     value={selectedMemberId}
-                    onChange={(e) => {
-                      setSelectedMemberId(e.target.value);
-                      // Auto-suggest new username based on member name + random/time seed
-                      const mObj = members.find(m => m.id === e.target.value);
-                      if (mObj) {
-                        const randomSeed = Math.floor(100 + Math.random() * 900);
-                        const sanitizedName = mObj.full_name.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 8);
-                        setNewUsername(`${sanitizedName}${randomSeed}`);
-                      } else {
-                        setNewUsername('');
-                      }
-                    }}
+                    onChange={(e) => handleSelectMember(e.target.value)}
                     className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full"
                   >
                     <option value="">- Pilih Anggota -</option>
                     {members.map((m) => (
                       <option key={m.id} value={m.id}>
-                        {m.full_name} (@{m.username})
+                        {m.full_name} ({m.username}) - {m.branch_name || 'Cabang Lain'}
                       </option>
                     ))}
                   </select>
@@ -369,49 +395,48 @@ export default function CardReplacementPage() {
 
                 {/* Kartu Baru */}
                 <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Barcode / QR Baru</label>
+                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Nomor Anggota Baru</label>
                   <input
                     type="text"
                     required
+                    readOnly
+                    disabled
                     value={newUsername}
-                    onChange={(e) => setNewUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
-                    placeholder="Masukkan Barcode / Nomor Anggota Baru..."
-                    className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full font-mono"
+                    placeholder="Auto-generate setelah memilih anggota..."
+                    className="bg-slate-100 border border-slate-200 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-mono cursor-not-allowed"
                   />
                 </div>
 
                 {/* Alasan */}
                 <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Alasan Pergantian</label>
+                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Alasan Pindah Cabang</label>
                   <select
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full"
                   >
-                    <option value="Kartu Hilang">Kartu Hilang</option>
-                    <option value="Kartu Rusak / Patah">Kartu Rusak / Patah</option>
-                    <option value="Perubahan Username / QR">Perubahan Username / QR</option>
+                    <option value="Mutasi Anggota">Mutasi Anggota</option>
+                    <option value="Pindah Domisili">Pindah Domisili</option>
+                    <option value="Kebijakan Manajemen">Kebijakan Manajemen</option>
                   </select>
                 </div>
 
                 {/* Biaya Cetak */}
                 <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Biaya Cetak Kartu</label>
-                  <select
-                    value={cardPrice}
-                    onChange={(e) => setCardPrice(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full font-mono"
-                  >
-                    <option value="25000">Rp. 25.000</option>
-                    <option value="50000">Rp. 50.000</option>
-                    <option value="0">Gratis (Promo / Kebijakan)</option>
-                  </select>
+                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Biaya Mutasi</label>
+                  <input
+                    type="text"
+                    readOnly
+                    disabled
+                    value="Rp. 0 (Gratis)"
+                    className="bg-slate-100 border border-slate-200 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-mono cursor-not-allowed"
+                  />
                 </div>
 
                 <div className="flex justify-end gap-3 border-t border-slate-150 pt-6">
                   <button
                     type="submit"
-                    disabled={submitting}
+                    disabled={submitting || formError !== '' || !newUsername}
                     className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-[#DC3545] hover:bg-[#c82333] text-white text-xs font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm disabled:opacity-50"
                   >
                     <Save className="w-4 h-4" />
@@ -433,7 +458,7 @@ export default function CardReplacementPage() {
             transactionDate: printLog.date,
             memberUsername: printLog.new_username,
             memberName: printLog.member_name,
-            packageName: `Pergantian Kartu (${printLog.reason})`,
+            packageName: `Pergantian Cabang (${printLog.reason})`,
             membershipStart: printLog.date,
             membershipEnd: printLog.date,
             paymentMethod: 'Tunai',

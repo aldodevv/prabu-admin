@@ -174,7 +174,7 @@ export default function SummaryPage() {
       className: 'select-none w-28',
       render: (m) => (
         <button
-          onClick={() => alert(`Proses perpanjangan untuk ${m.full_name}`)}
+          onClick={() => router.push(`/dashboard/transactions/member-payment?pay_member_id=${m.id}`)}
           className="inline-flex items-center gap-1 px-2.5 py-1.5 border border-[#28A745] hover:bg-[#28A745] text-[#28A745] hover:text-white font-bold uppercase tracking-wider text-[10px] rounded transition-all duration-150 cursor-pointer shadow-sm shadow-green-500/5"
         >
           <PlusCircle className="w-3.5 h-3.5" />
@@ -229,14 +229,14 @@ export default function SummaryPage() {
           value={summary.checkins_today} 
           icon={UserCheck} 
           bg="bg-[#FD7E14]"
-          onViewMore={() => router.push('/dashboard/members/visits')}
+          onViewMore={() => router.push('/dashboard/members/visits-all')}
         />
         <StatsCard 
           label="Check In - Check Out Hari Ini" 
           value={summary.checkouts_today} 
           icon={Clock} 
           bg="bg-[#6F42C1]"
-          onViewMore={() => router.push('/dashboard/members/visits')}
+          onViewMore={() => router.push('/dashboard/members/visits-all')}
         />
       </div>
 

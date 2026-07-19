@@ -6,7 +6,8 @@ import {
   Transaction, 
   Checkin, 
   Branch, 
-  Admin 
+  Admin,
+  Distributor
 } from '@/core/types';
 
 // Structured fetch system wrapping api calls with proper TypeScript typing
@@ -23,6 +24,7 @@ export const membersApi = {
   create: (data: Partial<Member>) => api.post<Member>('/admin/members', data),
   update: (id: string, data: Partial<Member>) => api.put<void>(`/admin/members/${id}`, data),
   delete: (id: string) => api.delete<void>(`/admin/members/${id}`),
+  getNextCode: (branchId: string) => api.get<{ next_code: string }>(`/admin/members/next-code?branch_id=${branchId}`),
 };
 
 export const trainersApi = {
@@ -77,6 +79,8 @@ export const checkinsApi = {
     if (params.per_page) q.append('per_page', String(params.per_page));
     return api.get<Checkin[]>(`/admin/checkins?${q.toString()}`);
   },
+  checkin: (memberId: string) => api.post<Checkin>(`/admin/members/${memberId}/checkin`, {}),
+  checkout: (memberId: string) => api.post<Checkin>(`/admin/members/${memberId}/checkout`, {}),
 };
 
 export const branchesApi = {
@@ -117,5 +121,13 @@ export const employeesApi = {
     const q = branchId ? `?branch_id=${branchId}` : '';
     return api.get<any[]>(`/admin/employees/${id}/checkins${q}`);
   }
+};
+
+export const distributorsApi = {
+  list: () => api.get<Distributor[]>('/admin/distributors'),
+  get: (id: string) => api.get<Distributor>(`/admin/distributors/${id}`),
+  create: (data: Partial<Distributor>) => api.post<Distributor>('/admin/distributors', data),
+  update: (id: string, data: Partial<Distributor>) => api.put<void>(`/admin/distributors/${id}`, data),
+  delete: (id: string) => api.delete<void>(`/admin/distributors/${id}`),
 };
 

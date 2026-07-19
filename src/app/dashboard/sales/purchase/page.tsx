@@ -2,11 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-
-interface Distributor {
-  id: string;
-  name: string;
-}
+import { distributorsApi } from '@/core/api';
+import { Distributor } from '@/core/types';
 
 interface PurchaseOrder {
   id: string;
@@ -68,11 +65,10 @@ export default function PurchaseTransactionsPage() {
 
   const fetchDistributors = async () => {
     try {
-      setDistributors([
-        { id: 'd1', name: 'PT Suplemen Bugar Jaya' },
-        { id: 'd2', name: 'CV Agung Sports & Wear' },
-        { id: 'd3', name: 'UD Maju Alat Fitnes' }
-      ]);
+      const res = await distributorsApi.list();
+      if (res.success && res.data) {
+        setDistributors(res.data);
+      }
     } catch (err) {
       console.error(err);
     }

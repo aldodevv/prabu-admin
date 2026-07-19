@@ -137,7 +137,7 @@ export const OfficialReceiptTemplate: React.FC<OfficialReceiptProps> = ({ onClos
             </thead>
             <tbody>
               <tr className="font-semibold text-slate-800">
-                <td className="py-3 px-3 border-r border-black font-mono">@{data.memberUsername}</td>
+                <td className="py-3 px-3 border-r border-black font-mono">{data.memberUsername}</td>
                 <td className="py-3 px-3 border-r border-black font-bold">{data.memberName}</td>
                 <td className="py-3 px-3 border-r border-black uppercase text-[10px]">{data.packageName}</td>
                 <td className="py-3 px-3 border-r border-black font-mono text-[10px]">

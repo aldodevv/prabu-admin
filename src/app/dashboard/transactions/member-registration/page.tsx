@@ -303,7 +303,7 @@ export default function MemberRegistrationPage() {
                 </thead>
                 <tbody>
                   <tr className="font-semibold text-slate-800">
-                    <td className="py-3 px-3 border-r border-black font-mono">@{successData.username}</td>
+                    <td className="py-3 px-3 border-r border-black font-mono">{successData.username}</td>
                     <td className="py-3 px-3 border-r border-black font-bold">{successData.member.full_name}</td>
                     <td className="py-3 px-3 border-r border-black uppercase text-[10px]">{successData.packageName}</td>
                     <td className="py-3 px-3 border-r border-black font-mono text-[10px]">

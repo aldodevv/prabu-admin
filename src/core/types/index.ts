@@ -88,6 +88,7 @@ export interface Checkin {
   id: string;
   member_id: string;
   member_name?: string;
+  member_code?: string;
   branch_id: string;
   branch_name?: string;
   check_in_at: string;
@@ -118,4 +119,15 @@ export interface Admin {
   is_active: boolean;
   work_start_time?: string;
   created_at?: string;
+}
+
+export interface Distributor {
+  id: string;
+  branch_id?: string;
+  name: string;
+  phone_hp?: string;
+  phone_telp?: string;
+  address?: string;
+  created_at?: string;
+  updated_at?: string;
 }
