@@ -2,51 +2,54 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import api from '@/lib/api';
-
-interface Product {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-  stock: number;
-  unit: string;
-  is_active: boolean;
-}
+import { productsApi, distributorsApi } from '@/core/api';
+import { Product, Distributor, ProductStockLog } from '@/core/types';
+import { Search, Plus, Eye, ArrowLeft, Save, Trash2, Edit2 } from 'lucide-react';
 
 export default function ProductsPage() {
-  const { activeBranchID } = useAuth();
+  const { activeBranchID, user } = useAuth();
+  const isOwner = user?.role === 'owner';
+
+  // view: 'list' | 'add' | 'edit' | 'detail'
+  const [view, setView] = useState<'list' | 'add' | 'edit' | 'detail'>('list');
   const [products, setProducts] = useState<Product[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [distributors, setDistributors] = useState<Distributor[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  // Form states (Create/Edit)
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingID, setEditingID] = useState<string | null>(null);
+  // Search filter
+  const [searchQuery, setSearchQuery] = useState('');
 
+  // Form states
+  const [distributorId, setDistributorId] = useState('');
+  const [code, setCode] = useState('');
   const [name, setName] = useState('');
-  const [category, setCategory] = useState('minuman');
-  const [price, setPrice] = useState(0);
-  const [stock, setStock] = useState(0);
+  const [jenisBarang, setJenisBarang] = useState('bukan Suplemen');
+  const [buyPrice, setBuyPrice] = useState<number | string>(0);
+  const [price, setPrice] = useState<number | string>(0);
+  const [stock, setStock] = useState<number | string>(0);
   const [unit, setUnit] = useState('pcs');
-  const [isActive, setIsActive] = useState(true);
+
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
 
   useEffect(() => {
     if (activeBranchID) {
       fetchProducts();
+      fetchDistributors();
     }
-  }, [activeBranchID, page]);
+  }, [activeBranchID]);
 
   const fetchProducts = async () => {
+    if (!activeBranchID) return;
     setLoading(true);
     try {
-      const res = await api.get<any>(
-        `/admin/products?branch_id=${activeBranchID}&page=${page}`
-      );
+      const res = await productsApi.list(activeBranchID);
       if (res.success && res.data) {
         setProducts(res.data);
-        setTotal(res.meta?.total || 0);
+        setFilteredProducts(res.data);
       }
     } catch (err) {
       console.error(err);
@@ -55,311 +58,562 @@ export default function ProductsPage() {
     }
   };
 
-  const handleOpenCreate = () => {
-    setEditingID(null);
+  const fetchDistributors = async () => {
+    try {
+      const res = await distributorsApi.list();
+      if (res.success && res.data) {
+        setDistributors(res.data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSearch = () => {
+    if (!searchQuery) {
+      setFilteredProducts(products);
+      return;
+    }
+    const filtered = products.filter(
+      (p) =>
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.jenis_barang.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredProducts(filtered);
+  };
+
+  const handleShowAll = () => {
+    setSearchQuery('');
+    setFilteredProducts(products);
+  };
+
+  const handleOpenAdd = async () => {
+    setDistributorId('');
+    setCode('');
     setName('');
-    setCategory('minuman');
+    setJenisBarang('bukan Suplemen');
+    setBuyPrice(0);
     setPrice(0);
     setStock(0);
     setUnit('pcs');
-    setIsActive(true);
-    setIsFormOpen(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    // Fetch auto generated code
+    if (activeBranchID) {
+      try {
+        const res = await productsApi.getNextCode(activeBranchID);
+        if (res.success && res.data) {
+          setCode(res.data.next_code);
+        }
+      } catch (err) {
+        console.error('Failed to get next code:', err);
+      }
+    }
+
+    setView('add');
   };
 
   const handleOpenEdit = (p: Product) => {
-    setEditingID(p.id);
+    setSelectedProduct(p);
+    setDistributorId(p.distributor_id || '');
+    setCode(p.code);
     setName(p.name);
-    setCategory(p.category);
-    setPrice(p.price);
-    setStock(p.stock);
-    setUnit(p.unit);
-    setIsActive(p.is_active);
-    setIsFormOpen(true);
+    setJenisBarang(p.jenis_barang || p.category || 'bukan Suplemen');
+    setBuyPrice(p.buy_price || 0);
+    setPrice(p.price || 0);
+    setStock(p.stock || 0);
+    setUnit(p.unit || 'pcs');
+    setErrorMsg('');
+    setSuccessMsg('');
+    setView('edit');
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleOpenDetail = async (productId: string) => {
     setLoading(true);
+    try {
+      const res = await productsApi.get(productId);
+      if (res.success && res.data) {
+        setSelectedProduct(res.data);
+        setView('detail');
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const body: any = {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      setErrorMsg('Nama barang wajib diisi');
+      return;
+    }
+
+    setSubmitting(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    const body: Partial<Product> = {
+      distributor_id: distributorId,
+      code,
       name,
-      category,
+      jenis_barang: jenisBarang,
+      category: jenisBarang,
+      buy_price: Number(buyPrice),
       price: Number(price),
       stock: Number(stock),
       unit,
     };
 
     try {
-      if (editingID) {
-        body.is_active = isActive;
-        const res = await api.put(`/admin/products/${editingID}`, body);
+      if (view === 'add') {
+        const res = await productsApi.create(body);
         if (res.success) {
-          setIsFormOpen(false);
+          setSuccessMsg('Data barang berhasil ditambahkan!');
           fetchProducts();
+          setTimeout(() => setView('list'), 1000);
+        } else {
+          setErrorMsg(res.error || 'Gagal menambahkan barang');
         }
-      } else {
-        const res = await api.post('/admin/products', body);
+      } else if (view === 'edit' && selectedProduct) {
+        const res = await productsApi.update(selectedProduct.id, body);
         if (res.success) {
-          setIsFormOpen(false);
+          setSuccessMsg('Data barang berhasil diperbarui!');
           fetchProducts();
+          setTimeout(() => setView('list'), 1000);
+        } else {
+          setErrorMsg(res.error || 'Gagal memperbarui barang');
         }
       }
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Terjadi kesalahan koneksi');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Apakah Anda yakin ingin menonaktifkan produk ini?')) return;
-    try {
-      const res = await api.delete(`/admin/products/${id}`);
-      if (res.success) {
-        fetchProducts();
-      }
-    } catch (err) {
-      console.error(err);
+  const handleDelete = async (id: string, prodName: string) => {
+    if (!confirm(`Apakah Anda yakin ingin menonaktifkan barang "${prodName}"?`)) {
+      return;
     }
+    try {
+      const res = await productsApi.delete(id);
+      if (res.success) {
+        alert('Barang berhasil dinonaktifkan');
+        fetchProducts();
+      } else {
+        alert(res.error || 'Gagal menonaktifkan barang');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Gagal menonaktifkan barang');
+    }
+  };
+
+  const formatIDR = (val: number) => {
+    return `Rp ${val.toLocaleString('id-ID')}`;
   };
 
   return (
-    <div className="space-y-8 font-sans">
-      <div className="flex justify-between items-center flex-wrap gap-4">
-        <div>
-          <h2 className="text-3xl font-heading text-slate-800">MANAJEMEN STOK RETAIL</h2>
-          <p className="text-slate-500 text-sm mt-1 uppercase tracking-widest font-accent">
-            Inventori Minuman, Aksesoris & Suplemen Cabang Gym
-          </p>
+    <div className="space-y-6 font-sans">
+      {/* Header Breadcrumb */}
+      <div className="bg-white px-6 py-4 border-b border-slate-200 shadow-sm rounded-lg">
+        <div className="text-xs text-slate-400 font-semibold flex items-center gap-1.5 uppercase tracking-wider">
+          <span>Transaction Cafe</span>
+          <span>&gt;</span>
+          <span className="text-[#DC3545]">Product</span>
+          {view === 'add' && (
+            <>
+              <span>&gt;</span>
+              <span className="text-[#DC3545]">Tambah Data Barang</span>
+            </>
+          )}
+          {view === 'edit' && (
+            <>
+              <span>&gt;</span>
+              <span className="text-[#DC3545]">Ubah Data Barang</span>
+            </>
+          )}
+          {view === 'detail' && (
+            <>
+              <span>&gt;</span>
+              <span className="text-[#DC3545]">Lihat Detail</span>
+            </>
+          )}
         </div>
-        <button
-          onClick={handleOpenCreate}
-          className="inline-flex items-center justify-center font-accent font-semibold text-xs uppercase tracking-widest px-6 py-3.5 bg-[#DC3545] hover:bg-[#c82333] text-white rounded shadow-sm cursor-pointer"
-        >
-          + TAMBAH PRODUK INVENTORI
-        </button>
+        <h2 className="text-2xl font-bold text-slate-800 mt-1 uppercase tracking-tight select-none">
+          {view === 'list'
+            ? 'Product'
+            : view === 'add'
+            ? 'Tambah Data Barang'
+            : view === 'edit'
+            ? 'Ubah Data Barang'
+            : 'Detail Product'}
+        </h2>
       </div>
 
-      {/* Products Table */}
-      {loading ? (
-        <div className="text-center py-20 text-slate-500 font-accent uppercase tracking-widest text-xs">
-          Loading data produk...
-        </div>
-      ) : (
-        <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
-          <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold select-none">
-            <span className="text-sm uppercase tracking-wider">Daftar Inventori Gym</span>
-          </div>
-          <div className="p-6">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-650">
-                <thead className="bg-[#6C7A89] text-white text-[10px] uppercase tracking-wider font-bold select-none">
-                  <tr>
-                    <th className="py-3 px-4 border-r border-slate-300/40">Nama Produk</th>
-                    <th className="py-3 px-4 border-r border-slate-300/40">Kategori</th>
-                    <th className="py-3 px-4 border-r border-slate-300/40">Harga Satuan</th>
-                    <th className="py-3 px-4 border-r border-slate-300/40">Stok</th>
-                    <th className="py-3 px-4 border-r border-slate-300/40">Satuan</th>
-                    <th className="py-3 px-4 border-r border-slate-300/40">Status</th>
-                    <th className="py-3 px-4 text-right">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
-                  {products.length > 0 ? (
-                    products.map((p) => (
-                      <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="py-3.5 px-4 font-bold text-slate-800 border-r border-slate-100">{p.name}</td>
-                        <td className="py-3.5 px-4 border-r border-slate-100">
-                          <span className="text-[10px] font-accent uppercase tracking-widest font-semibold border border-[#17A2B8]/20 px-2 py-0.5 text-[#17A2B8] rounded">
-                            {p.category}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-slate-800 font-medium border-r border-slate-100">
-                          Rp {p.price.toLocaleString('id-ID')}
-                        </td>
-                        <td className={`py-3.5 px-4 font-bold border-r border-slate-100 ${p.stock <= 5 ? 'text-[#DC3545]' : 'text-slate-800'}`}>
-                          {p.stock}
-                        </td>
-                        <td className="py-3.5 px-4 text-xs font-mono border-r border-slate-100">{p.unit}</td>
-                        <td className="py-3.5 px-4 border-r border-slate-100">
-                          <span
-                            className={`inline-block px-2.5 py-0.5 text-[10px] font-accent uppercase tracking-widest font-semibold border rounded ${
-                              p.is_active
-                                ? 'bg-emerald-50 text-emerald-800 border-emerald-250'
-                                : 'bg-slate-100 text-slate-500 border-slate-200'
-                            }`}
-                          >
-                            {p.is_active ? 'AKTIF' : 'NONAKTIF'}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-right">
-                          <div className="flex gap-2 justify-end">
-                            <button
-                              onClick={() => handleOpenEdit(p)}
-                              className="px-3 py-1.5 border border-[#17A2B8] hover:bg-[#17A2B8] text-[#17A2B8] hover:text-white font-accent text-[10px] uppercase tracking-wider font-bold rounded transition-all cursor-pointer"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDelete(p.id)}
-                              className="px-3 py-1.5 border border-[#DC3545] hover:bg-[#DC3545] text-[#DC3545] hover:text-white font-accent text-[10px] uppercase tracking-wider font-bold rounded transition-all cursor-pointer"
-                            >
-                              Disable
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-400 font-semibold select-none">
-                        Belum ada data produk di cabang ini.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+      {view === 'list' && (
+        <div className="space-y-6">
+          {/* Card Search */}
+          <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
+            <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
+              <Search className="w-4 h-4" />
+              <span className="text-sm uppercase tracking-wider">Search</span>
             </div>
+            <div className="p-5 flex flex-wrap items-center gap-3">
+              <select
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-white border border-slate-350 text-slate-700 text-xs px-3 py-2.5 rounded focus:outline-none min-w-[220px]"
+              >
+                <option value="">-Pilih-</option>
+                {products.map((p) => (
+                  <option key={p.id} value={p.name}>
+                    {p.name} ({p.code})
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={handleSearch}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-semibold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
+              >
+                <Search className="w-3.5 h-3.5" />
+                Search
+              </button>
+              <button
+                onClick={handleShowAll}
+                className="px-4 py-2.5 bg-[#DC3545] hover:bg-[#C82333] text-white text-xs font-semibold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
+              >
+                View All
+              </button>
+            </div>
+          </div>
 
-            {/* Pagination */}
-            {total > 50 && (
-              <div className="flex justify-between items-center mt-6 pt-6 border-t border-slate-200 text-xs">
-                <span className="text-slate-500">Total {total} Produk</span>
-                <div className="flex gap-2">
-                  <button
-                    disabled={page <= 1}
-                    onClick={() => setPage(page - 1)}
-                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 font-accent uppercase tracking-widest rounded cursor-pointer"
-                  >
-                    Prev
-                  </button>
-                  <button
-                    disabled={page * 50 >= total}
-                    onClick={() => setPage(page + 1)}
-                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 font-accent uppercase tracking-widest rounded cursor-pointer"
-                  >
-                    Next
-                  </button>
+          {/* Card Table Product */}
+          <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
+            <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex justify-between items-center select-none">
+              <span className="text-sm uppercase tracking-wider">Product</span>
+            </div>
+            <div className="p-6 space-y-4">
+              <button
+                onClick={handleOpenAdd}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#007BFF] hover:bg-[#0069D9] text-white text-xs font-semibold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add Product
+              </button>
+
+              {loading ? (
+                <div className="text-center py-10 text-slate-500 font-accent uppercase tracking-widest text-xs">
+                  Loading data product...
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="overflow-x-auto border border-slate-200 rounded">
+                  <table className="w-full text-left text-sm text-slate-650 border-collapse">
+                    <thead className="bg-[#6C7A89] text-white text-[11px] uppercase tracking-wider font-bold select-none border-b border-slate-350">
+                      <tr>
+                        <th className="py-3 px-4 border-r border-slate-300 w-12 text-center">No</th>
+                        <th className="py-3 px-4 border-r border-slate-300">Distributor</th>
+                        <th className="py-3 px-4 border-r border-slate-300">Kode Barang</th>
+                        <th className="py-3 px-4 border-r border-slate-300">Nama Barang</th>
+                        <th className="py-3 px-4 border-r border-slate-300">Jenis Barang</th>
+                        <th className="py-3 px-4 border-r border-slate-300 text-right">Harga Jual</th>
+                        <th className="py-3 px-4 border-r border-slate-300 text-center w-24">Unit</th>
+                        <th className="py-3 px-4 text-center w-36">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 text-slate-700 font-medium">
+                      {filteredProducts.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="py-8 text-center text-slate-400 font-accent uppercase tracking-wider text-xs">
+                            Tidak ada data product
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredProducts.map((p, index) => (
+                          <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="py-3 px-4 border-r border-slate-100 text-center font-semibold text-slate-500">{index + 1}</td>
+                            <td className="py-3 px-4 border-r border-slate-100 font-medium text-slate-700">{p.distributor_name || '-'}</td>
+                            <td className="py-3 px-4 border-r border-slate-100 font-mono text-xs font-semibold text-slate-800">{p.code || '-'}</td>
+                            <td className="py-3 px-4 border-r border-slate-100 font-bold text-slate-800">{p.name}</td>
+                            <td className="py-3 px-4 border-r border-slate-100 text-xs text-slate-600 capitalize">{p.jenis_barang || p.category}</td>
+                            <td className="py-3 px-4 border-r border-slate-100 text-right font-mono font-bold text-slate-800">{formatIDR(p.price)}</td>
+                            <td className="py-3 px-4 border-r border-slate-100 text-center font-mono font-extrabold text-slate-800">
+                              <span className={p.stock <= 5 ? 'text-red-600' : 'text-slate-800'}>{p.stock}</span>
+                            </td>
+                            <td className="py-3 px-4 text-center flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => handleOpenDetail(p.id)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#E0A800] hover:bg-[#c69500] text-white text-[11px] font-semibold rounded shadow-sm cursor-pointer transition-colors"
+                              >
+                                <Eye className="w-3 h-3" />
+                                Lihat Detail
+                              </button>
+                              {isOwner && (
+                                <>
+                                  <button
+                                    onClick={() => handleOpenEdit(p)}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#28A745] hover:bg-[#218838] text-white text-[11px] font-semibold rounded shadow-sm cursor-pointer transition-colors"
+                                  >
+                                    <Edit2 className="w-3 h-3" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(p.id, p.name)}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#DC3545] hover:bg-[#C82333] text-white text-[11px] font-semibold rounded shadow-sm cursor-pointer transition-colors"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                </>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
 
-      {/* Form Drawer Modal */}
-      {isFormOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white border border-slate-200 p-8 rounded shadow-2xl relative">
-            <button
-              onClick={() => setIsFormOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-650 cursor-pointer"
-            >
-              ✕
-            </button>
-
-            <h3 className="font-heading text-2xl text-slate-800 mb-6 border-b border-slate-100 pb-3">
-              {editingID ? 'UBAH DATA PRODUK' : 'TAMBAH PRODUK BARU'}
-            </h3>
-
-            <form onSubmit={handleSave} className="space-y-4 text-sm">
-              <div>
-                <label className="block text-slate-500 text-xs uppercase tracking-widest font-accent mb-1.5">
-                  Nama Produk
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-[#DC3545] focus:outline-none text-slate-700 px-3 py-2 text-xs transition-all rounded"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-slate-500 text-xs uppercase tracking-widest font-accent mb-1.5">
-                    Kategori
-                  </label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 focus:border-[#DC3545] focus:outline-none text-slate-700 px-3 py-2 text-xs transition-all rounded"
-                  >
-                    <option value="minuman">Minuman</option>
-                    <option value="suplemen">Suplemen</option>
-                    <option value="aksesoris">Aksesoris</option>
-                    <option value="alat_fitness">Alat Fitness</option>
-                  </select>
+      {(view === 'add' || view === 'edit') && (
+        /* Form Tambah / Ubah Data Barang */
+        <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
+          <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
+            <Plus className="w-4 h-4" />
+            <span className="text-sm uppercase tracking-wider">
+              {view === 'add' ? 'Tambah Data Barang' : 'Ubah Data Barang'}
+            </span>
+          </div>
+          <div className="p-6">
+            <form onSubmit={handleSubmit} className="space-y-6 max-w-xl">
+              {errorMsg && (
+                <div className="bg-red-50 text-red-700 text-xs font-semibold px-4 py-3 border border-red-200 rounded">
+                  ⚠️ {errorMsg}
                 </div>
-                <div>
-                  <label className="block text-slate-500 text-xs uppercase tracking-widest font-accent mb-1.5">
-                    Satuan
-                  </label>
-                  <input
-                    type="text"
-                    value={unit}
-                    onChange={(e) => setUnit(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 focus:border-[#DC3545] focus:outline-none text-slate-700 px-3 py-2 text-xs transition-all rounded"
-                    placeholder="pcs, botol, pack..."
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-slate-500 text-xs uppercase tracking-widest font-accent mb-1.5">
-                    Harga Satuan (IDR)
-                  </label>
-                  <input
-                    type="number"
-                    value={price}
-                    onChange={(e) => setPrice(Number(e.target.value))}
-                    className="w-full bg-slate-50 border border-slate-200 focus:border-[#DC3545] focus:outline-none text-slate-700 px-3 py-2 text-xs transition-all rounded"
-                    min={0}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-500 text-xs uppercase tracking-widest font-accent mb-1.5">
-                    Stok Awal
-                  </label>
-                  <input
-                    type="number"
-                    value={stock}
-                    onChange={(e) => setStock(Number(e.target.value))}
-                    className="w-full bg-slate-50 border border-slate-200 focus:border-[#DC3545] focus:outline-none text-slate-700 px-3 py-2 text-xs transition-all rounded"
-                    min={0}
-                    required
-                  />
-                </div>
-              </div>
-
-              {editingID && (
-                <div>
-                  <label className="block text-slate-500 text-xs uppercase tracking-widest font-accent mb-1.5">
-                    Status
-                  </label>
-                  <select
-                    value={isActive ? 'true' : 'false'}
-                    onChange={(e) => setIsActive(e.target.value === 'true')}
-                    className="w-full bg-slate-50 border border-slate-200 focus:border-[#DC3545] focus:outline-none text-slate-700 px-3 py-2 text-xs transition-all rounded"
-                  >
-                    <option value="true">Aktif</option>
-                    <option value="false">Nonaktif</option>
-                  </select>
+              )}
+              {successMsg && (
+                <div className="bg-emerald-50 text-emerald-700 text-xs font-semibold px-4 py-3 border border-emerald-200 rounded">
+                  ✓ {successMsg}
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full inline-flex items-center justify-center font-accent font-semibold text-xs uppercase tracking-widest py-3.5 bg-[#DC3545] hover:bg-[#c82333] text-white rounded transition-all duration-300 disabled:opacity-50 cursor-pointer"
-              >
-                {loading ? 'MENYIMPAN...' : 'SIMPAN PRODUK INVENTORI'}
-              </button>
+              <div className="space-y-4">
+                {/* Distributor */}
+                <div className="flex items-center">
+                  <label className="w-1/3 text-slate-600 text-sm font-semibold">Distributor</label>
+                  <select
+                    value={distributorId}
+                    onChange={(e) => setDistributorId(e.target.value)}
+                    className="w-2/3 bg-white border border-slate-300 focus:border-[#DC3545] focus:outline-none text-slate-700 px-3 py-2 text-xs transition-all rounded"
+                  >
+                    <option value="">-- PILIH DISTRIBUTOR --</option>
+                    {distributors.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Kode Barang */}
+                <div className="flex items-center">
+                  <label className="w-1/3 text-slate-600 text-sm font-semibold">Kode Barang</label>
+                  <input
+                    type="text"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    placeholder="Auto-generate kode barang..."
+                    className="w-2/3 bg-slate-50 border border-slate-300 focus:border-[#DC3545] focus:outline-none text-slate-700 px-3 py-2 text-xs transition-all rounded font-mono font-bold"
+                  />
+                </div>
+
+                {/* Nama Barang */}
+                <div className="flex items-center">
+                  <label className="w-1/3 text-slate-600 text-sm font-semibold">Nama Barang *</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Masukkan Nama Barang"
+                    className="w-2/3 bg-white border border-slate-300 focus:border-[#DC3545] focus:outline-none text-slate-700 px-3 py-2 text-xs transition-all rounded font-semibold"
+                    required
+                  />
+                </div>
+
+                {/* Jenis Barang */}
+                <div className="flex items-center">
+                  <label className="w-1/3 text-slate-600 text-sm font-semibold">Jenis Barang *</label>
+                  <select
+                    value={jenisBarang}
+                    onChange={(e) => setJenisBarang(e.target.value)}
+                    className="w-2/3 bg-white border border-slate-300 focus:border-[#DC3545] focus:outline-none text-slate-700 px-3 py-2 text-xs transition-all rounded font-medium"
+                    required
+                  >
+                    <option value="Suplemen">Suplemen</option>
+                    <option value="bukan Suplemen">bukan Suplemen</option>
+                    <option value="aksesoris">aksesoris</option>
+                  </select>
+                </div>
+
+                {/* Harga Beli */}
+                <div className="flex items-center">
+                  <label className="w-1/3 text-slate-600 text-sm font-semibold">Harga Beli (IDR) *</label>
+                  <input
+                    type="number"
+                    value={buyPrice}
+                    onChange={(e) => setBuyPrice(e.target.value)}
+                    placeholder="0"
+                    className="w-2/3 bg-white border border-slate-300 focus:border-[#DC3545] focus:outline-none text-slate-700 px-3 py-2 text-xs transition-all rounded font-mono font-semibold"
+                    required
+                  />
+                </div>
+
+                {/* Harga Jual */}
+                <div className="flex items-center">
+                  <label className="w-1/3 text-slate-600 text-sm font-semibold">Harga Jual (IDR) *</label>
+                  <input
+                    type="number"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    placeholder="0"
+                    className="w-2/3 bg-white border border-slate-300 focus:border-[#DC3545] focus:outline-none text-slate-700 px-3 py-2 text-xs transition-all rounded font-mono font-bold"
+                    required
+                  />
+                </div>
+
+                {/* Unit / Stock */}
+                <div className="flex items-center">
+                  <label className="w-1/3 text-slate-600 text-sm font-semibold">Unit / Stock Awal</label>
+                  <input
+                    type="number"
+                    value={stock}
+                    onChange={(e) => setStock(e.target.value)}
+                    placeholder="0"
+                    className="w-2/3 bg-white border border-slate-300 focus:border-[#DC3545] focus:outline-none text-slate-700 px-3 py-2 text-xs transition-all rounded font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-3 justify-end pt-4 border-t border-slate-100">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#28A745] hover:bg-[#218838] text-white text-xs font-semibold uppercase tracking-wider rounded shadow-sm cursor-pointer disabled:opacity-50 transition-colors"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  Simpan
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setView('list')}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#DC3545] hover:bg-[#C82333] text-white text-xs font-semibold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  Kembali
+                </button>
+              </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {view === 'detail' && selectedProduct && (
+        /* Halaman Lihat Detail Data Barang & Riwayat Perubahan Unit */
+        <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
+          <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex justify-between items-center select-none">
+            <span className="text-sm uppercase tracking-wider">Detail Product</span>
+            <button
+              onClick={() => setView('list')}
+              className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#DC3545] hover:bg-[#C82333] text-white text-xs font-semibold rounded cursor-pointer transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Kembali
+            </button>
+          </div>
+
+          <div className="p-6 space-y-6">
+            {/* Header Data Grid */}
+            <div className="border border-slate-200 rounded overflow-hidden divide-y divide-slate-200 text-sm">
+              <div className="flex bg-slate-50 p-3">
+                <div className="w-48 font-bold text-slate-700">Distributor</div>
+                <div className="w-6 text-center font-bold text-slate-500">=</div>
+                <div className="font-semibold text-slate-800">{selectedProduct.distributor_name || '-'}</div>
+              </div>
+              <div className="flex p-3">
+                <div className="w-48 font-bold text-slate-700">Kode Barang</div>
+                <div className="w-6 text-center font-bold text-slate-500">=</div>
+                <div className="font-mono font-bold text-slate-800">{selectedProduct.code || '-'}</div>
+              </div>
+              <div className="flex bg-slate-50 p-3">
+                <div className="w-48 font-bold text-slate-700">Nama Barang</div>
+                <div className="w-6 text-center font-bold text-slate-500">=</div>
+                <div className="font-bold text-slate-900">{selectedProduct.name}</div>
+              </div>
+              <div className="flex p-3">
+                <div className="w-48 font-bold text-slate-700">Jenis Barang</div>
+                <div className="w-6 text-center font-bold text-slate-500">=</div>
+                <div className="capitalize text-slate-800 font-semibold">{selectedProduct.jenis_barang || selectedProduct.category}</div>
+              </div>
+              <div className="flex bg-slate-50 p-3">
+                <div className="w-48 font-bold text-slate-700">Harga Jual</div>
+                <div className="w-6 text-center font-bold text-slate-500">=</div>
+                <div className="font-mono font-bold text-emerald-800">{formatIDR(selectedProduct.price)}</div>
+              </div>
+              <div className="flex p-3">
+                <div className="w-48 font-bold text-slate-700">Unit Tersedia</div>
+                <div className="w-6 text-center font-bold text-slate-500">=</div>
+                <div className="font-mono font-extrabold text-blue-700 text-base">{selectedProduct.stock} {selectedProduct.unit || 'pcs'}</div>
+              </div>
+            </div>
+
+            {/* Riwayat Perubahan Unit Table */}
+            <div className="space-y-3">
+              <h3 className="font-heading text-lg text-slate-800 uppercase tracking-tight">
+                Riwayat Perubahan Unit
+              </h3>
+              <div className="overflow-x-auto border border-slate-200 rounded">
+                <table className="w-full text-left text-sm text-slate-650 border-collapse">
+                  <thead className="bg-[#6C7A89] text-white text-[11px] uppercase tracking-wider font-bold select-none border-b border-slate-350">
+                    <tr>
+                      <th className="py-3 px-4 border-r border-slate-300 w-12 text-center">No</th>
+                      <th className="py-3 px-4 border-r border-slate-300">Tanggal</th>
+                      <th className="py-3 px-4 border-r border-slate-300">Nama Barang</th>
+                      <th className="py-3 px-4 border-r border-slate-300">Alasan</th>
+                      <th className="py-3 px-4 border-r border-slate-300 text-center">Jumlah Unit Sebelum Terubah</th>
+                      <th className="py-3 px-4 text-center">Jumlah Unit Sesudah Terubah</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 text-slate-700 font-medium">
+                    {!selectedProduct.stock_logs || selectedProduct.stock_logs.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-6 text-center text-slate-400 font-accent uppercase tracking-wider text-xs">
+                          Belum ada riwayat perubahan unit
+                        </td>
+                      </tr>
+                    ) : (
+                      selectedProduct.stock_logs.map((log, idx) => (
+                        <tr key={log.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="py-3 px-4 border-r border-slate-100 text-center font-semibold text-slate-500">{idx + 1}</td>
+                          <td className="py-3 px-4 border-r border-slate-100 font-mono text-xs text-slate-600">
+                            {new Date(log.created_at).toLocaleString('id-ID')}
+                          </td>
+                          <td className="py-3 px-4 border-r border-slate-100 font-bold text-slate-800">{selectedProduct.name}</td>
+                          <td className="py-3 px-4 border-r border-slate-100 text-slate-700 font-semibold">{log.reason}</td>
+                          <td className="py-3 px-4 border-r border-slate-100 text-center font-mono font-bold text-slate-600">{log.unit_before}</td>
+                          <td className="py-3 px-4 text-center font-mono font-extrabold text-blue-700">{log.unit_after}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       )}

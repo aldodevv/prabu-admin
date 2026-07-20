@@ -7,7 +7,9 @@ import {
   Checkin, 
   Branch, 
   Admin,
-  Distributor
+  Distributor,
+  Product,
+  PurchaseTransaction
 } from '@/core/types';
 
 // Structured fetch system wrapping api calls with proper TypeScript typing
@@ -93,10 +95,27 @@ export const dashboardApi = {
 };
 
 export const productsApi = {
-  list: (branchId: string, perPage = 100) => api.get<any[]>(`/admin/products?branch_id=${branchId}&per_page=${perPage}`),
-  create: (data: any) => api.post<any>('/admin/products', data),
-  update: (id: string, data: any) => api.put<any>(`/admin/products/${id}`, data),
-  delete: (id: string) => api.delete<any>(`/admin/products/${id}`),
+  list: (branchId: string, page = 1, perPage = 200) => api.get<Product[]>(`/admin/products?branch_id=${branchId}&page=${page}&per_page=${perPage}`),
+  get: (id: string) => api.get<Product>(`/admin/products/${id}`),
+  getNextCode: (branchId: string) => api.get<{ next_code: string }>(`/admin/products/next-code?branch_id=${branchId}`),
+  create: (data: Partial<Product>) => api.post<Product>('/admin/products', data),
+  update: (id: string, data: Partial<Product>) => api.put<void>(`/admin/products/${id}`, data),
+  delete: (id: string) => api.delete<void>(`/admin/products/${id}`),
+};
+
+export const purchaseTransactionsApi = {
+  list: (branchId: string) => api.get<PurchaseTransaction[]>(`/admin/purchase-transactions?branch_id=${branchId}`),
+  getNextNumbers: (branchId: string) => api.get<{ transaction_number: string; next_invoice: string }>(`/admin/purchase-transactions/next-number?branch_id=${branchId}`),
+  get: (id: string) => api.get<PurchaseTransaction>(`/admin/purchase-transactions/${id}`),
+  create: (data: {
+    transaction_date?: string;
+    invoice_number?: string;
+    distributor_id: string;
+    notes: string;
+    items: { product_id: string; quantity: number; unit_price: number }[];
+  }) => api.post<PurchaseTransaction>('/admin/purchase-transactions', data),
+  updateNotes: (id: string, notes: string) => api.put<void>(`/admin/purchase-transactions/${id}`, { notes }),
+  delete: (id: string) => api.delete<void>(`/admin/purchase-transactions/${id}`),
 };
 
 export const reportsApi = {

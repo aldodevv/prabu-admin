@@ -46,6 +46,63 @@ export interface PTRegistration {
   created_at: string;
 }
 
+export interface ProductStockLog {
+  id: string;
+  product_id: string;
+  branch_id: string;
+  product_name?: string;
+  reason: string;
+  unit_before: number;
+  unit_after: number;
+  created_at: string;
+}
+
+export interface Product {
+  id: string;
+  branch_id: string;
+  distributor_id?: string;
+  distributor_name?: string;
+  code: string;
+  name: string;
+  category: string;
+  jenis_barang: string;
+  buy_price: number;
+  price: number;
+  stock: number;
+  unit: string;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+  stock_logs?: ProductStockLog[];
+}
+
+export interface PurchaseTransactionItem {
+  id: string;
+  purchase_transaction_id?: string;
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+}
+
+export interface PurchaseTransaction {
+  id: string;
+  branch_id: string;
+  transaction_number: string;
+  invoice_number: string;
+  distributor_id?: string;
+  distributor_name: string;
+  notes?: string;
+  admin_id: string;
+  admin_name: string;
+  transaction_date: string;
+  total_amount: number;
+  items?: PurchaseTransactionItem[];
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface TransactionItem {
   id: string;
   transaction_id?: string;
