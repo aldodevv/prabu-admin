@@ -12,6 +12,9 @@ import { OfficialReceiptTemplate } from '@/components/core/PrintTemplates';
 import { Search, Eye, Edit, ArrowLeft, Save, Printer, FileText, FileSpreadsheet, RotateCcw } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { exportToExcel } from '@/lib/excelExport';
+import { compressImage } from '@/utils/imageCompressor';
+import { uploadToCloudinary } from '@/lib/cloudinary';
+import { DigitalMemberCard } from '@/components/core/DigitalMemberCard';
 
 export default function AllClubMembersPanel() {
   const { user } = useAuth();
@@ -19,6 +22,7 @@ export default function AllClubMembersPanel() {
   // Navigation states: 'list' | 'detail' | 'edit'
   const [step, setStep] = useState<'list' | 'detail' | 'edit'>('list');
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [showDigitalCard, setShowDigitalCard] = useState(false);
 
   // Members List states
   const [members, setMembers] = useState<Member[]>([]);
@@ -41,6 +45,8 @@ export default function AllClubMembersPanel() {
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
   const [photoBase64, setPhotoBase64] = useState<string>('');
+  const [photoUrl, setPhotoUrl] = useState<string>('');
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [editError, setEditError] = useState('');
   const [editSuccess, setEditSuccess] = useState('');
 
@@ -149,26 +155,28 @@ export default function AllClubMembersPanel() {
 
   const handleOpenEdit = (m: Member) => {
     setSelectedMember(m);
-    setFullName(m.full_name);
-    setGender(m.gender || 'Laki-laki');
+    setFullName(m.full_name || '');
+    setGender(m.gender || '');
     setDob(m.date_of_birth || '');
     setPhone(m.phone || '');
     setEmail(m.email || '');
     setAddress(m.address || '');
     setPhotoBase64(m.photo_url || '');
+    setPhotoUrl(m.photo_url || '');
     setEditError('');
     setEditSuccess('');
     setStep('edit');
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoBase64(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressed = await compressImage(file);
+        setPhotoBase64(compressed);
+      } catch (err: any) {
+        console.error('Gagal mengompres gambar:', err);
+      }
     }
   };
 
@@ -178,6 +186,18 @@ export default function AllClubMembersPanel() {
     setLoading(true);
     setEditError('');
     setEditSuccess('');
+
+    let finalPhotoUrl = photoUrl;
+    if (photoBase64 && photoBase64.startsWith('data:')) {
+      try {
+        finalPhotoUrl = await uploadToCloudinary(photoBase64, 'prabugym/members');
+      } catch (err: any) {
+        console.error('Cloudinary upload error:', err);
+        setEditError('Gagal mengunggah foto ke Cloudinary: ' + (err.message || 'Error'));
+        setLoading(false);
+        return;
+      }
+    }
 
     const body = {
       full_name: fullName,
@@ -190,7 +210,7 @@ export default function AllClubMembersPanel() {
       membership_start: selectedMember.membership_start,
       membership_end: selectedMember.membership_end,
       is_active: selectedMember.is_active,
-      photo_url: photoBase64,
+      photo_url: finalPhotoUrl,
     };
 
     try {
@@ -348,56 +368,121 @@ export default function AllClubMembersPanel() {
             <PageHeader 
               title="Daftar Anggota" 
               action={
-                <button
-                  onClick={() => setStep('list')}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#DC3545] hover:bg-[#c82333] text-white text-xs font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Kembali</span>
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setShowDigitalCard(true)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
+                  >
+                    <span>🪪 Kartu Member Digital</span>
+                  </button>
+                  <button
+                    onClick={() => setStep('list')}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#DC3545] hover:bg-[#c82333] text-white text-xs font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Kembali</span>
+                  </button>
+                </div>
               }
             />
 
+            {/* Digital Card Modal */}
+            {showDigitalCard && (
+              <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto animate-fadeIn">
+                <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl relative space-y-4">
+                  <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                    <h3 className="font-heading font-bold text-slate-800 text-base">Kartu Anggota Digital</h3>
+                    <button
+                      onClick={() => setShowDigitalCard(false)}
+                      className="text-slate-400 hover:text-slate-700 font-bold text-sm px-2 py-1 rounded cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <DigitalMemberCard
+                    member={{
+                      username: selectedMember.username,
+                      full_name: selectedMember.full_name,
+                      email: selectedMember.email,
+                      phone: selectedMember.phone,
+                      membership_type: selectedMember.membership_type,
+                      membership_start: selectedMember.membership_start,
+                      membership_end: selectedMember.membership_end,
+                    }}
+                    branchName={selectedMember.branch_name}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Data Personal Table */}
             <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden p-6 space-y-4">
-              <h3 className="font-heading text-lg font-bold border-b border-slate-100 pb-2 text-slate-800">Data Personal</h3>
-              <div className="border border-slate-200 overflow-hidden rounded-xs">
-                <table className="w-full text-left text-xs border-collapse">
-                  <tbody>
-                    <tr className="border-b border-slate-100">
-                      <td className="py-2.5 px-4 font-bold bg-slate-50 border-r border-slate-200 w-[25%]">Nomor Anggota</td>
-                      <td className="py-2.5 px-4 font-mono text-slate-800">{selectedMember.username}</td>
-                    </tr>
-                    <tr className="border-b border-slate-100">
-                      <td className="py-2.5 px-4 font-bold bg-slate-50 border-r border-slate-200">Nama Anggota</td>
-                      <td className="py-2.5 px-4 font-bold text-slate-800">{selectedMember.full_name}</td>
-                    </tr>
-                    <tr className="border-b border-slate-100">
-                      <td className="py-2.5 px-4 font-bold bg-slate-50 border-r border-slate-200">Jenis Kelamin</td>
-                      <td className="py-2.5 px-4 text-slate-800">{selectedMember.gender || 'Laki-Laki'}</td>
-                    </tr>
-                    <tr className="border-b border-slate-100">
-                      <td className="py-2.5 px-4 font-bold bg-slate-50 border-r border-slate-200">Tanggal Lahir</td>
-                      <td className="py-2.5 px-4 text-slate-700">{selectedMember.date_of_birth || '-'}</td>
-                    </tr>
-                    <tr className="border-b border-slate-100">
-                      <td className="py-2.5 px-4 font-bold bg-slate-50 border-r border-slate-200">Nomor HP</td>
-                      <td className="py-2.5 px-4 font-mono text-slate-800">{selectedMember.phone || '-'}</td>
-                    </tr>
-                    <tr className="border-b border-slate-100">
-                      <td className="py-2.5 px-4 font-bold bg-slate-50 border-r border-slate-200">Email</td>
-                      <td className="py-2.5 px-4 text-slate-800">{selectedMember.email || '-'}</td>
-                    </tr>
-                    <tr className="border-b border-slate-100">
-                      <td className="py-2.5 px-4 font-bold bg-slate-50 border-r border-slate-200">Alamat</td>
-                      <td className="py-2.5 px-4 text-slate-700 font-body">{selectedMember.address || '-'}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2.5 px-4 font-bold bg-slate-50 border-r border-slate-200">Tanggal Bergabung</td>
-                      <td className="py-2.5 px-4 text-slate-600">{new Date(selectedMember.created_at || '').toLocaleDateString('id-ID')}</td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                <h3 className="font-heading text-lg font-bold text-slate-800">Data Personal</h3>
+                <button
+                  onClick={() => setShowDigitalCard(true)}
+                  className="text-xs font-bold text-[#17A2B8] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  🪪 Lihat Kartu Member Digital
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-[140px_1fr] gap-6 items-start max-md:grid-cols-1">
+                {/* Profile Photo */}
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-32 h-32 bg-slate-50 border border-slate-200 rounded-lg overflow-hidden flex items-center justify-center text-slate-400 font-bold text-xs shadow-xs">
+                    {selectedMember.photo_url ? (
+                      <img
+                        src={selectedMember.photo_url}
+                        alt={selectedMember.full_name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      'No Photo'
+                    )}
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Foto Anggota</span>
+                </div>
+
+                {/* Member Info Table */}
+                <div className="border border-slate-200 overflow-hidden rounded-xs">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <tbody>
+                      <tr className="border-b border-slate-100">
+                        <td className="py-2.5 px-4 font-bold bg-slate-50 border-r border-slate-200 w-[25%]">Nomor Anggota</td>
+                        <td className="py-2.5 px-4 font-mono text-slate-800">{selectedMember.username}</td>
+                      </tr>
+                      <tr className="border-b border-slate-100">
+                        <td className="py-2.5 px-4 font-bold bg-slate-50 border-r border-slate-200">Nama Anggota</td>
+                        <td className="py-2.5 px-4 font-bold text-slate-800">{selectedMember.full_name}</td>
+                      </tr>
+                      <tr className="border-b border-slate-100">
+                        <td className="py-2.5 px-4 font-bold bg-slate-50 border-r border-slate-200">Jenis Kelamin</td>
+                        <td className="py-2.5 px-4 text-slate-800">{selectedMember.gender || 'Laki-Laki'}</td>
+                      </tr>
+                      <tr className="border-b border-slate-100">
+                        <td className="py-2.5 px-4 font-bold bg-slate-50 border-r border-slate-200">Tanggal Lahir</td>
+                        <td className="py-2.5 px-4 text-slate-700">{selectedMember.date_of_birth || '-'}</td>
+                      </tr>
+                      <tr className="border-b border-slate-100">
+                        <td className="py-2.5 px-4 font-bold bg-slate-50 border-r border-slate-200">Nomor HP</td>
+                        <td className="py-2.5 px-4 font-mono text-slate-800">{selectedMember.phone || '-'}</td>
+                      </tr>
+                      <tr className="border-b border-slate-100">
+                        <td className="py-2.5 px-4 font-bold bg-slate-50 border-r border-slate-200">Email</td>
+                        <td className="py-2.5 px-4 text-slate-800">{selectedMember.email || '-'}</td>
+                      </tr>
+                      <tr className="border-b border-slate-100">
+                        <td className="py-2.5 px-4 font-bold bg-slate-50 border-r border-slate-200">Alamat</td>
+                        <td className="py-2.5 px-4 text-slate-700 font-body">{selectedMember.address || '-'}</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2.5 px-4 font-bold bg-slate-50 border-r border-slate-200">Tanggal Bergabung</td>
+                        <td className="py-2.5 px-4 text-slate-600">{new Date(selectedMember.created_at || '').toLocaleDateString('id-ID')}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
 
