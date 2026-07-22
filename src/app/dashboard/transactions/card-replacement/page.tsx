@@ -10,6 +10,8 @@ import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 import { DataTable, Column } from '@/components/core/DataTable';
 import { OfficialReceiptTemplate } from '@/components/core/PrintTemplates';
 import { Plus, Printer, ArrowLeft, Save, FileText, CreditCard } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
+import { exportToExcel } from '@/lib/excelExport';
 
 export default function CardReplacementPage() {
   const { activeBranchID, user } = useAuth();
@@ -25,6 +27,9 @@ export default function CardReplacementPage() {
 
   // Search filter
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterColumn, setFilterColumn] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 400);
+  const [isTyping, setIsTyping] = useState(false);
 
   // Form Fields
   const [selectedMemberId, setSelectedMemberId] = useState('');
@@ -220,8 +225,14 @@ export default function CardReplacementPage() {
   };
 
   const getFilteredLogs = () => {
-    return logs.filter(log => {
-      const q = searchQuery.toLowerCase();
+    if (!debouncedSearch.trim() && !filterColumn) return logs;
+    const q = debouncedSearch.toLowerCase().trim();
+
+    return logs.filter((log) => {
+      if (filterColumn === 'member_name') return log.member_name.toLowerCase().includes(q);
+      if (filterColumn === 'old_username') return log.old_username.toLowerCase().includes(q);
+      if (filterColumn === 'new_username') return log.new_username.toLowerCase().includes(q);
+      if (filterColumn === 'reason') return log.reason.toLowerCase().includes(q);
       return (
         log.member_name.toLowerCase().includes(q) ||
         log.old_username.toLowerCase().includes(q) ||
@@ -233,9 +244,37 @@ export default function CardReplacementPage() {
 
   const handleResetSearch = () => {
     setSearchQuery('');
+    setFilterColumn('');
   };
 
-  // Columns definition for DataTable
+  const handleExportExcel = () => {
+    const headers = ['No', 'Tanggal', 'Nama Anggota', 'No. Anggota Lama', 'No. Anggota Baru', 'Alasan Mutasi', 'Biaya', 'Nama CS'];
+    const data = getFilteredLogs().map((log, index) => [
+      index + 1,
+      formatDateLabel(log.date),
+      log.member_name,
+      log.old_username,
+      log.new_username,
+      log.reason,
+      log.fee || 0,
+      log.admin_name || '-',
+    ]);
+
+    exportToExcel({
+      filename: `Log_Pergantian_Cabang_Prabu_Gym_${new Date().toISOString().split('T')[0]}`,
+      title: 'LOG PERGANTIAN CABANG & MUTASI - PRABU GYM',
+      headers,
+      data,
+    });
+  };
+
+  const columnOptions = [
+    { label: 'Nama Anggota', value: 'member_name' },
+    { label: 'No. Anggota Lama', value: 'old_username' },
+    { label: 'No. Anggota Baru', value: 'new_username' },
+    { label: 'Alasan Mutasi', value: 'reason' },
+  ];
+
   const columns: Column<CardReplacementLog>[] = [
     {
       key: 'no',
@@ -288,14 +327,14 @@ export default function CardReplacementPage() {
       key: 'action',
       header: 'Aksi',
       align: 'center',
-      className: 'w-24',
+      className: 'w-20',
       render: (log) => (
         <button
           onClick={() => setPrintLog(log)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-[9px] font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
+          title="Cetak Receipt Mutasi"
+          className="p-2 bg-[#007BFF] hover:bg-[#0069D9] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
         >
           <Printer className="w-3.5 h-3.5" />
-          <span>Receipt</span>
         </button>
       )
     }
@@ -324,11 +363,15 @@ export default function CardReplacementPage() {
               }
             />
 
-            {/* Pencarian Box */}
+            {/* Search Box */}
             <SearchFilterBar
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
-              searchPlaceholder="Cari nama anggota, nomor lama, atau nomor baru..."
+              searchPlaceholder="Ketik nama anggota, nomor lama, atau nomor baru..."
+              columnOptions={columnOptions}
+              selectedColumn={filterColumn}
+              onColumnChange={setFilterColumn}
+              isTyping={isTyping}
               onReset={handleResetSearch}
             />
 
@@ -346,19 +389,11 @@ export default function CardReplacementPage() {
 
         {/* Step 2: Add New Form */}
         {step === 'add' && (
-          <div className="space-y-6 animate-fadeIn max-w-3xl mx-auto">
-            <PageHeader
-              title="Form Pergantian Cabang"
-              action={
-                <button
-                  onClick={() => setStep('list')}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#DC3545] hover:bg-[#c82333] text-white text-xs font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Batal</span>
-                </button>
-              }
-            />
+          <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden w-full animate-fadeIn">
+            <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold select-none flex items-center gap-2">
+              <CreditCard className="w-4 h-4" />
+              <span className="text-sm uppercase tracking-wider font-heading">Form Pergantian Cabang</span>
+            </div>
 
             {formError && (
               <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-bold uppercase tracking-wider">
@@ -372,75 +407,84 @@ export default function CardReplacementPage() {
               </div>
             )}
 
-            <div className="bg-white border border-slate-200 p-8 rounded shadow-sm">
-              <form onSubmit={handleSaveReplacement} className="space-y-6 text-sm text-slate-700">
-                
-                {/* Cari Member */}
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Nama Anggota</label>
-                  <select
-                    required
-                    value={selectedMemberId}
-                    onChange={(e) => handleSelectMember(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full"
-                  >
-                    <option value="">- Pilih Anggota -</option>
-                    {members.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.full_name} ({m.username}) - {m.branch_name || 'Cabang Lain'}
-                      </option>
-                    ))}
-                  </select>
+            <div className="p-6 md:p-8 w-full">
+              <form onSubmit={handleSaveReplacement} className="space-y-6 text-sm text-slate-700 w-full">
+                <div className="space-y-5">
+                  {/* Cari Member */}
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left">Nama Anggota</label>
+                    <select
+                      required
+                      value={selectedMemberId}
+                      onChange={(e) => handleSelectMember(e.target.value)}
+                      className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full"
+                    >
+                      <option value="">- Pilih Anggota -</option>
+                      {members.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.full_name} ({m.username}) - {m.branch_name || 'Cabang Lain'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Kartu Baru */}
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left">Nomor Anggota Baru</label>
+                    <input
+                      type="text"
+                      required
+                      readOnly
+                      disabled
+                      value={newUsername}
+                      placeholder="Auto-generate setelah memilih anggota..."
+                      className="bg-slate-100 border border-slate-300 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-mono cursor-not-allowed font-bold"
+                    />
+                  </div>
+
+                  {/* Alasan */}
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left">Alasan Pindah Cabang</label>
+                    <select
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full"
+                    >
+                      <option value="Mutasi Anggota">Mutasi Anggota</option>
+                      <option value="Pindah Domisili">Pindah Domisili</option>
+                      <option value="Kebijakan Manajemen">Kebijakan Manajemen</option>
+                    </select>
+                  </div>
+
+                  {/* Biaya Cetak */}
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left">Biaya Mutasi</label>
+                    <input
+                      type="text"
+                      readOnly
+                      disabled
+                      value="Rp. 0 (Gratis)"
+                      className="bg-slate-100 border border-slate-300 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-mono cursor-not-allowed"
+                    />
+                  </div>
                 </div>
 
-                {/* Kartu Baru */}
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Nomor Anggota Baru</label>
-                  <input
-                    type="text"
-                    required
-                    readOnly
-                    disabled
-                    value={newUsername}
-                    placeholder="Auto-generate setelah memilih anggota..."
-                    className="bg-slate-100 border border-slate-200 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-mono cursor-not-allowed"
-                  />
-                </div>
-
-                {/* Alasan */}
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Alasan Pindah Cabang</label>
-                  <select
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full"
-                  >
-                    <option value="Mutasi Anggota">Mutasi Anggota</option>
-                    <option value="Pindah Domisili">Pindah Domisili</option>
-                    <option value="Kebijakan Manajemen">Kebijakan Manajemen</option>
-                  </select>
-                </div>
-
-                {/* Biaya Cetak */}
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Biaya Mutasi</label>
-                  <input
-                    type="text"
-                    readOnly
-                    disabled
-                    value="Rp. 0 (Gratis)"
-                    className="bg-slate-100 border border-slate-200 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-mono cursor-not-allowed"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-3 border-t border-slate-150 pt-6">
+                <div className="flex items-center gap-3 justify-end pt-6 border-t border-slate-200/60">
                   <button
                     type="submit"
                     disabled={submitting || formError !== '' || !newUsername}
-                    className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-[#DC3545] hover:bg-[#c82333] text-white text-xs font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors disabled:opacity-50"
                   >
                     <Save className="w-4 h-4" />
                     <span>{submitting ? 'Menyimpan...' : 'Simpan Transaksi'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStep('list')}
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#DC3545] hover:bg-[#c82333] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Kembali</span>
                   </button>
                 </div>
               </form>

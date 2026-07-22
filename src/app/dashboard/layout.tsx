@@ -239,6 +239,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <MenuIcon className="w-6 h-6" />
           </button>
 
+          {/* Active Club Tag */}
+          {activeBranchID && branches.length > 0 && (
+            <div className="ml-4 px-3.5 py-1.5 border border-red-500 text-red-500 font-extrabold text-xs rounded-full uppercase tracking-wider bg-red-50/50 select-none no-print">
+              Club {(branches.find(b => b.id === activeBranchID)?.name || '').replace('Prabu Gym ', '').toUpperCase()}
+            </div>
+          )}
+
           <div className="flex items-center gap-6 ml-auto">
             {/* Branch Selector Dropdown */}
             {branches.length > 0 && (

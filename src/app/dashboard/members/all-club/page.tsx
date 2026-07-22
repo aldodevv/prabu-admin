@@ -9,7 +9,9 @@ import { PageHeader } from '@/components/core/PageHeader';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 import { DataTable, Column } from '@/components/core/DataTable';
 import { OfficialReceiptTemplate } from '@/components/core/PrintTemplates';
-import { Search, Eye, Edit, ArrowLeft, Save, Printer, FileText } from 'lucide-react';
+import { Search, Eye, Edit, ArrowLeft, Save, Printer, FileText, FileSpreadsheet, RotateCcw } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
+import { exportToExcel } from '@/lib/excelExport';
 
 export default function AllClubMembersPanel() {
   const { user } = useAuth();
@@ -23,6 +25,9 @@ export default function AllClubMembersPanel() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [filterColumn, setFilterColumn] = useState('');
+  const debouncedSearch = useDebounce(search, 400);
+  const [isTyping, setIsTyping] = useState(false);
   const [loading, setLoading] = useState(true);
   
   // Filters matching Search Box
@@ -87,9 +92,33 @@ export default function AllClubMembersPanel() {
 
   const handleResetSearch = () => {
     setSearch('');
+    setFilterColumn('');
     setStatusFilter('Semua');
     setPage(1);
     fetchMembers('');
+  };
+
+  const handleExportExcel = () => {
+    const headers = ['No', 'Cabang', 'Nomor Anggota', 'Nama Anggota', 'Jenis Kelamin', 'Tanggal Lahir', 'Nomor HP', 'Email', 'Paket Anggota', 'Status'];
+    const data = members.map((m, index) => [
+      index + 1,
+      m.branch_name || 'All Club',
+      `@${m.username}`,
+      m.full_name,
+      m.gender || 'Laki-laki',
+      m.date_of_birth || '-',
+      m.phone || '-',
+      m.email || '-',
+      m.membership_type || '-',
+      m.is_active ? 'Aktif' : 'Tidak Aktif',
+    ]);
+
+    exportToExcel({
+      filename: `Data_Anggota_All_Club_${new Date().toISOString().split('T')[0]}`,
+      title: 'DATA ANGGOTA ALL CLUB - PRABU GYM',
+      headers,
+      data,
+    });
   };
 
   const handleOpenDetail = async (m: Member) => {
@@ -183,6 +212,14 @@ export default function AllClubMembersPanel() {
     }
   };
 
+  const columnOptions = [
+    { label: 'Nomor Anggota', value: 'username' },
+    { label: 'Nama Anggota', value: 'full_name' },
+    { label: 'Nomor HP', value: 'phone' },
+    { label: 'Email', value: 'email' },
+    { label: 'Paket Anggota', value: 'membership_type' },
+  ];
+
   // Columns definition for DataTable
   const columns: Column<Member>[] = [
     {
@@ -196,9 +233,9 @@ export default function AllClubMembersPanel() {
       key: 'photo',
       header: 'Foto',
       align: 'center',
-      className: 'w-28',
+      className: 'w-24',
       render: (m) => (
-        <div className="w-20 h-20 mx-auto bg-slate-50 border border-slate-200 rounded overflow-hidden flex items-center justify-center text-slate-400 text-[10px] uppercase font-bold select-none">
+        <div className="w-16 h-16 mx-auto bg-slate-50 border border-slate-200 rounded overflow-hidden flex items-center justify-center text-slate-400 text-[10px] uppercase font-bold select-none">
           {m.photo_url ? (
             <img src={m.photo_url} alt="Profile" className="w-full h-full object-cover" />
           ) : (
@@ -227,22 +264,23 @@ export default function AllClubMembersPanel() {
       key: 'action',
       header: 'Aksi',
       align: 'center',
-      className: 'w-36',
+      className: 'w-24',
       render: (m) => (
-        <div className="flex gap-2 justify-center flex-wrap">
+        <div className="flex gap-1.5 justify-center">
+          {/* Icon-Only Buttons with Tooltips */}
           <button
             onClick={() => handleOpenDetail(m)}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#28A745] hover:bg-[#218838] text-white font-bold uppercase text-[9px] tracking-wider rounded cursor-pointer transition-colors shadow-sm"
+            title="Lihat Detail Anggota"
+            className="p-2 bg-[#6C7A89] hover:bg-[#5a6673] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
           >
-            <Eye className="w-3 h-3" />
-            View Detail
+            <Eye className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => handleOpenEdit(m)}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#007BFF] hover:bg-[#0069d9] text-white font-bold uppercase text-[9px] tracking-wider rounded cursor-pointer transition-colors shadow-sm"
+            title="Ubah Data Anggota"
+            className="p-2 bg-[#17A2B8] hover:bg-[#138496] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
           >
-            <Edit className="w-3 h-3" />
-            Edit
+            <Edit className="w-3.5 h-3.5" />
           </button>
         </div>
       )
@@ -265,8 +303,12 @@ export default function AllClubMembersPanel() {
             <SearchFilterBar
               searchQuery={search}
               onSearchChange={setSearch}
-              onSearchSubmit={handleSearchSubmit}
-              searchPlaceholder="Cari nama, nomor HP, email..."
+              searchPlaceholder="Ketik nama, nomor HP, email..."
+              columnOptions={columnOptions}
+              selectedColumn={filterColumn}
+              onColumnChange={setFilterColumn}
+              isTyping={isTyping}
+              onExportExcel={handleExportExcel}
               onReset={handleResetSearch}
             >
               <select
@@ -275,10 +317,10 @@ export default function AllClubMembersPanel() {
                   setStatusFilter(e.target.value);
                   setPage(1);
                 }}
-                className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded"
+                className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded font-medium"
               >
-                <option value="Semua">-Pilih-</option>
-                <option value="Aktif">Status: ...Aktif</option>
+                <option value="Semua">Status: Semua</option>
+                <option value="Aktif">Status: Aktif</option>
                 <option value="Expired">Status: Expired</option>
                 <option value="Nonaktif">Status: Nonaktif</option>
               </select>
@@ -432,14 +474,14 @@ export default function AllClubMembersPanel() {
                                         window.print();
                                       }, 100);
                                     }}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#17A2B8] hover:bg-[#138496] border border-[#17A2B8] text-white text-[9px] font-accent font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#007BFF] hover:bg-[#0069D9] text-white text-[9px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
                                   >
                                     <Printer className="w-3.5 h-3.5" />
                                     Cetak
                                   </button>
                                   <button
                                     onClick={() => setReceiptTx(tx)}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-300 text-slate-700 text-[9px] font-accent font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#6C7A89] hover:bg-[#5a6673] text-white text-[9px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
                                   >
                                     <FileText className="w-3.5 h-3.5" />
                                     Document

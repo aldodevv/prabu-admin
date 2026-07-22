@@ -9,7 +9,9 @@ import { PageHeader } from '@/components/core/PageHeader';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 import { DataTable, Column } from '@/components/core/DataTable';
 import { OfficialReceiptTemplate } from '@/components/core/PrintTemplates';
-import { Search, Eye, Edit, ArrowLeft, Save, Printer, FileText } from 'lucide-react';
+import { Search, Eye, Edit, ArrowLeft, Save, Printer, FileText, FileSpreadsheet, RotateCcw } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
+import { exportToExcel } from '@/lib/excelExport';
 
 export default function OneClubMembersPanel() {
   const { activeBranchID, user } = useAuth();
@@ -23,6 +25,9 @@ export default function OneClubMembersPanel() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [filterColumn, setFilterColumn] = useState('');
+  const debouncedSearch = useDebounce(search, 400);
+  const [isTyping, setIsTyping] = useState(false);
   const [loading, setLoading] = useState(true);
   
   // Filters matching Search Box
@@ -47,6 +52,15 @@ export default function OneClubMembersPanel() {
 
   useEffect(() => {
     if (activeBranchID) {
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const urlSearch = params.get('search') || params.get('no-anggota') || params.get('one-club');
+        if (urlSearch) {
+          setSearch(urlSearch);
+          fetchMembers(urlSearch);
+          return;
+        }
+      }
       fetchMembers();
     }
   }, [activeBranchID, page]);
@@ -89,9 +103,32 @@ export default function OneClubMembersPanel() {
 
   const handleResetSearch = () => {
     setSearch('');
+    setFilterColumn('');
     setStatusFilter('Semua');
     setPage(1);
     fetchMembers('');
+  };
+
+  const handleExportExcel = () => {
+    const headers = ['No', 'Nomor Anggota', 'Nama Anggota', 'Jenis Kelamin', 'Tanggal Lahir', 'Nomor HP', 'Email', 'Paket Anggota', 'Status'];
+    const data = members.map((m, index) => [
+      index + 1,
+      `@${m.username}`,
+      m.full_name,
+      m.gender || 'Laki-laki',
+      m.date_of_birth || '-',
+      m.phone || '-',
+      m.email || '-',
+      m.membership_type || '-',
+      m.is_active ? 'Aktif' : 'Tidak Aktif',
+    ]);
+
+    exportToExcel({
+      filename: `Data_Anggota_One_Club_${new Date().toISOString().split('T')[0]}`,
+      title: 'DATA ANGGOTA ONE CLUB - PRABU GYM',
+      headers,
+      data,
+    });
   };
 
   const handleOpenDetail = async (m: Member) => {
@@ -185,6 +222,14 @@ export default function OneClubMembersPanel() {
     }
   };
 
+  const columnOptions = [
+    { label: 'Nomor Anggota', value: 'username' },
+    { label: 'Nama Anggota', value: 'full_name' },
+    { label: 'Nomor HP', value: 'phone' },
+    { label: 'Email', value: 'email' },
+    { label: 'Paket Anggota', value: 'membership_type' },
+  ];
+
   // Columns definition for DataTable
   const columns: Column<Member>[] = [
     {
@@ -198,9 +243,9 @@ export default function OneClubMembersPanel() {
       key: 'photo',
       header: 'Foto',
       align: 'center',
-      className: 'w-28',
+      className: 'w-24',
       render: (m) => (
-        <div className="w-20 h-20 mx-auto bg-slate-50 border border-slate-200 rounded overflow-hidden flex items-center justify-center text-slate-400 text-[10px] uppercase font-bold select-none">
+        <div className="w-16 h-16 mx-auto bg-slate-50 border border-slate-200 rounded overflow-hidden flex items-center justify-center text-slate-400 text-[10px] uppercase font-bold select-none">
           {m.photo_url ? (
             <img src={m.photo_url} alt="Profile" className="w-full h-full object-cover" />
           ) : (
@@ -229,22 +274,22 @@ export default function OneClubMembersPanel() {
       key: 'action',
       header: 'Aksi',
       align: 'center',
-      className: 'w-36',
+      className: 'w-24',
       render: (m) => (
-        <div className="flex gap-2 justify-center flex-wrap">
+        <div className="flex gap-1.5 justify-center">
           <button
             onClick={() => handleOpenDetail(m)}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#28A745] hover:bg-[#218838] text-white font-bold uppercase text-[9px] tracking-wider rounded cursor-pointer transition-colors shadow-sm"
+            title="Lihat Detail Anggota"
+            className="p-2 bg-[#6C7A89] hover:bg-[#5a6673] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
           >
-            <Eye className="w-3 h-3" />
-            View Detail
+            <Eye className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => handleOpenEdit(m)}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#007BFF] hover:bg-[#0069d9] text-white font-bold uppercase text-[9px] tracking-wider rounded cursor-pointer transition-colors shadow-sm"
+            title="Ubah Data Anggota"
+            className="p-2 bg-[#17A2B8] hover:bg-[#138496] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
           >
-            <Edit className="w-3 h-3" />
-            Edit
+            <Edit className="w-3.5 h-3.5" />
           </button>
         </div>
       )
@@ -267,8 +312,12 @@ export default function OneClubMembersPanel() {
             <SearchFilterBar
               searchQuery={search}
               onSearchChange={setSearch}
-              onSearchSubmit={handleSearchSubmit}
-              searchPlaceholder="Cari nama, nomor HP, email..."
+              searchPlaceholder="Ketik nama, nomor HP, email..."
+              columnOptions={columnOptions}
+              selectedColumn={filterColumn}
+              onColumnChange={setFilterColumn}
+              isTyping={isTyping}
+              onExportExcel={handleExportExcel}
               onReset={handleResetSearch}
             >
               <select
@@ -277,9 +326,9 @@ export default function OneClubMembersPanel() {
                   setStatusFilter(e.target.value);
                   setPage(1);
                 }}
-                className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded"
+                className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded font-medium"
               >
-                <option value="Semua">-Pilih-</option>
+                <option value="Semua">Status: Semua</option>
                 <option value="Aktif">Status: Aktif</option>
                 <option value="Expired">Status: Expired</option>
                 <option value="Nonaktif">Status: Nonaktif</option>
@@ -434,14 +483,14 @@ export default function OneClubMembersPanel() {
                                         window.print();
                                       }, 100);
                                     }}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#17A2B8] hover:bg-[#138496] border border-[#17A2B8] text-white text-[9px] font-accent font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#007BFF] hover:bg-[#0069D9] text-white text-[9px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
                                   >
                                     <Printer className="w-3.5 h-3.5" />
                                     Cetak
                                   </button>
                                   <button
                                     onClick={() => setReceiptTx(tx)}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-300 text-slate-700 text-[9px] font-accent font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#6C7A89] hover:bg-[#5a6673] text-white text-[9px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
                                   >
                                     <FileText className="w-3.5 h-3.5" />
                                     Document
@@ -472,19 +521,11 @@ export default function OneClubMembersPanel() {
 
         {/* Ubah Data Anggota Step */}
         {step === 'edit' && selectedMember && (
-          <div className="space-y-6 animate-fadeIn max-w-4xl mx-auto">
-            <PageHeader 
-              title="Ubah Data Anggota" 
-              action={
-                <button
-                  onClick={() => setStep('list')}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#DC3545] hover:bg-[#c82333] text-white text-xs font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Batal</span>
-                </button>
-              }
-            />
+          <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden w-full animate-fadeIn">
+            <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold select-none flex items-center gap-2">
+              <Edit className="w-4 h-4" />
+              <span className="text-sm uppercase tracking-wider font-heading">Ubah Data Anggota</span>
+            </div>
 
             {editError && (
               <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-bold uppercase tracking-wider">
@@ -498,107 +539,116 @@ export default function OneClubMembersPanel() {
               </div>
             )}
 
-            <div className="bg-white border border-slate-200 p-8 rounded shadow-sm">
-              <form onSubmit={handleUpdateMember} className="space-y-6 text-sm text-slate-700">
-                {/* Form fields */}
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Nomor Anggota</label>
-                  <input
-                    type="text"
-                    readOnly
-                    disabled
-                    value={`@${selectedMember.username}`}
-                    className="bg-slate-100 border border-slate-200 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-mono font-bold"
-                  />
-                </div>
-
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Nama Anggota</label>
-                  <input
-                    type="text"
-                    required
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full"
-                  />
-                </div>
-
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Jenis Kelamin</label>
-                  <select
-                    value={gender}
-                    onChange={(e) => setGender(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full"
-                  >
-                    <option value="Laki-laki">Laki-laki</option>
-                    <option value="Perempuan">Perempuan</option>
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Tanggal Lahir</label>
-                  <input
-                    type="date"
-                    value={dob}
-                    onChange={(e) => setDob(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full font-mono"
-                  />
-                </div>
-
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Nomor HP</label>
-                  <input
-                    type="text"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full font-mono"
-                  />
-                </div>
-
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Email</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full"
-                  />
-                </div>
-
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-start max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent mt-2">Alamat</label>
-                  <textarea
-                    rows={3}
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full font-body resize-none"
-                  />
-                </div>
-
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Foto Profil</label>
-                  <div className="space-y-3">
+            <div className="p-6 md:p-8 w-full">
+              <form onSubmit={handleUpdateMember} className="space-y-6 text-sm text-slate-700 w-full">
+                <div className="space-y-5">
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left">Nomor Anggota</label>
                     <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="text-xs file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 file:cursor-pointer"
+                      type="text"
+                      readOnly
+                      disabled
+                      value={`@${selectedMember.username}`}
+                      className="bg-slate-100 border border-slate-300 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-mono font-bold"
                     />
-                    {photoBase64 && (
-                      <div className="w-24 h-24 border border-slate-200 rounded overflow-hidden">
-                        <img src={photoBase64} alt="Preview" className="w-full h-full object-cover" />
-                      </div>
-                    )}
+                  </div>
+
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left">Nama Anggota</label>
+                    <input
+                      type="text"
+                      required
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full font-semibold"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left">Jenis Kelamin</label>
+                    <select
+                      value={gender}
+                      onChange={(e) => setGender(e.target.value)}
+                      className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full"
+                    >
+                      <option value="Laki-laki">Laki-laki</option>
+                      <option value="Perempuan">Perempuan</option>
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left">Tanggal Lahir</label>
+                    <input
+                      type="date"
+                      value={dob}
+                      onChange={(e) => setDob(e.target.value)}
+                      className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full font-mono"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left">Nomor HP</label>
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                      className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full font-mono"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left">Email</label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-start max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left mt-2">Alamat</label>
+                    <textarea
+                      rows={3}
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full font-body resize-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left">Foto Profil</label>
+                    <div className="space-y-3">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="text-xs file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 file:cursor-pointer"
+                      />
+                      {photoBase64 && (
+                        <div className="w-24 h-24 border border-slate-300 rounded overflow-hidden">
+                          <img src={photoBase64} alt="Preview" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-3 border-t border-slate-150 pt-6">
+                <div className="flex items-center gap-3 justify-end pt-6 border-t border-slate-200/60">
                   <button
                     type="submit"
-                    className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-[#DC3545] hover:bg-[#c82333] text-white text-xs font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-all shadow-sm"
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#28A745] hover:bg-[#218838] text-white text-xs font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
                   >
                     <Save className="w-4 h-4" />
                     <span>Simpan Perubahan</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStep('list')}
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#DC3545] hover:bg-[#c82333] text-white text-xs font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Kembali</span>
                   </button>
                 </div>
               </form>

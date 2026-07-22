@@ -171,14 +171,17 @@ export default function ScanBarcodePage() {
 
   return (
     <div className="space-y-6 font-sans">
-      {/* Breadcrumb path */}
-      <div className="bg-white border border-slate-200 px-4 py-3 text-xs text-slate-500 rounded font-sans shadow-sm select-none">
-        Transaksi Fitnes &nbsp;&gt;&nbsp; Scan Barcode
+      {/* Feature Title & Description */}
+      <div>
+        <h2 className="text-3xl font-heading text-slate-800 uppercase">SCAN BARCODE</h2>
+        <p className="text-slate-500 text-sm mt-1 uppercase tracking-widest font-accent">
+          Scan Presensi Barcode Anggota & Karyawan Club Gym
+        </p>
       </div>
 
       <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
         {/* Cyan Heading Title Bar */}
-        <div className="bg-[#3bbbc8] px-6 py-4 flex items-center gap-2 text-white">
+        <div className="bg-[#17A2B8] px-6 py-4 flex items-center gap-2 text-white select-none">
           <Icons.Search className="w-5 h-5" />
           <h2 className="text-sm font-bold uppercase tracking-wider font-sans">Scan Barcode</h2>
         </div>
@@ -194,19 +197,19 @@ export default function ScanBarcodePage() {
               value={barcode}
               onChange={(e) => setBarcode(e.target.value)}
               placeholder="Masukkan Kode Barcode di sini..."
-              className="flex-1 bg-slate-50 border border-slate-350 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#3bbbc8] text-slate-800"
+              className="flex-1 bg-slate-50 border border-slate-350 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#17A2B8] text-slate-800"
             />
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-[#3bbbc8] hover:bg-[#31a5b0] text-white text-xs font-bold rounded flex items-center justify-center transition-colors cursor-pointer disabled:opacity-55"
+              className="px-4 py-2 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold rounded flex items-center justify-center transition-colors cursor-pointer disabled:opacity-55"
             >
               <Icons.Search className="w-4 h-4" />
             </button>
           </form>
 
           {errorMsg && (
-            <div className="p-3 bg-red-55 border-l-4 border-red-500 text-red-700 text-xs font-bold uppercase tracking-wider rounded">
+            <div className="p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-bold uppercase tracking-wider rounded">
               ⚠️ {errorMsg}
             </div>
           )}
@@ -246,10 +249,11 @@ export default function ScanBarcodePage() {
                   Data {result.type === 'member' ? 'Anggota' : 'Karyawan'}
                 </h3>
 
-                <div className="grid grid-cols-[1fr_2fr] gap-6 max-md:grid-cols-1">
-                  {/* Left Column: Avatar Photo Placeholder */}
-                  <div>
-                    <div className="w-full bg-[#4A4A4A] aspect-[4/3] flex items-center justify-center rounded overflow-hidden border border-slate-200">
+                {/* Vertical Column Layout for Photo & Member Data */}
+                <div className="flex flex-col gap-6 w-full">
+                  {/* Photo Display */}
+                  <div className="w-full max-w-sm mx-auto">
+                    <div className="w-full bg-[#4A4A4A] aspect-[4/3] flex items-center justify-center rounded overflow-hidden border border-slate-200 shadow-sm">
                       {result.type === 'member' && (result.data as MemberData).photo_url ? (
                         <img 
                           src={(result.data as MemberData).photo_url} 

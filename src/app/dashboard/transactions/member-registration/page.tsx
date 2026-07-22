@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import Link from 'next/link';
-import { Printer, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Printer, ArrowLeft, CheckCircle, UserPlus, Check } from 'lucide-react';
 
 interface SuccessData {
   member: any;
@@ -49,7 +49,7 @@ export default function MemberRegistrationPage() {
   // Form Package states
   const [packageName, setPackageName] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
-  const [clubType, setClubType] = useState('');
+  const [clubType, setClubType] = useState('One Club');
   const [notes, setNotes] = useState('');
 
   // Reactive dates
@@ -131,7 +131,7 @@ export default function MemberRegistrationPage() {
       }
 
       // 2. Create the associated sales transaction
-      const txNotes = `Pendaftaran Anggota: ${fullName} - Paket: ${packageName} (${clubType}) - Sosial Media: ${socialMedia}. Catatan: ${notes}`;
+      const txNotes = `Pendaftaran Anggota: ${fullName} - Paket: ${packageName} (${clubType})${socialMedia ? ` - Sosial Media: ${socialMedia}` : ''}.${notes ? ` Catatan: ${notes}` : ''}`;
       const txBody = {
         member_id: createdMember.id,
         notes: txNotes.trim(),
@@ -168,7 +168,7 @@ export default function MemberRegistrationPage() {
       setPhotoBase64('');
       setPackageName('');
       setPaymentMethod('');
-      setClubType('');
+      setClubType('One Club');
       setNotes('');
     } catch (err: any) {
       setErrorMsg(err.message || 'Terjadi kesalahan sistem');
@@ -229,7 +229,7 @@ export default function MemberRegistrationPage() {
 
       <div className="flex justify-between items-center flex-wrap gap-4 no-print">
         <div>
-          <h2 className="text-3xl font-heading text-slate-800">PENDAFTARAN ANGGOTA</h2>
+          <h2 className="text-3xl font-heading text-slate-800 uppercase">PENDAFTARAN ANGGOTA</h2>
           <p className="text-slate-500 text-sm mt-1 uppercase tracking-widest font-accent">
             Pendaftaran Baru & Transaksi Paket Keanggotaan Club Gym
           </p>
@@ -245,17 +245,23 @@ export default function MemberRegistrationPage() {
       {successData && (
         <div className="space-y-6 animate-fadeIn">
           {/* Action buttons (hidden on print) */}
-          <div className="flex gap-4 no-print max-w-4xl mx-auto">
+          <div className="flex gap-4 no-print max-w-4xl mx-auto flex-wrap">
             <button
               onClick={handlePrint}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-widest rounded transition-colors cursor-pointer shadow-sm"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#007BFF] hover:bg-[#0069D9] text-white text-xs font-bold uppercase tracking-wider rounded transition-colors cursor-pointer shadow-sm"
             >
               <Printer className="w-4 h-4" />
               Cetak Receipt
             </button>
+            <Link
+              href={`/dashboard/members/one-club?search=${encodeURIComponent(successData.username)}`}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#6C7A89] hover:bg-[#5a6673] text-white text-xs font-bold uppercase tracking-wider rounded transition-colors cursor-pointer shadow-sm"
+            >
+              Lihat Data Anggota
+            </Link>
             <button
               onClick={() => setSuccessData(null)}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-accent font-bold uppercase tracking-widest rounded transition-colors cursor-pointer border border-slate-300/60"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#DC3545] hover:bg-[#C82333] text-white text-xs font-bold uppercase tracking-wider rounded transition-colors cursor-pointer shadow-sm"
             >
               <ArrowLeft className="w-4 h-4" />
               Kembali Ke Form
@@ -334,55 +340,60 @@ export default function MemberRegistrationPage() {
         </div>
       )}
 
-      {/* Main Registration Form */}
+      {/* Main Registration Form - Full Width Grid Layout */}
       {!successData && (
-        <form onSubmit={handleSubmit} className="bg-white border border-slate-200 p-8 shadow-sm rounded space-y-6 no-print">
-          
-          {/* Section: Metadata */}
-          <div className="space-y-4 border-b border-slate-100 pb-6">
-            <h3 className="font-heading text-lg text-slate-800 uppercase tracking-wider">Transaksi Pendaftaran</h3>
-            <div className="grid grid-cols-3 gap-6 max-md:grid-cols-1">
-              <div>
-                <label className="block text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1.5">
-                  Tanggal Transaksi
-                </label>
-                <input
-                  type="text"
-                  disabled
-                  value={todayFormatted}
-                  className="w-full bg-slate-100 border border-slate-200 text-slate-500 px-3 py-2 text-xs focus:outline-none font-mono rounded"
-                />
-              </div>
-            </div>
+        <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden w-full no-print">
+          <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
+            <UserPlus className="w-4 h-4" />
+            <span className="text-sm uppercase tracking-wider font-heading">Pendaftaran Anggota</span>
           </div>
 
-          {/* Section: Personal Info */}
-          <div className="space-y-4 border-b border-slate-100 pb-6">
-            <h3 className="font-heading text-lg text-slate-800 uppercase tracking-wider">Data Pribadi Anggota</h3>
-            <div className="grid grid-cols-2 gap-6 max-md:grid-cols-1">
-              <div className="space-y-4">
-                <div className="flex gap-4 items-center">
-                  <div className="w-20 h-20 bg-slate-50 border border-slate-200 rounded flex items-center justify-center text-slate-400 text-xs select-none">
-                    {photoBase64 ? (
-                      <img src={photoBase64} alt="Member" className="w-full h-full object-cover rounded" />
-                    ) : (
-                      'No Photo'
-                    )}
-                  </div>
-                  <label className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold uppercase tracking-wider rounded border border-slate-200 cursor-pointer transition-colors">
-                    Pilih Gambar
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
+          <div className="p-6 md:p-8">
+            <form onSubmit={handleSubmit} className="space-y-6 w-full">
+              
+              <div className="space-y-5">
+                {/* Tanggal Transaksi */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">
+                    Tanggal Transaksi
                   </label>
+                  <input
+                    type="text"
+                    disabled
+                    value={todayFormatted}
+                    className="w-full bg-slate-100 border border-slate-300 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none font-mono rounded"
+                  />
                 </div>
 
-                <div>
-                  <label className="block text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1.5">
-                    Nama Anggota <span className="text-red-500">*</span>
+                {/* Photo Input (Larger w-32 h-32) */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">
+                    Foto Anggota
+                  </label>
+                  <div className="flex gap-4 items-center">
+                    <div className="w-28 h-28 bg-slate-50 border border-slate-300 rounded flex items-center justify-center text-slate-400 text-xs select-none">
+                      {photoBase64 ? (
+                        <img src={photoBase64} alt="Member" className="w-full h-full object-cover rounded" />
+                      ) : (
+                        'No Photo'
+                      )}
+                    </div>
+                    <label className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold uppercase tracking-wider rounded border border-slate-300 cursor-pointer transition-colors">
+                      Pilih Gambar
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Nama Anggota */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">
+                    Nama Anggota *
                   </label>
                   <input
                     type="text"
@@ -390,19 +401,20 @@ export default function MemberRegistrationPage() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Masukkan Nama Anggota"
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded font-body"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-semibold"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1.5">
-                    Jenis Kelamin <span className="text-red-500">*</span>
+                {/* Jenis Kelamin */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">
+                    Jenis Kelamin *
                   </label>
                   <select
                     required
                     value={gender}
                     onChange={(e) => setGender(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded font-body"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded"
                   >
                     <option value="">-Pilih-</option>
                     <option value="Laki-laki">Laki-laki</option>
@@ -410,35 +422,36 @@ export default function MemberRegistrationPage() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1.5">
+                {/* Tanggal Lahir */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">
                     Tanggal Lahir
                   </label>
                   <input
                     type="date"
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded font-body"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-mono"
                   />
                 </div>
-              </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1.5">
-                    Nomor HP
+                {/* Nomor HP */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">
+                    Nomor HP (Angka)
                   </label>
                   <input
                     type="tel"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="Masukkan Nomor HP"
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded font-mono"
+                    onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                    placeholder="Masukkan Nomor HP (Contoh: 081234567890)"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-mono"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1.5">
+                {/* Email */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">
                     Email
                   </label>
                   <input
@@ -446,71 +459,67 @@ export default function MemberRegistrationPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Masukkan Email"
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded font-body"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1.5">
-                    Sosial Media
+                {/* Sosial Media */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">
+                    Sosial Media <span className="text-slate-400 font-normal">(Opsional)</span>
                   </label>
                   <input
                     type="text"
                     value={socialMedia}
                     onChange={(e) => setSocialMedia(e.target.value)}
                     placeholder="Instagram / Facebook / Tiktok"
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded font-body"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1.5">
+                {/* Alamat */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-start max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left mt-2">
                     Alamat
                   </label>
                   <textarea
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     placeholder="Masukkan Alamat Lengkap"
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded font-body resize-none h-[72px]"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded resize-none h-[72px]"
                   />
                 </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Section: Package Details */}
-          <div className="space-y-4 pb-6">
-            <h3 className="font-heading text-lg text-slate-800 uppercase tracking-wider">Data Paket Anggota</h3>
-            <div className="grid grid-cols-2 gap-6 max-md:grid-cols-1">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1.5">
-                    Paket Anggota <span className="text-red-500">*</span>
+                {/* Paket Anggota */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1 pt-4 border-t border-slate-100">
+                  <label className="text-sm font-bold text-slate-700 text-left">
+                    Paket Anggota *
                   </label>
                   <select
                     required
                     value={packageName}
                     onChange={(e) => setPackageName(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded font-body"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-bold"
                   >
                     <option value="">-Pilih-</option>
                     {PACKAGES.map((pkg) => (
                       <option key={pkg.name} value={pkg.name}>
-                        {pkg.name}
+                        {pkg.name} (Rp. {pkg.price.toLocaleString('id-ID')})
                       </option>
                     ))}
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1.5">
-                    Jenis Pembayaran <span className="text-red-500">*</span>
+                {/* Jenis Pembayaran */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">
+                    Jenis Pembayaran *
                   </label>
                   <select
                     required
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded font-body"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded"
                   >
                     <option value="">-Pilih-</option>
                     <option value="Tunai">Tunai</option>
@@ -519,82 +528,90 @@ export default function MemberRegistrationPage() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1.5">
-                    Tipe Club <span className="text-red-500">*</span>
+                {/* Tipe Club */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">
+                    Tipe Club *
                   </label>
                   <select
                     required
                     value={clubType}
                     onChange={(e) => setClubType(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded font-body"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded"
                   >
-                    <option value="">-Pilih-</option>
                     <option value="One Club">One Club</option>
                     <option value="All Club">All Club</option>
                   </select>
                 </div>
 
-                {/* Selected Package Calculations block (Image 2) */}
+                {/* Selected Package Details */}
                 {selectedPkg && (
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded space-y-3.5 animate-fadeIn">
-                    <div className="grid grid-cols-[1.2fr_2fr] gap-4 items-center">
-                      <span className="text-xs font-semibold text-slate-600 font-accent uppercase">Total Bayar</span>
-                      <input
-                        type="text"
-                        readOnly
-                        value={selectedPkg.price.toLocaleString('id-ID')}
-                        className="bg-slate-100 border border-slate-200 text-slate-800 font-bold px-3 py-1.5 text-xs focus:outline-none rounded w-full"
-                      />
-                    </div>
-                    <div className="grid grid-cols-[1.2fr_2fr] gap-4 items-center">
-                      <span className="text-xs font-semibold text-slate-600 font-accent uppercase">Mulai Aktif</span>
-                      <input
-                        type="date"
-                        value={startDateInput}
-                        onChange={(e) => setStartDateInput(e.target.value)}
-                        className="bg-white border border-slate-200 text-slate-800 font-semibold px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full"
-                      />
-                    </div>
-                    <div className="grid grid-cols-[1.2fr_2fr] gap-4 items-center">
-                      <span className="text-xs font-semibold text-slate-600 font-accent uppercase">Masa Aktif</span>
-                      <input
-                        type="date"
-                        readOnly
-                        value={calculatedEnd}
-                        className="bg-slate-100 border border-slate-200 text-slate-600 px-3 py-1.5 text-xs focus:outline-none rounded w-full"
-                      />
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-start max-sm:grid-cols-1 bg-slate-50 p-4 border border-slate-200 rounded">
+                    <label className="text-sm font-bold text-slate-700 text-left">
+                      Rincian Paket
+                    </label>
+                    <div className="space-y-3 w-full">
+                      <div className="flex items-center gap-4">
+                        <span className="w-28 text-xs font-semibold text-slate-600">Total Bayar:</span>
+                        <input
+                          type="text"
+                          readOnly
+                          value={`Rp. ${selectedPkg.price.toLocaleString('id-ID')}`}
+                          className="bg-slate-100 border border-slate-200 text-slate-800 font-bold px-3 py-1.5 text-xs rounded flex-1"
+                        />
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="w-28 text-xs font-semibold text-slate-600">Mulai Aktif:</span>
+                        <input
+                          type="date"
+                          value={startDateInput}
+                          onChange={(e) => setStartDateInput(e.target.value)}
+                          className="bg-white border border-slate-300 text-slate-800 font-semibold px-3 py-1.5 text-xs focus:outline-none rounded flex-1 font-mono"
+                        />
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="w-28 text-xs font-semibold text-slate-600">Masa Aktif:</span>
+                        <input
+                          type="date"
+                          readOnly
+                          value={calculatedEnd}
+                          className="bg-slate-100 border border-slate-200 text-slate-600 px-3 py-1.5 text-xs rounded flex-1 font-mono"
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
+
+                {/* Keterangan */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-start max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left mt-2">
+                    Keterangan <span className="text-slate-400 font-normal">(Opsional)</span>
+                  </label>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Masukkan Keterangan Tambahan..."
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded resize-none h-[80px]"
+                  />
+                </div>
+
               </div>
 
-              <div>
-                <label className="block text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1.5">
-                  Keterangan
-                </label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Masukkan Keterangan Tambahan..."
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded font-body resize-none h-[155px]"
-                />
+              {/* Form Action Buttons */}
+              <div className="flex items-center gap-3 justify-end pt-6 border-t border-slate-200/60">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer disabled:opacity-50 transition-colors"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>{loading ? 'Menyimpan...' : 'Simpan Transaksi'}</span>
+                </button>
               </div>
-            </div>
-          </div>
 
-          {/* Form Action */}
-          <div className="flex justify-end pt-4 border-t border-slate-100">
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-accent font-bold text-xs uppercase tracking-widest disabled:opacity-50 transition-colors flex items-center gap-1.5 cursor-pointer rounded shadow-sm"
-            >
-              {loading ? 'MENYIMPAN...' : '✓ Simpan Transaksi'}
-            </button>
+            </form>
           </div>
-
-        </form>
+        </div>
       )}
     </div>
   );

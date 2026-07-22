@@ -3,8 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { productsApi, distributorsApi } from '@/core/api';
-import { Product, Distributor, ProductStockLog } from '@/core/types';
-import { Search, Plus, Eye, ArrowLeft, Save, Trash2, Edit2 } from 'lucide-react';
+import { Product, Distributor } from '@/core/types';
+import { Search, Plus, Eye, ArrowLeft, Save, Trash2, Edit2, FileSpreadsheet, RotateCcw } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
+import { exportToExcel } from '@/lib/excelExport';
+import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 
 export default function ProductsPage() {
   const { activeBranchID, user } = useAuth();
@@ -17,8 +20,11 @@ export default function ProductsPage() {
   const [distributors, setDistributors] = useState<Distributor[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  // Search filter
+  // Search, Debounce & Column Filter
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterColumn, setFilterColumn] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 400);
+  const [isTyping, setIsTyping] = useState(false);
 
   // Form states
   const [distributorId, setDistributorId] = useState('');
@@ -28,7 +34,6 @@ export default function ProductsPage() {
   const [buyPrice, setBuyPrice] = useState<number | string>(0);
   const [price, setPrice] = useState<number | string>(0);
   const [stock, setStock] = useState<number | string>(0);
-  const [unit, setUnit] = useState('pcs');
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -41,6 +46,20 @@ export default function ProductsPage() {
       fetchDistributors();
     }
   }, [activeBranchID]);
+
+  // Handle typing state
+  useEffect(() => {
+    if (searchQuery !== debouncedSearch) {
+      setIsTyping(true);
+    } else {
+      setIsTyping(false);
+    }
+  }, [searchQuery, debouncedSearch]);
+
+  // Execute filtering when debounced search query or column filter changes
+  useEffect(() => {
+    applyFilter();
+  }, [debouncedSearch, filterColumn, products]);
 
   const fetchProducts = async () => {
     if (!activeBranchID) return;
@@ -69,71 +88,98 @@ export default function ProductsPage() {
     }
   };
 
-  const handleSearch = () => {
-    if (!searchQuery) {
+  const applyFilter = () => {
+    if (!debouncedSearch.trim() && !filterColumn) {
       setFilteredProducts(products);
       return;
     }
-    const filtered = products.filter(
-      (p) =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.jenis_barang.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+
+    const query = debouncedSearch.toLowerCase().trim();
+    const filtered = products.filter((p) => {
+      if (filterColumn === 'name') {
+        return p.name.toLowerCase().includes(query);
+      }
+      if (filterColumn === 'code') {
+        return (p.code || '').toLowerCase().includes(query);
+      }
+      if (filterColumn === 'jenis_barang') {
+        return (p.jenis_barang || p.category || '').toLowerCase().includes(query);
+      }
+      if (filterColumn === 'distributor') {
+        return (p.distributor_name || '').toLowerCase().includes(query);
+      }
+
+      // Default: match all columns
+      return (
+        p.name.toLowerCase().includes(query) ||
+        (p.code || '').toLowerCase().includes(query) ||
+        (p.jenis_barang || p.category || '').toLowerCase().includes(query) ||
+        (p.distributor_name || '').toLowerCase().includes(query)
+      );
+    });
+
     setFilteredProducts(filtered);
   };
 
-  const handleShowAll = () => {
+  const handleReset = () => {
     setSearchQuery('');
+    setFilterColumn('');
     setFilteredProducts(products);
   };
 
-  const handleOpenAdd = async () => {
+  const handleExportExcel = () => {
+    const headers = ['No', 'Distributor', 'Kode Barang', 'Nama Barang', 'Jenis Barang', 'Harga Beli (IDR)', 'Harga Jual (IDR)', 'Stok / Unit'];
+    const data = filteredProducts.map((p, index) => [
+      index + 1,
+      p.distributor_name || '-',
+      p.code || '-',
+      p.name,
+      p.jenis_barang || p.category || '-',
+      p.buy_price || 0,
+      p.price || 0,
+      p.stock || 0,
+    ]);
+
+    exportToExcel({
+      filename: `Data_Barang_Prabu_Gym_${new Date().toISOString().split('T')[0]}`,
+      title: 'DATA BARANG - PRABU GYM',
+      headers,
+      data,
+    });
+  };
+
+  const handleOpenAdd = () => {
+    setSelectedProduct(null);
     setDistributorId('');
-    setCode('');
+    setCode(`PRD-${Math.floor(1000 + Math.random() * 9000)}`);
     setName('');
     setJenisBarang('bukan Suplemen');
     setBuyPrice(0);
     setPrice(0);
     setStock(0);
-    setUnit('pcs');
     setErrorMsg('');
     setSuccessMsg('');
-
-    // Fetch auto generated code
-    if (activeBranchID) {
-      try {
-        const res = await productsApi.getNextCode(activeBranchID);
-        if (res.success && res.data) {
-          setCode(res.data.next_code);
-        }
-      } catch (err) {
-        console.error('Failed to get next code:', err);
-      }
-    }
-
     setView('add');
   };
 
-  const handleOpenEdit = (p: Product) => {
-    setSelectedProduct(p);
-    setDistributorId(p.distributor_id || '');
-    setCode(p.code);
-    setName(p.name);
-    setJenisBarang(p.jenis_barang || p.category || 'bukan Suplemen');
-    setBuyPrice(p.buy_price || 0);
-    setPrice(p.price || 0);
-    setStock(p.stock || 0);
-    setUnit(p.unit || 'pcs');
+  const handleOpenEdit = (prod: Product) => {
+    setSelectedProduct(prod);
+    setDistributorId(prod.distributor_id || '');
+    setCode(prod.code || '');
+    setName(prod.name);
+    setJenisBarang(prod.jenis_barang || 'bukan Suplemen');
+    setBuyPrice(prod.buy_price || 0);
+    setPrice(prod.price);
+    setStock(prod.stock);
     setErrorMsg('');
     setSuccessMsg('');
     setView('edit');
   };
 
-  const handleOpenDetail = async (productId: string) => {
+  const handleOpenDetail = async (id: string) => {
     setLoading(true);
     try {
-      const res = await productsApi.get(productId);
+      const res = await productsApi.get(id);
       if (res.success && res.data) {
         setSelectedProduct(res.data);
         setView('detail');
@@ -148,7 +194,7 @@ export default function ProductsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      setErrorMsg('Nama barang wajib diisi');
+      setErrorMsg('Nama barang tidak boleh kosong');
       return;
     }
 
@@ -156,32 +202,33 @@ export default function ProductsPage() {
     setErrorMsg('');
     setSuccessMsg('');
 
-    const body: Partial<Product> = {
-      distributor_id: distributorId,
+    const payload = {
+      branch_id: activeBranchID || undefined,
+      distributor_id: distributorId || undefined,
       code,
       name,
-      jenis_barang: jenisBarang,
       category: jenisBarang,
+      jenis_barang: jenisBarang,
       buy_price: Number(buyPrice),
       price: Number(price),
       stock: Number(stock),
-      unit,
+      unit: 'pcs',
     };
 
     try {
       if (view === 'add') {
-        const res = await productsApi.create(body);
+        const res = await productsApi.create(payload);
         if (res.success) {
-          setSuccessMsg('Data barang berhasil ditambahkan!');
+          setSuccessMsg('Barang berhasil ditambahkan');
           fetchProducts();
           setTimeout(() => setView('list'), 1000);
         } else {
           setErrorMsg(res.error || 'Gagal menambahkan barang');
         }
       } else if (view === 'edit' && selectedProduct) {
-        const res = await productsApi.update(selectedProduct.id, body);
+        const res = await productsApi.update(selectedProduct.id, payload);
         if (res.success) {
-          setSuccessMsg('Data barang berhasil diperbarui!');
+          setSuccessMsg('Barang berhasil diperbarui');
           fetchProducts();
           setTimeout(() => setView('list'), 1000);
         } else {
@@ -216,6 +263,13 @@ export default function ProductsPage() {
     return `Rp ${val.toLocaleString('id-ID')}`;
   };
 
+  const columnOptions = [
+    { label: 'Nama Barang', value: 'name' },
+    { label: 'Kode Barang', value: 'code' },
+    { label: 'Jenis Barang', value: 'jenis_barang' },
+    { label: 'Distributor', value: 'distributor' },
+  ];
+
   return (
     <div className="space-y-6 font-sans">
       {/* Header Breadcrumb */}
@@ -245,51 +299,28 @@ export default function ProductsPage() {
         </div>
         <h2 className="text-2xl font-bold text-slate-800 mt-1 uppercase tracking-tight select-none">
           {view === 'list'
-            ? 'Product'
+            ? 'Product Cafe'
             : view === 'add'
             ? 'Tambah Data Barang'
             : view === 'edit'
             ? 'Ubah Data Barang'
-            : 'Detail Product'}
+            : 'Lihat Detail Barang'}
         </h2>
       </div>
 
       {view === 'list' && (
         <div className="space-y-6">
-          {/* Card Search */}
-          <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
-            <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
-              <Search className="w-4 h-4" />
-              <span className="text-sm uppercase tracking-wider">Search</span>
-            </div>
-            <div className="p-5 flex flex-wrap items-center gap-3">
-              <select
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-white border border-slate-350 text-slate-700 text-xs px-3 py-2.5 rounded focus:outline-none min-w-[220px]"
-              >
-                <option value="">-Pilih-</option>
-                {products.map((p) => (
-                  <option key={p.id} value={p.name}>
-                    {p.name} ({p.code})
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={handleSearch}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-semibold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
-              >
-                <Search className="w-3.5 h-3.5" />
-                Search
-              </button>
-              <button
-                onClick={handleShowAll}
-                className="px-4 py-2.5 bg-[#DC3545] hover:bg-[#C82333] text-white text-xs font-semibold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
-              >
-                View All
-              </button>
-            </div>
-          </div>
+          {/* Reusable Search & Filter Bar */}
+          <SearchFilterBar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Ketik pencarian nama atau kode barang..."
+            columnOptions={columnOptions}
+            selectedColumn={filterColumn}
+            onColumnChange={setFilterColumn}
+            isTyping={isTyping}
+            onReset={handleReset}
+          />
 
           {/* Card Table Product */}
           <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
@@ -299,7 +330,7 @@ export default function ProductsPage() {
             <div className="p-6 space-y-4">
               <button
                 onClick={handleOpenAdd}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#007BFF] hover:bg-[#0069D9] text-white text-xs font-semibold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Add Product
@@ -321,7 +352,7 @@ export default function ProductsPage() {
                         <th className="py-3 px-4 border-r border-slate-300">Jenis Barang</th>
                         <th className="py-3 px-4 border-r border-slate-300 text-right">Harga Jual</th>
                         <th className="py-3 px-4 border-r border-slate-300 text-center w-24">Unit</th>
-                        <th className="py-3 px-4 text-center w-36">Aksi</th>
+                        <th className="py-3 px-4 text-center w-28">Aksi</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 text-slate-700 font-medium">
@@ -344,26 +375,29 @@ export default function ProductsPage() {
                               <span className={p.stock <= 5 ? 'text-red-600' : 'text-slate-800'}>{p.stock}</span>
                             </td>
                             <td className="py-3 px-4 text-center flex items-center justify-center gap-1.5">
+                              {/* Icon-Only Action Buttons with Hover Tooltip */}
                               <button
                                 onClick={() => handleOpenDetail(p.id)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#E0A800] hover:bg-[#c69500] text-white text-[11px] font-semibold rounded shadow-sm cursor-pointer transition-colors"
+                                title="Lihat Detail Barang"
+                                className="p-2 bg-[#6C7A89] hover:bg-[#5a6673] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
                               >
-                                <Eye className="w-3 h-3" />
-                                Lihat Detail
+                                <Eye className="w-3.5 h-3.5" />
                               </button>
                               {isOwner && (
                                 <>
                                   <button
                                     onClick={() => handleOpenEdit(p)}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#28A745] hover:bg-[#218838] text-white text-[11px] font-semibold rounded shadow-sm cursor-pointer transition-colors"
+                                    title="Ubah Data Barang"
+                                    className="p-2 bg-[#17A2B8] hover:bg-[#138496] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
                                   >
-                                    <Edit2 className="w-3 h-3" />
+                                    <Edit2 className="w-3.5 h-3.5" />
                                   </button>
                                   <button
                                     onClick={() => handleDelete(p.id, p.name)}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#DC3545] hover:bg-[#C82333] text-white text-[11px] font-semibold rounded shadow-sm cursor-pointer transition-colors"
+                                    title="Hapus Barang"
+                                    className="p-2 bg-[#DC3545] hover:bg-[#C82333] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
                                   >
-                                    <Trash2 className="w-3 h-3" />
+                                    <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                 </>
                               )}
@@ -382,15 +416,15 @@ export default function ProductsPage() {
 
       {(view === 'add' || view === 'edit') && (
         /* Form Tambah / Ubah Data Barang */
-        <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden w-full">
           <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
             <Plus className="w-4 h-4" />
-            <span className="text-sm uppercase tracking-wider">
+            <span className="text-sm uppercase tracking-wider font-heading">
               {view === 'add' ? 'Tambah Data Barang' : 'Ubah Data Barang'}
             </span>
           </div>
-          <div className="p-6">
-            <form onSubmit={handleSubmit} className="space-y-6 max-w-xl">
+          <div className="p-6 md:p-8">
+            <form onSubmit={handleSubmit} className="space-y-6 w-full">
               {errorMsg && (
                 <div className="bg-red-50 text-red-700 text-xs font-semibold px-4 py-3 border border-red-200 rounded">
                   ⚠️ {errorMsg}
@@ -402,14 +436,14 @@ export default function ProductsPage() {
                 </div>
               )}
 
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {/* Distributor */}
-                <div className="flex items-center">
-                  <label className="w-1/3 text-slate-600 text-sm font-semibold">Distributor</label>
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">Distributor</label>
                   <select
                     value={distributorId}
                     onChange={(e) => setDistributorId(e.target.value)}
-                    className="w-2/3 bg-white border border-slate-300 focus:border-[#DC3545] focus:outline-none text-slate-700 px-3 py-2 text-xs transition-all rounded"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded"
                   >
                     <option value="">-- PILIH DISTRIBUTOR --</option>
                     {distributors.map((d) => (
@@ -421,37 +455,37 @@ export default function ProductsPage() {
                 </div>
 
                 {/* Kode Barang */}
-                <div className="flex items-center">
-                  <label className="w-1/3 text-slate-600 text-sm font-semibold">Kode Barang</label>
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">Kode Barang</label>
                   <input
                     type="text"
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
                     placeholder="Auto-generate kode barang..."
-                    className="w-2/3 bg-slate-50 border border-slate-300 focus:border-[#DC3545] focus:outline-none text-slate-700 px-3 py-2 text-xs transition-all rounded font-mono font-bold"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono font-bold"
                   />
                 </div>
 
                 {/* Nama Barang */}
-                <div className="flex items-center">
-                  <label className="w-1/3 text-slate-600 text-sm font-semibold">Nama Barang *</label>
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">Nama Barang *</label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Masukkan Nama Barang"
-                    className="w-2/3 bg-white border border-slate-300 focus:border-[#DC3545] focus:outline-none text-slate-700 px-3 py-2 text-xs transition-all rounded font-semibold"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-semibold"
                     required
                   />
                 </div>
 
                 {/* Jenis Barang */}
-                <div className="flex items-center">
-                  <label className="w-1/3 text-slate-600 text-sm font-semibold">Jenis Barang *</label>
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">Jenis Barang *</label>
                   <select
                     value={jenisBarang}
                     onChange={(e) => setJenisBarang(e.target.value)}
-                    className="w-2/3 bg-white border border-slate-300 focus:border-[#DC3545] focus:outline-none text-slate-700 px-3 py-2 text-xs transition-all rounded font-medium"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-medium"
                     required
                   >
                     <option value="Suplemen">Suplemen</option>
@@ -461,60 +495,60 @@ export default function ProductsPage() {
                 </div>
 
                 {/* Harga Beli */}
-                <div className="flex items-center">
-                  <label className="w-1/3 text-slate-600 text-sm font-semibold">Harga Beli (IDR) *</label>
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">Harga Beli (IDR) *</label>
                   <input
                     type="number"
                     value={buyPrice}
                     onChange={(e) => setBuyPrice(e.target.value)}
                     placeholder="0"
-                    className="w-2/3 bg-white border border-slate-300 focus:border-[#DC3545] focus:outline-none text-slate-700 px-3 py-2 text-xs transition-all rounded font-mono font-semibold"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono font-semibold"
                     required
                   />
                 </div>
 
                 {/* Harga Jual */}
-                <div className="flex items-center">
-                  <label className="w-1/3 text-slate-600 text-sm font-semibold">Harga Jual (IDR) *</label>
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">Harga Jual (IDR) *</label>
                   <input
                     type="number"
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
                     placeholder="0"
-                    className="w-2/3 bg-white border border-slate-300 focus:border-[#DC3545] focus:outline-none text-slate-700 px-3 py-2 text-xs transition-all rounded font-mono font-bold"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono font-bold"
                     required
                   />
                 </div>
 
                 {/* Unit / Stock */}
-                <div className="flex items-center">
-                  <label className="w-1/3 text-slate-600 text-sm font-semibold">Unit / Stock Awal</label>
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">Unit / Stock Awal</label>
                   <input
                     type="number"
                     value={stock}
                     onChange={(e) => setStock(e.target.value)}
                     placeholder="0"
-                    className="w-2/3 bg-white border border-slate-300 focus:border-[#DC3545] focus:outline-none text-slate-700 px-3 py-2 text-xs transition-all rounded font-mono"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono"
                   />
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-3 justify-end pt-4 border-t border-slate-100">
+              <div className="flex items-center gap-3 justify-end pt-6 border-t border-slate-200/60">
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#28A745] hover:bg-[#218838] text-white text-xs font-semibold uppercase tracking-wider rounded shadow-sm cursor-pointer disabled:opacity-50 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer disabled:opacity-50 transition-colors"
                 >
-                  <Save className="w-3.5 h-3.5" />
+                  <Save className="w-4 h-4" />
                   Simpan
                 </button>
                 <button
                   type="button"
                   onClick={() => setView('list')}
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#DC3545] hover:bg-[#C82333] text-white text-xs font-semibold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#DC3545] hover:bg-[#C82333] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
                 >
-                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <ArrowLeft className="w-4 h-4" />
                   Kembali
                 </button>
               </div>

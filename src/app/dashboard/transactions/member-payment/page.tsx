@@ -4,7 +4,10 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { Search, UserPlus, Trash, ArrowLeft, Save, Printer, FileText } from 'lucide-react';
+import { Search, UserPlus, Trash, ArrowLeft, Save, Printer, FileText, PlusCircle } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
+import { exportToExcel } from '@/lib/excelExport';
+import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 
 interface Member {
   id: string;
@@ -64,6 +67,9 @@ export default function MemberPaymentPage() {
 
   // Filter & Search states
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterColumn, setFilterColumn] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 400);
+  const [isTyping, setIsTyping] = useState(false);
   const [selectedMemberFilter, setSelectedMemberFilter] = useState('Semua');
   const [memberScope, setMemberScope] = useState<'one' | 'all'>('one');
 
@@ -293,25 +299,70 @@ export default function MemberPaymentPage() {
     }
   };
 
+  // Handle typing state
+  useEffect(() => {
+    if (searchQuery !== debouncedSearch) {
+      setIsTyping(true);
+    } else {
+      setIsTyping(false);
+    }
+  }, [searchQuery, debouncedSearch]);
+
   const getFilteredMembers = () => {
-    return members.filter(m => {
-      const q = searchQuery.toLowerCase();
-      const matchQuery =
+    if (!debouncedSearch.trim() && !filterColumn && selectedMemberFilter === 'Semua') return members;
+    const q = debouncedSearch.toLowerCase().trim();
+
+    return members.filter((m) => {
+      if (selectedMemberFilter !== 'Semua' && m.id !== selectedMemberFilter) {
+        return false;
+      }
+
+      if (filterColumn === 'username') return m.username.toLowerCase().includes(q);
+      if (filterColumn === 'full_name') return m.full_name.toLowerCase().includes(q);
+      if (filterColumn === 'phone') return (m.phone || '').toLowerCase().includes(q);
+      if (filterColumn === 'membership_type') return (m.membership_type || '').toLowerCase().includes(q);
+
+      return (
         m.full_name.toLowerCase().includes(q) ||
         m.username.toLowerCase().includes(q) ||
-        (m.phone && m.phone.toLowerCase().includes(q));
-
-      if (selectedMemberFilter !== 'Semua') {
-        return matchQuery && m.id === selectedMemberFilter;
-      }
-      return matchQuery;
+        (m.phone && m.phone.toLowerCase().includes(q)) ||
+        (m.membership_type && m.membership_type.toLowerCase().includes(q))
+      );
     });
   };
 
   const handleResetSearch = () => {
     setSearchQuery('');
+    setFilterColumn('');
     setSelectedMemberFilter('Semua');
   };
+
+  const handleExportExcel = () => {
+    const headers = ['No', 'Nomor Anggota', 'Nama Anggota', 'Masa Aktif Selesai', 'Kontak HP', 'Paket Fitnes', 'Status Anggota'];
+    const data = getFilteredMembers().map((m, index) => [
+      index + 1,
+      m.username,
+      m.full_name,
+      formatDateLabel(m.membership_end),
+      m.phone || '-',
+      m.membership_type || '-',
+      isMemberActive(m.membership_end) ? 'Aktif' : 'Tidak Aktif',
+    ]);
+
+    exportToExcel({
+      filename: `Data_Pembayaran_Anggota_${new Date().toISOString().split('T')[0]}`,
+      title: 'DATA PEMBAYARAN & PERPANJANGAN ANGGOTA - PRABU GYM',
+      headers,
+      data,
+    });
+  };
+
+  const columnOptions = [
+    { label: 'Nomor Anggota', value: 'username' },
+    { label: 'Nama Anggota', value: 'full_name' },
+    { label: 'Kontak HP', value: 'phone' },
+    { label: 'Paket Fitnes', value: 'membership_type' },
+  ];
 
   const formatDateLabel = (dateStr: string) => {
     if (!dateStr) return '-';
@@ -369,54 +420,17 @@ export default function MemberPaymentPage() {
               </p>
             </div>
 
-            {/* Pencari Box (Image 1 Layout) */}
-            <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
-              <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold select-none flex items-center gap-2">
-                <Search className="w-4 h-4" />
-                <span className="text-sm uppercase tracking-wider">Pencari</span>
-              </div>
-              <div className="p-6">
-                <div className="flex gap-4 flex-wrap items-center">
-                  <div className="relative min-w-[280px]">
-                    <select
-                      value={selectedMemberFilter}
-                      onChange={(e) => setSelectedMemberFilter(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded font-bold uppercase"
-                    >
-                      <option value="Semua">-Pilih-</option>
-                      {members.map(m => (
-                        <option key={m.id} value={m.id}>
-                          {m.username} | {m.full_name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <input
-                    type="text"
-                    placeholder="Cari nama atau HP..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 px-4 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded min-w-[200px]"
-                  />
-
-                  <button
-                    onClick={fetchMembers}
-                    className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
-                  >
-                    <Search className="w-3.5 h-3.5" />
-                    <span>Pencarian</span>
-                  </button>
-                  <button
-                    onClick={handleResetSearch}
-                    className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#DC3545] hover:bg-[#c82333] text-white text-xs font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
-                  >
-                    <FileText className="w-3.5 h-3.5" />
-                    <span>Tampilkan Semua</span>
-                  </button>
-                </div>
-              </div>
-            </div>
+            {/* Search Box */}
+            <SearchFilterBar
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              searchPlaceholder="Ketik nama, nomor anggota, atau kontak HP..."
+              columnOptions={columnOptions}
+              selectedColumn={filterColumn}
+              onColumnChange={setFilterColumn}
+              isTyping={isTyping}
+              onReset={handleResetSearch}
+            />
 
             {/* Table Container */}
             {loading ? (
@@ -463,7 +477,7 @@ export default function MemberPaymentPage() {
                           <th className="py-3 px-4 border-r border-slate-350/40">Kontak</th>
                           <th className="py-3 px-4 border-r border-slate-350/40">Paket Fitnes</th>
                           <th className="py-3 px-4 border-r border-slate-350/40 text-center">Status Anggota</th>
-                          <th className="py-3 px-4 text-center">Aksi</th>
+                          <th className="py-3 px-4 text-center w-24">Aksi</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-slate-700 font-semibold text-xs">
@@ -492,18 +506,21 @@ export default function MemberPaymentPage() {
                                   )}
                                 </td>
                                 <td className="py-4 px-4 text-center select-none">
-                                  <div className="flex flex-col gap-1 items-center justify-center">
+                                  <div className="flex gap-1.5 justify-center">
+                                    {/* Icon-Only Action Buttons with Tooltips */}
                                     <button
                                       onClick={() => handleOpenPayment(m)}
-                                      className="w-full inline-flex items-center justify-center gap-1 px-3 py-1.5 bg-[#28A745] hover:bg-[#218838] border border-[#28A745] text-white font-bold uppercase text-[9px] tracking-wider rounded cursor-pointer transition-colors shadow-xs"
+                                      title="Proses Pembayaran / Perpanjangan"
+                                      className="p-2 bg-[#17A2B8] hover:bg-[#138496] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
                                     >
-                                      + Pembayaran
+                                      <PlusCircle className="w-4 h-4" />
                                     </button>
                                     <button
                                       onClick={() => handleDeleteMember(m)}
-                                      className="w-full inline-flex items-center justify-center gap-1 px-3 py-1.5 bg-white hover:bg-red-50 border border-[#DC3545] text-[#DC3545] font-bold uppercase text-[9px] tracking-wider rounded cursor-pointer transition-colors shadow-xs"
+                                      title="Hapus Data Anggota"
+                                      className="p-2 bg-[#DC3545] hover:bg-[#C82333] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
                                     >
-                                      Hapus
+                                      <Trash className="w-4 h-4" />
                                     </button>
                                   </div>
                                 </td>

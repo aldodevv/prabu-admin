@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
-import { Save, Printer, ArrowLeft } from 'lucide-react';
+import { Save, Printer, ArrowLeft, UserCheck } from 'lucide-react';
 
 interface Member {
   id: string;
@@ -54,6 +54,11 @@ export default function PTRegistrationPage() {
   const [totalAmount, setTotalAmount] = useState(0);
   const [endDate, setEndDate] = useState('');
 
+  // Loading states for data fetching
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [loadingTrainers, setLoadingTrainers] = useState(false);
+  const [fetchError, setFetchError] = useState('');
+
   // UI state
   const [loading, setLoading] = useState(false);
   const [successTx, setSuccessTx] = useState<PTRegistration | null>(null);
@@ -62,15 +67,16 @@ export default function PTRegistrationPage() {
   useEffect(() => {
     if (activeBranchID) {
       fetchMembers();
-      fetchTrainersAndEnsureDefaults();
+      fetchTrainers();
     }
     const today = new Date().toISOString().split('T')[0];
     setStartDate(today);
   }, [activeBranchID, memberScope]);
 
   const fetchMembers = async () => {
+    setLoadingMembers(true);
+    setFetchError('');
     try {
-      // Query parameters: filter by branch if scope is 'one'
       const url = memberScope === 'one' 
         ? `/admin/members?branch_id=${activeBranchID}&per_page=200`
         : `/admin/members?per_page=200`;
@@ -78,39 +84,29 @@ export default function PTRegistrationPage() {
       const res = await api.get<any>(url);
       if (res.success && res.data) {
         setMembers(res.data);
+      } else {
+        setFetchError(res.error || 'Gagal mengambil data anggota');
       }
-    } catch (err) {
-      console.error('Error fetching members:', err);
+    } catch (err: any) {
+      setFetchError(err.message || 'Terjadi kesalahan jaringan saat mengambil data anggota');
+    } finally {
+      setLoadingMembers(false);
     }
   };
 
-  const fetchTrainersAndEnsureDefaults = async () => {
+  const fetchTrainers = async () => {
+    setLoadingTrainers(true);
     try {
       const res = await api.get<any>(`/admin/trainers?branch_id=${activeBranchID}`);
       if (res.success && res.data) {
-        let list = res.data;
-        const requiredNames = ['Andrea tutto', 'Muhammad Tri'];
-        const updatedList = [...list];
-
-        for (const name of requiredNames) {
-          const exists = list.some((t: any) => t.full_name.toLowerCase() === name.toLowerCase());
-          if (!exists) {
-            const createRes = await api.post<any>('/admin/trainers', {
-              branch_id: activeBranchID,
-              full_name: name,
-              phone: '0812345678',
-              email: name.toLowerCase().replace(' ', '') + '@prabugym.com',
-              gender: name === 'Andrea tutto' ? 'Perempuan' : 'Laki-laki',
-            });
-            if (createRes.success && createRes.data) {
-              updatedList.push(createRes.data);
-            }
-          }
-        }
-        setTrainers(updatedList);
+        setTrainers(res.data);
+      } else {
+        setFetchError(prev => prev ? `${prev} | ${res.error}` : (res.error || 'Gagal mengambil data pelatih'));
       }
-    } catch (err) {
-      console.error('Error ensuring trainers:', err);
+    } catch (err: any) {
+      setFetchError(prev => prev ? `${prev} | ${err.message}` : (err.message || 'Terjadi kesalahan jaringan saat mengambil data pelatih'));
+    } finally {
+      setLoadingTrainers(false);
     }
   };
 
@@ -179,7 +175,6 @@ export default function PTRegistrationPage() {
     try {
       const res = await api.post<any>('/admin/pt-registrations', body);
       if (res.success && res.data) {
-        // Prepare the success data for the Official Receipt
         setSuccessTx({
           id: res.data.id,
           transaction_number: res.data.id ? `PRABU-PT-GRG-${res.data.id.substring(0, 7).toUpperCase()}` : 'PRABU-PT-GRG-0000001',
@@ -194,7 +189,6 @@ export default function PTRegistrationPage() {
           notes: notes,
         });
 
-        // Reset form fields
         setSelectedMemberID('');
         setSelectedTrainerID('');
         setSelectedPackage('');
@@ -256,13 +250,19 @@ export default function PTRegistrationPage() {
       `}</style>
 
       {/* Form Container (Hidden on receipt printing) */}
-      <div className="no-print space-y-6">
+      <div className="no-print space-y-6 w-full">
         <div>
-          <h2 className="text-3xl font-heading text-slate-800">PENDAFTARAN PERSONAL TRAINER</h2>
+          <h2 className="text-3xl font-heading text-slate-800 uppercase">PENDAFTARAN PERSONAL TRAINER</h2>
           <p className="text-slate-500 text-sm mt-1 uppercase tracking-widest font-accent">
             Pendaftaran & Transaksi Paket Latihan Mandiri dengan Pelatih
           </p>
         </div>
+
+        {fetchError && (
+          <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-bold uppercase tracking-wider animate-fadeIn">
+            ⚠️ Gagal Memuat Data: {fetchError}
+          </div>
+        )}
 
         {errorMsg && (
           <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-bold uppercase tracking-wider animate-fadeIn">
@@ -270,200 +270,214 @@ export default function PTRegistrationPage() {
           </div>
         )}
 
-        <div className="bg-white border border-slate-200 p-8 rounded shadow-sm max-w-4xl">
-          <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold select-none mb-6 rounded-t">
-            <span className="text-sm uppercase tracking-wider font-heading">Pendaftaran Personal Trainner</span>
+        <div className="bg-white border border-slate-200 rounded shadow-sm w-full overflow-hidden">
+          <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold select-none flex items-center gap-2">
+            <UserCheck className="w-4 h-4" />
+            <span className="text-sm uppercase tracking-wider font-heading">Pendaftaran Personal Trainer</span>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6 text-sm text-slate-700">
-            {/* Tanggal Transaksi */}
-            <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-              <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Tanggal Transaksi</label>
-              <input
-                type="text"
-                readOnly
-                disabled
-                value={todayFormatted}
-                className="bg-slate-100 border border-slate-200 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-mono font-bold"
-              />
-            </div>
-
-            {/* Kelompok Anggota Toggle */}
-            <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-              <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Kelompok Anggota</label>
-              <div className="flex gap-4">
-                <label className="inline-flex items-center gap-1.5 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="scope"
-                    checked={memberScope === 'one'}
-                    onChange={() => setMemberScope('one')}
-                    className="text-[#DC3545] focus:ring-[#DC3545]"
-                  />
-                  <span className="text-xs font-bold">One Club (Cabang Aktif)</span>
-                </label>
-                <label className="inline-flex items-center gap-1.5 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="scope"
-                    checked={memberScope === 'all'}
-                    onChange={() => setMemberScope('all')}
-                    className="text-[#DC3545] focus:ring-[#DC3545]"
-                  />
-                  <span className="text-xs font-bold">All Club (Semua Cabang)</span>
-                </label>
-              </div>
-            </div>
-
-            {/* Nama Anggota */}
-            <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-              <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Nama Anggota *</label>
-              <select
-                required
-                value={selectedMemberID}
-                onChange={(e) => setSelectedMemberID(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full"
-              >
-                <option value="">-Pilih-</option>
-                {members.map(m => (
-                  <option key={m.id} value={m.id}>
-                    {m.username} / {m.full_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Nama Pelatih */}
-            <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-              <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Nama Pelatih *</label>
-              <select
-                required
-                value={selectedTrainerID}
-                onChange={(e) => setSelectedTrainerID(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full"
-              >
-                <option value="">-Pilih-</option>
-                {trainers.map(t => (
-                  <option key={t.id} value={t.id}>
-                    {t.full_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Paket Latihan Anggota */}
-            <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-              <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Paket Latihan Anggota *</label>
-              <select
-                required
-                value={selectedPackage}
-                onChange={(e) => setSelectedPackage(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full font-bold"
-              >
-                <option value="">-Pilih-</option>
-                <option value="Bonus 1 Sesi PT - Promo januari (free)">Bonus 1 Sesi PT - Promo januari (free)</option>
-                <option value="Bonus 2 Sesi PT - Promo januari (free)">Bonus 2 Sesi PT - Promo januari (free)</option>
-                <option value="PT 1 Sesi [Harga 150k]">PT 1 Sesi [Harga 150k]</option>
-                <option value="PT 3 Sesi [Harga 400k]">PT 3 Sesi [Harga 400k]</option>
-                <option value="PT 6 Sesi [Harga 750k]">PT 6 Sesi [Harga 750k]</option>
-                <option value="PT 12 Sesi [Harga 1200k]">PT 12 Sesi [Harga 1200k]</option>
-              </select>
-            </div>
-
-            {/* Conditional fields based on Package selection */}
-            {selectedPackage && (
-              <>
-                {/* Jumlah Sesi */}
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Jumlah Sesi</label>
-                  <input
-                    type="number"
-                    readOnly
-                    disabled
-                    value={sessionCount}
-                    className="bg-slate-100 border border-slate-200 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-bold"
-                  />
-                </div>
-
-                {/* Total Bayar */}
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Total Bayar</label>
+          <div className="p-6 md:p-8">
+            <form onSubmit={handleSubmit} className="space-y-6 text-sm text-slate-700 w-full">
+              <div className="space-y-5">
+                {/* Tanggal Transaksi */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">Tanggal Transaksi</label>
                   <input
                     type="text"
                     readOnly
                     disabled
-                    value={totalAmount}
-                    className="bg-slate-100 border border-slate-200 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-bold"
+                    value={todayFormatted}
+                    className="bg-slate-100 border border-slate-300 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-mono font-bold"
                   />
                 </div>
 
-                {/* Mulai Gym */}
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Mulai Gym</label>
-                  <input
-                    type="date"
+                {/* Kelompok Anggota Toggle */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">Kelompok Anggota</label>
+                  <div className="flex gap-4">
+                    <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="scope"
+                        checked={memberScope === 'one'}
+                        onChange={() => setMemberScope('one')}
+                        className="text-[#17A2B8] focus:ring-[#17A2B8]"
+                      />
+                      <span className="text-xs font-bold text-slate-700">One Club (Cabang Aktif)</span>
+                    </label>
+                    <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="scope"
+                        checked={memberScope === 'all'}
+                        onChange={() => setMemberScope('all')}
+                        className="text-[#17A2B8] focus:ring-[#17A2B8]"
+                      />
+                      <span className="text-xs font-bold text-slate-700">All Club (Semua Cabang)</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Nama Anggota */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">
+                    Nama Anggota *
+                  </label>
+                  <div className="relative w-full">
+                    <select
+                      required
+                      disabled={loadingMembers}
+                      value={selectedMemberID}
+                      onChange={(e) => setSelectedMemberID(e.target.value)}
+                      className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full disabled:opacity-50"
+                    >
+                      <option value="">{loadingMembers ? 'Memuat data anggota...' : '-Pilih-'}</option>
+                      {members.map(m => (
+                        <option key={m.id} value={m.id}>
+                          {m.username} / {m.full_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Nama Pelatih */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">
+                    Nama Pelatih *
+                  </label>
+                  <div className="relative w-full">
+                    <select
+                      required
+                      disabled={loadingTrainers}
+                      value={selectedTrainerID}
+                      onChange={(e) => setSelectedTrainerID(e.target.value)}
+                      className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full disabled:opacity-50"
+                    >
+                      <option value="">{loadingTrainers ? 'Memuat data pelatih...' : '-Pilih-'}</option>
+                      {trainers.map(t => (
+                        <option key={t.id} value={t.id}>
+                          {t.full_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Paket Latihan Anggota */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">Paket Latihan Anggota *</label>
+                  <select
                     required
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full font-bold"
-                  />
+                    value={selectedPackage}
+                    onChange={(e) => setSelectedPackage(e.target.value)}
+                    className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full font-bold"
+                  >
+                    <option value="">-Pilih-</option>
+                    <option value="Bonus 1 Sesi PT - Promo januari (free)">Bonus 1 Sesi PT - Promo januari (free)</option>
+                    <option value="Bonus 2 Sesi PT - Promo januari (free)">Bonus 2 Sesi PT - Promo januari (free)</option>
+                    <option value="PT 1 Sesi [Harga 150k]">PT 1 Sesi [Harga 150k]</option>
+                    <option value="PT 3 Sesi [Harga 400k]">PT 3 Sesi [Harga 400k]</option>
+                    <option value="PT 6 Sesi [Harga 750k]">PT 6 Sesi [Harga 750k]</option>
+                    <option value="PT 12 Sesi [Harga 1200k]">PT 12 Sesi [Harga 1200k]</option>
+                  </select>
                 </div>
 
-                {/* Masa Aktif */}
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Masa Aktif</label>
-                  <input
-                    type="date"
-                    readOnly
-                    disabled
-                    value={endDate}
-                    className="bg-slate-100 border border-slate-200 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-bold"
+                {/* Conditional fields based on Package selection */}
+                {selectedPackage && (
+                  <>
+                    {/* Jumlah Sesi */}
+                    <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                      <label className="text-sm font-bold text-slate-700 text-left">Jumlah Sesi</label>
+                      <input
+                        type="number"
+                        readOnly
+                        disabled
+                        value={sessionCount}
+                        className="bg-slate-100 border border-slate-300 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-bold"
+                      />
+                    </div>
+
+                    {/* Total Bayar */}
+                    <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                      <label className="text-sm font-bold text-slate-700 text-left">Total Bayar</label>
+                      <input
+                        type="text"
+                        readOnly
+                        disabled
+                        value={`Rp. ${totalAmount.toLocaleString('id-ID')}`}
+                        className="bg-slate-100 border border-slate-300 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-bold"
+                      />
+                    </div>
+
+                    {/* Mulai Gym */}
+                    <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                      <label className="text-sm font-bold text-slate-700 text-left">Mulai Gym</label>
+                      <input
+                        type="date"
+                        required
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full font-bold"
+                      />
+                    </div>
+
+                    {/* Masa Aktif */}
+                    <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                      <label className="text-sm font-bold text-slate-700 text-left">Masa Aktif</label>
+                      <input
+                        type="date"
+                        readOnly
+                        disabled
+                        value={endDate}
+                        className="bg-slate-100 border border-slate-300 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-bold"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Jenis Pembayaran */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">Jenis Pembayaran *</label>
+                  <select
+                    required
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full"
+                  >
+                    <option value="">-Pilih-</option>
+                    <option value="Qris">Qris</option>
+                    <option value="Tunai">Tunai</option>
+                    <option value="Transfer">Transfer</option>
+                  </select>
+                </div>
+
+                {/* Keterangan */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-start max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left mt-2">Keterangan</label>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Masukan Keterangan"
+                    rows={4}
+                    className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full resize-none h-[100px]"
                   />
                 </div>
-              </>
-            )}
+              </div>
 
-            {/* Jenis Pembayaran */}
-            <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-              <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Jenis Pembayaran *</label>
-              <select
-                required
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full"
-              >
-                <option value="">-Pilih-</option>
-                <option value="Qris">Qris</option>
-                <option value="Tunai">Tunai</option>
-                <option value="Transfer">Transfer</option>
-              </select>
-            </div>
-
-            {/* Keterangan */}
-            <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-              <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Keterangan</label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Masukan Keterangan"
-                rows={4}
-                className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full resize-none h-[100px]"
-              />
-            </div>
-
-            {/* Submit Button */}
-            <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1 pt-4 border-t border-slate-100">
-              <div />
-              <button
-                type="submit"
-                disabled={loading}
-                className="inline-flex items-center gap-1.5 px-6 py-3 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-widest rounded transition-colors shadow-sm cursor-pointer"
-              >
-                <Save className="w-4 h-4" />
-                <span>{loading ? 'MEMPROSES...' : 'Simpan Transaksi'}</span>
-              </button>
-            </div>
-          </form>
+              {/* Submit Button */}
+              <div className="flex items-center gap-3 justify-end pt-6 border-t border-slate-200/60">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer disabled:opacity-50 transition-colors"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{loading ? 'MEMPROSES...' : 'Simpan Transaksi'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
 
@@ -474,14 +488,14 @@ export default function PTRegistrationPage() {
           <div className="flex gap-4 no-print">
             <button
               onClick={handlePrint}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-widest rounded transition-colors cursor-pointer shadow-sm"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#007BFF] hover:bg-[#0069D9] text-white text-xs font-bold uppercase tracking-wider rounded transition-colors cursor-pointer shadow-sm"
             >
               <Printer className="w-4 h-4" />
               Cetak Receipt
             </button>
             <button
               onClick={() => setSuccessTx(null)}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-slate-200 hover:bg-slate-350 text-slate-700 text-xs font-accent font-bold uppercase tracking-widest rounded transition-colors cursor-pointer border border-slate-300"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#DC3545] hover:bg-[#C82333] text-white text-xs font-bold uppercase tracking-wider rounded transition-colors cursor-pointer shadow-sm"
             >
               <ArrowLeft className="w-4 h-4" />
               Kembali Ke Form

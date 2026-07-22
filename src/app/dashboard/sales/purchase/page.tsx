@@ -4,7 +4,10 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { purchaseTransactionsApi, distributorsApi, productsApi } from '@/core/api';
 import { PurchaseTransaction, Distributor, Product } from '@/core/types';
-import { Search, Plus, Eye, ArrowLeft, Printer, Trash2, Check, Edit2 } from 'lucide-react';
+import { Search, Plus, Eye, ArrowLeft, Printer, Trash2, Check, Edit2, FileSpreadsheet, RotateCcw } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
+import { exportToExcel } from '@/lib/excelExport';
+import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 
 interface PurchaseItemInput {
   product_id: string;
@@ -26,8 +29,11 @@ export default function PurchaseTransactionsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<PurchaseTransaction | null>(null);
 
-  // Search filter
+  // Search, Debounce & Column Filter
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterColumn, setFilterColumn] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 400);
+  const [isTyping, setIsTyping] = useState(false);
 
   // Step 1 Meta Form states
   const [transactionDate, setTransactionDate] = useState('');
@@ -54,6 +60,20 @@ export default function PurchaseTransactionsPage() {
       fetchProducts();
     }
   }, [activeBranchID]);
+
+  // Handle typing state
+  useEffect(() => {
+    if (searchQuery !== debouncedSearch) {
+      setIsTyping(true);
+    } else {
+      setIsTyping(false);
+    }
+  }, [searchQuery, debouncedSearch]);
+
+  // Apply filtering when debouncedSearch or filterColumn changes
+  useEffect(() => {
+    applyFilter();
+  }, [debouncedSearch, filterColumn, orders]);
 
   const fetchOrders = async () => {
     if (!activeBranchID) return;
@@ -94,24 +114,72 @@ export default function PurchaseTransactionsPage() {
     }
   };
 
-  const handleSearch = () => {
-    if (!searchQuery) {
+  const applyFilter = () => {
+    if (!debouncedSearch.trim() && !filterColumn) {
       setFilteredOrders(orders);
       return;
     }
-    const filtered = orders.filter(
-      (o) =>
-        o.transaction_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        o.invoice_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        o.distributor_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (o.notes && o.notes.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+
+    const q = debouncedSearch.toLowerCase().trim();
+    const filtered = orders.filter((o) => {
+      if (filterColumn === 'transaction_number') return o.transaction_number.toLowerCase().includes(q);
+      if (filterColumn === 'invoice_number') return o.invoice_number.toLowerCase().includes(q);
+      if (filterColumn === 'distributor_name') return o.distributor_name.toLowerCase().includes(q);
+      if (filterColumn === 'admin_name') return (o.admin_name || '').toLowerCase().includes(q);
+
+      return (
+        o.transaction_number.toLowerCase().includes(q) ||
+        o.invoice_number.toLowerCase().includes(q) ||
+        o.distributor_name.toLowerCase().includes(q) ||
+        (o.admin_name || '').toLowerCase().includes(q) ||
+        (o.notes || '').toLowerCase().includes(q)
+      );
+    });
+
     setFilteredOrders(filtered);
   };
 
-  const handleShowAll = () => {
+  const handleResetSearch = () => {
     setSearchQuery('');
+    setFilterColumn('');
     setFilteredOrders(orders);
+  };
+
+  const handleExportExcel = () => {
+    const headers = ['No', 'Tanggal', 'No. Transaksi', 'No. Faktur / Invoice', 'Distributor', 'Total Harga (IDR)', 'Petugas CS'];
+    const data = filteredOrders.map((o, index) => [
+      index + 1,
+      formatDateLabel(o.transaction_date),
+      o.transaction_number,
+      o.invoice_number,
+      o.distributor_name,
+      o.total_amount || 0,
+      o.admin_name || '-',
+    ]);
+
+    exportToExcel({
+      filename: `Transaksi_Pembelian_Prabu_Gym_${new Date().toISOString().split('T')[0]}`,
+      title: 'TRANSAKSI PEMBELIAN BARANG - PRABU GYM',
+      headers,
+      data,
+    });
+  };
+
+  const columnOptions = [
+    { label: 'No. Transaksi', value: 'transaction_number' },
+    { label: 'No. Faktur / Invoice', value: 'invoice_number' },
+    { label: 'Distributor', value: 'distributor_name' },
+    { label: 'Petugas CS', value: 'admin_name' },
+  ];
+
+  const formatDateLabel = (dateStr: string) => {
+    if (!dateStr) return '-';
+    try {
+      const d = new Date(dateStr);
+      return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+    } catch {
+      return dateStr;
+    }
   };
 
   const handleOpenCreateMeta = async () => {
@@ -409,40 +477,18 @@ export default function PurchaseTransactionsPage() {
 
       {step === 'list' && (
         <div className="space-y-6">
-          {/* Card Search */}
-          <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
-            <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
-              <Search className="w-4 h-4" />
-              <span className="text-sm uppercase tracking-wider">Search</span>
-            </div>
-            <div className="p-5 flex flex-wrap items-center gap-3">
-              <select
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-white border border-slate-350 text-slate-700 text-xs px-3 py-2.5 rounded focus:outline-none min-w-[220px]"
-              >
-                <option value="">-Pilih-</option>
-                {orders.map((o) => (
-                  <option key={o.id} value={o.transaction_number}>
-                    {o.transaction_number} ({o.distributor_name})
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={handleSearch}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-semibold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
-              >
-                <Search className="w-3.5 h-3.5" />
-                Pencarian
-              </button>
-              <button
-                onClick={handleShowAll}
-                className="px-4 py-2.5 bg-[#DC3545] hover:bg-[#C82333] text-white text-xs font-semibold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
-              >
-                Tampilkan Semua
-              </button>
-            </div>
-          </div>
+          {/* Reusable Search & Filter Bar */}
+          <SearchFilterBar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Ketik no. transaksi, no. faktur, distributor..."
+            columnOptions={columnOptions}
+            selectedColumn={filterColumn}
+            onColumnChange={setFilterColumn}
+            isTyping={isTyping}
+            onExportExcel={handleExportExcel}
+            onReset={handleResetSearch}
+          />
 
           {/* Card Table Transaksi Pembelian */}
           <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
@@ -452,7 +498,7 @@ export default function PurchaseTransactionsPage() {
             <div className="p-6 space-y-4">
               <button
                 onClick={handleOpenCreateMeta}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#007BFF] hover:bg-[#0069D9] text-white text-xs font-semibold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Tambah Pembelian
@@ -468,13 +514,13 @@ export default function PurchaseTransactionsPage() {
                     <thead className="bg-[#6C7A89] text-white text-[11px] uppercase tracking-wider font-bold select-none border-b border-slate-350">
                       <tr>
                         <th className="py-3 px-4 border-r border-slate-300 w-12 text-center">No</th>
-                        <th className="py-3 px-4 border-r border-slate-300">Tanggal Transaksi</th>
-                        <th className="py-3 px-4 border-r border-slate-300">Nomor Transaksi</th>
-                        <th className="py-3 px-4 border-r border-slate-300">Nomor Invoice</th>
+                        <th className="py-3 px-4 border-r border-slate-300">Tanggal</th>
+                        <th className="py-3 px-4 border-r border-slate-300">No. Transaksi</th>
+                        <th className="py-3 px-4 border-r border-slate-300">No. Faktur</th>
                         <th className="py-3 px-4 border-r border-slate-300">Distributor</th>
-                        <th className="py-3 px-4 border-r border-slate-300">Keterangan</th>
-                        <th className="py-3 px-4 border-r border-slate-300">Nama CS</th>
-                        <th className="py-3 px-4 text-center w-36">Aksi</th>
+                        <th className="py-3 px-4 border-r border-slate-300">Catatan</th>
+                        <th className="py-3 px-4 border-r border-slate-300">Petugas</th>
+                        <th className="py-3 px-4 text-center w-20">Aksi</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 text-slate-700 font-medium">
@@ -495,19 +541,21 @@ export default function PurchaseTransactionsPage() {
                             <td className="py-3 px-4 border-r border-slate-100 text-xs text-slate-600">{o.notes || '-'}</td>
                             <td className="py-3 px-4 border-r border-slate-100 text-xs font-semibold text-slate-700">{o.admin_name}</td>
                             <td className="py-3 px-4 text-center flex items-center justify-center gap-1.5">
+                              {/* Icon-Only Action Buttons with Hover Tooltips */}
                               <button
                                 onClick={() => handleOpenDetail(o.id)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#28A745] hover:bg-[#218838] text-white text-[11px] font-semibold rounded shadow-sm cursor-pointer transition-colors"
+                                title="Lihat Detail Pembelian"
+                                className="p-2 bg-[#6C7A89] hover:bg-[#5a6673] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
                               >
-                                <Eye className="w-3 h-3" />
-                                View Detail
+                                <Eye className="w-3.5 h-3.5" />
                               </button>
                               {isOwner && (
                                 <button
                                   onClick={() => handleDeleteOrder(o.id, o.transaction_number)}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#DC3545] hover:bg-[#C82333] text-white text-[11px] font-semibold rounded shadow-sm cursor-pointer transition-colors"
+                                  title="Hapus Transaksi Pembelian"
+                                  className="p-2 bg-[#DC3545] hover:bg-[#C82333] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
                                 >
-                                  <Trash2 className="w-3 h-3" />
+                                  <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                               )}
                             </td>
@@ -525,52 +573,52 @@ export default function PurchaseTransactionsPage() {
 
       {step === 'create_meta' && (
         /* Form Step 1: Tambah Pembelian (Metadata) */
-        <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden w-full">
           <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
             <Plus className="w-4 h-4" />
-            <span className="text-sm uppercase tracking-wider">Tambah Pembelian</span>
+            <span className="text-sm uppercase tracking-wider font-heading">Tambah Pembelian</span>
           </div>
-          <div className="p-6">
-            <form onSubmit={handleProceedToAddItems} className="space-y-6 max-w-xl">
+          <div className="p-6 md:p-8">
+            <form onSubmit={handleProceedToAddItems} className="space-y-6 w-full">
               {errorMsg && (
                 <div className="bg-red-50 text-red-700 text-xs font-semibold px-4 py-3 border border-red-200 rounded">
                   ⚠️ {errorMsg}
                 </div>
               )}
 
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {/* Tanggal Transaksi */}
-                <div className="flex items-center">
-                  <label className="w-1/3 text-slate-600 text-sm font-semibold">Tanggal Transaksi</label>
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">Tanggal Transaksi</label>
                   <input
                     type="date"
                     value={transactionDate}
                     onChange={(e) => setTransactionDate(e.target.value)}
-                    className="w-2/3 bg-white border border-slate-300 focus:border-[#DC3545] focus:outline-none text-slate-700 px-3 py-2 text-xs transition-all rounded font-mono"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono"
                     required
                   />
                 </div>
 
                 {/* Nomor Invoice */}
-                <div className="flex items-center">
-                  <label className="w-1/3 text-slate-600 text-sm font-semibold">Nomor Invoice</label>
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">Nomor Invoice</label>
                   <input
                     type="text"
                     value={invoiceNumber}
                     onChange={(e) => setInvoiceNumber(e.target.value)}
                     placeholder="Masukkan Nomor Invoice"
-                    className="w-2/3 bg-white border border-slate-300 focus:border-[#DC3545] focus:outline-none text-slate-700 px-3 py-2 text-xs transition-all rounded font-mono font-semibold"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono font-semibold"
                     required
                   />
                 </div>
 
                 {/* Nama Distributor */}
-                <div className="flex items-center">
-                  <label className="w-1/3 text-slate-600 text-sm font-semibold">Nama Distributor</label>
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left">Nama Distributor</label>
                   <select
                     value={distributorId}
                     onChange={(e) => setDistributorId(e.target.value)}
-                    className="w-2/3 bg-white border border-slate-300 focus:border-[#DC3545] focus:outline-none text-slate-700 px-3 py-2 text-xs transition-all rounded font-medium"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-medium"
                     required
                   >
                     <option value="">-Pilih-</option>
@@ -583,33 +631,33 @@ export default function PurchaseTransactionsPage() {
                 </div>
 
                 {/* Keterangan */}
-                <div className="flex items-start">
-                  <label className="w-1/3 text-slate-600 text-sm font-semibold mt-1.5">Keterangan</label>
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-start max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left mt-2">Keterangan</label>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Masukkan Keterangan (contoh: L Mineral Besar 2 dus 24 Botol)"
                     rows={3}
-                    className="w-2/3 bg-white border border-slate-300 focus:border-[#DC3545] focus:outline-none text-slate-700 px-3 py-2 text-xs transition-all rounded"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded resize-none"
                   />
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-3 justify-end pt-4 border-t border-slate-100">
+              <div className="flex items-center gap-3 justify-end pt-6 border-t border-slate-200/60">
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#28A745] hover:bg-[#218838] text-white text-xs font-semibold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
                 >
-                  <Check className="w-3.5 h-3.5" />
+                  <Check className="w-4 h-4" />
                   Simpan & Lanjut Add Purchase
                 </button>
                 <button
                   type="button"
                   onClick={() => setStep('list')}
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#DC3545] hover:bg-[#C82333] text-white text-xs font-semibold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#DC3545] hover:bg-[#C82333] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
                 >
-                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <ArrowLeft className="w-4 h-4" />
                   Kembali
                 </button>
               </div>
@@ -769,7 +817,7 @@ export default function PurchaseTransactionsPage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={handlePrint}
-                className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#28A745] hover:bg-[#218838] text-white text-xs font-semibold rounded cursor-pointer transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#007BFF] hover:bg-[#0069D9] text-white text-xs font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
               >
                 <Printer className="w-3.5 h-3.5" />
                 Cetak Transaksi
