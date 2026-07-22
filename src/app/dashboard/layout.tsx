@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { employeesApi } from '@/core/api';
 import { ROUTES, NAVIGATION_MENU } from '@/core/constants';
 import * as Icons from 'lucide-react';
 
@@ -13,8 +12,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const router = useRouter();
   const [mobileSidebar, setMobileSidebar] = useState(false);
-  const [checkinStatus, setCheckinStatus] = useState<any | null>(null);
-  const [checkingIn, setCheckingIn] = useState(false);
   const [userDropdown, setUserDropdown] = useState(false);
   
   // Compact sidebar active group dropdown state
@@ -46,37 +43,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       router.push(ROUTES.LOGIN);
     }
   }, [user, loading, router]);
-
-  useEffect(() => {
-    if (user) {
-      fetchCheckinStatus();
-    }
-  }, [user]);
-
-  const fetchCheckinStatus = async () => {
-    try {
-      const res = await employeesApi.activeCheckin();
-      if (res.success) {
-        setCheckinStatus(res.data);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleKaryawanCheckin = async () => {
-    setCheckingIn(true);
-    try {
-      const res = await employeesApi.checkin();
-      if (res.success) {
-        await fetchCheckinStatus();
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setCheckingIn(false);
-    }
-  };
 
   if (loading || !user) {
     return (
@@ -198,19 +164,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
             </div>
 
-            {user.role === 'karyawan' && (
-              <button
-                onClick={handleKaryawanCheckin}
-                disabled={checkingIn}
-                className={`w-full py-2 px-3 text-[9px] font-bold uppercase tracking-widest text-center border transition-all rounded cursor-pointer ${
-                  checkinStatus
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
-                    : 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20'
-                }`}
-              >
-                {checkingIn ? '...' : checkinStatus ? 'PRESENSI: MASUK' : 'PRESENSI HARIAN'}
-              </button>
-            )}
+
 
             <button
               onClick={logout}

@@ -118,13 +118,9 @@ export const purchaseTransactionsApi = {
   delete: (id: string) => api.delete<void>(`/admin/purchase-transactions/${id}`),
 };
 
-export const reportsApi = {
-  list: (branchId: string) => api.get<any[]>(`/admin/reports?branch_id=${branchId}`),
-};
+
 
 export const employeesApi = {
-  checkin: () => api.post<any>('/admin/checkin', {}),
-  activeCheckin: () => api.get<any>('/admin/my-checkin'),
   list: (params: { branch_id?: string; page?: number; per_page?: number }) => {
     const q = new URLSearchParams();
     if (params.branch_id) q.append('branch_id', params.branch_id);
@@ -136,10 +132,6 @@ export const employeesApi = {
   create: (data: any) => api.post<any>('/admin/employees', data),
   update: (id: string, data: any) => api.put<any>(`/admin/employees/${id}`, data),
   delete: (id: string) => api.delete<any>(`/admin/employees/${id}`),
-  getCheckins: (id: string, branchId?: string) => {
-    const q = branchId ? `?branch_id=${branchId}` : '';
-    return api.get<any[]>(`/admin/employees/${id}/checkins${q}`);
-  }
 };
 
 export const distributorsApi = {
