@@ -30,7 +30,7 @@ export const membersApi = {
 };
 
 export const trainersApi = {
-  list: (branchId: string) => api.get<Trainer[]>(`/admin/trainers?branch_id=${branchId}`),
+  list: (_branchId?: string) => api.get<Trainer[]>('/admin/trainers'),
   get: (id: string) => api.get<Trainer>(`/admin/trainers/${id}`),
   create: (data: Partial<Trainer>) => api.post<Trainer>('/admin/trainers', data),
   update: (id: string, data: Partial<Trainer>) => api.put<void>(`/admin/trainers/${id}`, data),

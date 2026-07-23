@@ -97,7 +97,7 @@ export default function PTRegistrationPage() {
   const fetchTrainers = async () => {
     setLoadingTrainers(true);
     try {
-      const res = await api.get<any>(`/admin/trainers?branch_id=${activeBranchID}`);
+      const res = await api.get<any>('/admin/trainers');
       if (res.success && res.data) {
         setTrainers(res.data);
       } else {
