@@ -201,7 +201,7 @@ export default function SummaryPage() {
       />
 
       {/* Row 1 Metrics (Blue, Green, Red) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 select-none">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 select-none">
         <StatsCard 
           label="Total Anggota" 
           value={summary.total_members} 
@@ -223,7 +223,7 @@ export default function SummaryPage() {
       </div>
 
       {/* Row 2 Metrics (Orange, Purple) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 select-none">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5 select-none">
         <StatsCard 
           label="Check In Hari Ini" 
           value={summary.checkins_today} 
@@ -245,25 +245,25 @@ export default function SummaryPage() {
         <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest font-accent">
           Demografi Gender Anggota
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {[
             { label: 'Anggota Laki-laki Aktif', value: summary.male_active, iconBg: 'bg-[#17A2B8]' },
             { label: 'Anggota Perempuan Aktif', value: summary.female_active, iconBg: 'bg-[#17A2B8]' },
             { label: 'Anggota Laki-laki Tidak Aktif', value: summary.male_inactive, iconBg: 'bg-[#DC3545]' },
             { label: 'Anggota Perempuan Tidak Aktif', value: summary.female_inactive, iconBg: 'bg-[#DC3545]' }
           ].map((item, idx) => (
-            <div key={idx} className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden flex items-stretch">
-              <div className={`${item.iconBg} w-14 flex items-center justify-center text-white shrink-0`}>
-                <User className="w-6 h-6 fill-white/20" />
+            <div key={idx} className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden flex items-stretch min-w-0">
+              <div className={`${item.iconBg} w-12 sm:w-14 flex items-center justify-center text-white shrink-0`}>
+                <User className="w-5 h-5 sm:w-6 sm:h-6 fill-white/20" />
               </div>
-              <div className="p-3.5 flex flex-col justify-center">
-                <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider leading-none font-accent">
+              <div className="p-3 sm:p-3.5 flex flex-col justify-center min-w-0 flex-1">
+                <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider leading-none font-accent truncate">
                   {item.label}
                 </span>
                 <span className="text-slate-400 text-[9px] font-bold uppercase mt-1 leading-none font-accent">
                   Jumlah Orang
                 </span>
-                <span className="text-2xl font-black font-mono text-slate-800 mt-1 leading-none">
+                <span className="text-xl sm:text-2xl font-black font-mono text-slate-800 mt-1 leading-none">
                   {item.value}
                 </span>
               </div>
@@ -277,25 +277,25 @@ export default function SummaryPage() {
         <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest font-accent">
           Demografi Usia Anggota
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {[
             { label: 'Anak-anak (10 - 20)', value: summary.age_10_20 },
             { label: 'Dewasa Muda (21 - 30)', value: summary.age_21_30 },
             { label: 'Dewasa (31 - 41)', value: summary.age_31_41 },
             { label: 'Orang Tua (42 - 75)', value: summary.age_42_75 }
           ].map((item, idx) => (
-            <div key={idx} className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden flex items-stretch">
-              <div className="bg-[#007BFF] w-14 flex items-center justify-center text-white shrink-0">
-                <BarChart3 className="w-6 h-6 stroke-[2px]" />
+            <div key={idx} className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden flex items-stretch min-w-0">
+              <div className="bg-[#007BFF] w-12 sm:w-14 flex items-center justify-center text-white shrink-0">
+                <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2px]" />
               </div>
-              <div className="p-3.5 flex flex-col justify-center">
-                <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider leading-none font-accent">
+              <div className="p-3 sm:p-3.5 flex flex-col justify-center min-w-0 flex-1">
+                <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider leading-none font-accent truncate">
                   {item.label}
                 </span>
                 <span className="text-slate-400 text-[9px] font-bold uppercase mt-1 leading-none font-accent">
                   Jumlah Orang
                 </span>
-                <span className="text-2xl font-black font-mono text-slate-800 mt-1 leading-none">
+                <span className="text-xl sm:text-2xl font-black font-mono text-slate-800 mt-1 leading-none">
                   {item.value}
                 </span>
               </div>

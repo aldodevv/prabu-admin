@@ -5,6 +5,11 @@ import { AuthProvider } from '@/context/AuthContext';
 export const metadata: Metadata = {
   title: 'PrabuGym — Admin Dashboard',
   description: 'Sistem Terintegrasi Pengelolaan Cabang PrabuGym',
+  icons: {
+    icon: '/logo-transparent.png',
+    shortcut: '/logo-transparent.png',
+    apple: '/logo-transparent.png',
+  },
 };
 
 export default function RootLayout({
@@ -14,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id">
-      <body className="bg-black-deep text-white antialiased min-h-screen">
+      <body className="bg-[#F4F6F9] text-slate-800 antialiased min-h-screen">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

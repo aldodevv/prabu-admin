@@ -34,7 +34,7 @@ export const SearchFilterBar: React.FC<SearchFilterBarProps> = ({
   children
 }) => {
   return (
-    <div className="bg-white border border-slate-200 p-6 rounded shadow-sm flex items-end justify-between gap-4 flex-wrap no-print">
+    <div className="bg-white border border-slate-200 p-3.5 sm:p-6 rounded shadow-sm flex items-end justify-between gap-3 sm:gap-4 flex-wrap no-print w-full max-w-full">
       <div className="flex flex-wrap gap-3 items-end flex-1">
         {/* Column Filter Selector */}
         {columnOptions && columnOptions.length > 0 && (

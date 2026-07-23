@@ -179,38 +179,38 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* 3. Main Content Wrapper */}
       <div 
-        className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${
+        className={`flex-1 flex flex-col min-h-screen w-full max-w-full overflow-x-hidden transition-all duration-300 ${
           hasSubmenu ? 'lg:pl-[366px]' : 'lg:pl-[110px]'
         }`}
       >
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-30 shadow-sm">
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-3 sm:px-6 sticky top-0 z-30 shadow-sm w-full max-w-full">
           {/* Mobile hamburger menu toggle */}
           <button
             onClick={() => setMobileSidebar(true)}
-            className="p-1 text-slate-500 hover:text-slate-800 lg:hidden cursor-pointer"
+            className="p-1 text-slate-500 hover:text-slate-800 lg:hidden cursor-pointer shrink-0"
           >
             <MenuIcon className="w-6 h-6" />
           </button>
 
           {/* Active Club Tag */}
           {activeBranchID && branches.length > 0 && (
-            <div className="ml-4 px-3.5 py-1.5 border border-red-500 text-red-500 font-extrabold text-xs rounded-full uppercase tracking-wider bg-red-50/50 select-none no-print">
+            <div className="hidden sm:inline-flex ml-2 sm:ml-4 px-2.5 sm:px-3.5 py-1 sm:py-1.5 border border-red-500 text-red-500 font-extrabold text-[10px] sm:text-xs rounded-full uppercase tracking-wider bg-red-50/50 select-none no-print shrink-0">
               Club {(branches.find(b => b.id === activeBranchID)?.name || '').replace('Prabu Gym ', '').toUpperCase()}
             </div>
           )}
 
-          <div className="flex items-center gap-6 ml-auto">
+          <div className="flex items-center gap-2 sm:gap-4 lg:gap-6 ml-auto shrink-0">
             {/* Branch Selector Dropdown */}
             {branches.length > 0 && (
               <div className="relative">
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-650 bg-slate-50 border border-slate-200 px-3.5 py-2 rounded-lg shadow-sm">
-                  <BuildingIcon className="w-3.5 h-3.5 text-[#DC3545]" />
-                  <span className="uppercase tracking-wider">Cabang:</span>
+                <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-bold text-slate-650 bg-slate-50 border border-slate-200 px-2 sm:px-3.5 py-1.5 sm:py-2 rounded-lg shadow-sm">
+                  <BuildingIcon className="w-3.5 h-3.5 text-[#DC3545] shrink-0" />
+                  <span className="uppercase tracking-wider hidden sm:inline">Cabang:</span>
                   <select
                     value={activeBranchID || ''}
                     onChange={(e) => selectBranch(e.target.value)}
-                    className="bg-transparent focus:outline-none cursor-pointer uppercase text-slate-800 font-extrabold pr-1"
+                    className="bg-transparent focus:outline-none cursor-pointer uppercase text-slate-800 font-extrabold pr-1 max-w-[120px] sm:max-w-none truncate"
                   >
                     {branches.map((b) => (
                       <option key={b.id} value={b.id}>
@@ -226,16 +226,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="relative">
               <button
                 onClick={() => setUserDropdown(!userDropdown)}
-                className="flex items-center gap-2.5 focus:outline-none cursor-pointer group"
+                className="flex items-center gap-1.5 sm:gap-2.5 focus:outline-none cursor-pointer group"
               >
-                <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-600 text-xs shadow-sm uppercase group-hover:border-[#DC3545] transition-all">
+                <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-600 text-xs shadow-sm uppercase group-hover:border-[#DC3545] transition-all shrink-0">
                   {user.full_name[0]}
                 </div>
-                <div className="text-left max-sm:hidden">
+                <div className="text-left hidden md:block">
                   <h4 className="text-xs font-bold text-slate-700 leading-none group-hover:text-slate-900">{user.full_name}</h4>
                   <span className="text-[10px] font-accent text-slate-400 font-bold uppercase tracking-wider">{user.role}</span>
                 </div>
-                <ChevronDownIcon className="w-3 h-3 text-slate-400 group-hover:text-slate-600 transition-colors" />
+                <ChevronDownIcon className="w-3 h-3 text-slate-400 group-hover:text-slate-600 transition-colors shrink-0" />
               </button>
 
               {userDropdown && (
@@ -258,7 +258,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Page Content area */}
-        <main className="flex-1 p-8 max-md:p-4">
+        <main className="flex-1 p-3 sm:p-6 lg:p-8 w-full max-w-full overflow-x-hidden">
           {children}
         </main>
       </div>

@@ -43,20 +43,20 @@ export function DataTable<T extends { id: string | number }>({
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   return (
-    <div className={`bg-white border border-slate-200 rounded shadow-sm overflow-hidden ${className}`}>
+    <div className={`bg-white border border-slate-200 rounded shadow-sm overflow-hidden w-full max-w-full ${className}`}>
       {title && (
         <CyanHeaderBar title={title} action={headerAction} />
       )}
       
-      <div className="p-6">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-650 border-collapse">
+      <div className="p-3 sm:p-6">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left text-sm text-slate-650 border-collapse min-w-[600px]">
             <thead className="bg-[#6C7A89] text-white text-[10px] uppercase tracking-wider font-bold select-none">
               <tr>
                 {columns.map((col, idx) => (
                   <th 
                     key={col.key} 
-                    className={`py-3 px-4 ${
+                    className={`py-3 px-3 sm:px-4 ${
                       idx < columns.length - 1 ? 'border-r border-slate-350/40' : ''
                     } ${
                       col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'
@@ -88,7 +88,7 @@ export function DataTable<T extends { id: string | number }>({
                     {columns.map((col, idx) => (
                       <td 
                         key={col.key} 
-                        className={`py-3.5 px-4 ${
+                        className={`py-3 sm:py-3.5 px-3 sm:px-4 ${
                           idx < columns.length - 1 ? 'border-r border-slate-100' : ''
                         } ${
                           col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'
@@ -106,8 +106,8 @@ export function DataTable<T extends { id: string | number }>({
 
         {/* Pagination Controls */}
         {!loading && onPageChange && totalPages > 1 && (
-          <div className="mt-6 flex justify-between items-center text-xs font-accent text-slate-500 font-bold no-print select-none border-t border-slate-100 pt-4">
-            <div>
+          <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3 justify-between items-center text-xs font-accent text-slate-500 font-bold no-print select-none border-t border-slate-100 pt-4">
+            <div className="text-[10px] sm:text-xs">
               MENAMPILKAN {data.length} DARI {totalItems} DATA
             </div>
             <div className="flex gap-2">
