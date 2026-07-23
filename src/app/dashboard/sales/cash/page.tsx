@@ -30,24 +30,24 @@ const BRANCH_ADDRESSES: Record<string, string> = {
 
 export default function TransaksiTunaiPage() {
   const { activeBranchID, branches, user } = useAuth();
-  
+
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   // Form input states
   const [selectedProductID, setSelectedProductID] = useState('');
   const [unit, setUnit] = useState<number | ''>('');
   const [discountPercent, setDiscountPercent] = useState<number>(0);
-  
+
   // Cart state
   const [cart, setCart] = useState<CartItem[]>([]);
-  
+
   // Payment states
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentAmount, setPaymentAmount] = useState<number | ''>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Printable receipt state
   const [completedTx, setCompletedTx] = useState<any | null>(null);
   const [isPrintOpen, setIsPrintOpen] = useState(false);
@@ -106,7 +106,7 @@ export default function TransaksiTunaiPage() {
         return;
       }
       updatedCart[existingIndex].quantity = newQty;
-      
+
       const price = product.price;
       const unitDiscount = price * (discountPercent / 100);
       updatedCart[existingIndex].subtotal = (price - unitDiscount) * newQty;
@@ -206,17 +206,17 @@ export default function TransaksiTunaiPage() {
       'PANCORAN_MAS': 'PMS'
     };
     const bCode = codeMap[activeBranchCode.toUpperCase()] || 'LMO';
-    
+
     // Parse date for invoice
     const date = new Date(tx.transaction_date || tx.created_at);
     const yy = String(date.getFullYear()).slice(-2);
     const mm = String(date.getMonth() + 1).padStart(2, '0');
     const dd = String(date.getDate()).padStart(2, '0');
-    
+
     // Get sequence number from transaction number if format matches TRX-BRANCH-YYYYMMDD-SEQ
     const txNum = tx.transaction_number || '';
     const seq = txNum.split('-').pop() || '001';
-    
+
     return `PRABU.${bCode}.${yy}${mm}${dd}.${seq}`;
   };
 
@@ -254,7 +254,7 @@ export default function TransaksiTunaiPage() {
           <span>&gt;</span>
           <span className="text-[#DC3545]">Transaksi Tunai</span>
         </div>
-        
+
         {/* Dynamic Branch Tag */}
         {activeBranch && (
           <div className="px-3.5 py-1.5 border border-red-500 text-red-500 font-extrabold text-xs rounded-full uppercase tracking-wider bg-red-50/50 select-none">
@@ -280,7 +280,7 @@ export default function TransaksiTunaiPage() {
           {/* Section 1: Transaksi */}
           <div className="space-y-4">
             <h3 className="font-heading text-lg font-bold text-slate-800 border-b border-slate-100 pb-2">Transaksi</h3>
-            
+
             <form onSubmit={handleAddItem} className="grid grid-cols-[2fr_1fr_1fr_auto] gap-4 max-md:grid-cols-1 items-end">
               <div>
                 <label className="block text-slate-500 text-[10px] uppercase tracking-widest font-accent mb-1.5">
@@ -439,7 +439,6 @@ export default function TransaksiTunaiPage() {
                     <option value="Transfer">Transfer</option>
                     <option value="QRIS">QRIS</option>
                     <option value="Debit Card">Debit Card</option>
-                    <option value="Credit Card">Credit Card</option>
                   </select>
                 </div>
 
@@ -509,20 +508,11 @@ export default function TransaksiTunaiPage() {
             <div id="receipt-print-area" className="text-black font-mono text-xs leading-relaxed mx-auto w-[280px]">
               {/* Logo section */}
               <div className="flex flex-col items-center justify-center text-center space-y-1 mb-3">
-                <svg className="w-16 h-auto text-red-650" viewBox="0 0 500 240" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M170 55 L200 85 L250 45 L300 85 L330 55 L320 100 L180 100 Z" fill="#DC3545" />
-                  <rect x="70" y="110" width="15" height="50" rx="4" fill="#1E293B" />
-                  <rect x="90" y="100" width="15" height="70" rx="4" fill="#1E293B" />
-                  <rect x="110" y="90" width="18" height="90" rx="6" fill="#1E293B" />
-                  <rect x="128" y="130" width="244" height="10" fill="#1E293B" />
-                  <rect x="372" y="90" width="18" height="90" rx="6" fill="#1E293B" />
-                  <rect x="395" y="100" width="15" height="70" rx="4" fill="#1E293B" />
-                  <rect x="415" y="110" width="15" height="50" rx="4" fill="#1E293B" />
-                  <path d="M210 145 C210 120, 290 120, 290 145 C290 160, 210 160, 210 145 Z" fill="#DC3545" />
-                  <path d="M215 140 C215 130, 230 130, 230 140 M230 140 C230 130, 245 130, 245 140 M245 140 C245 130, 260 130, 260 140 M260 140 C260 130, 275 130, 275 140" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" />
-                  <text x="250" y="205" textAnchor="middle" fontFamily="Impact, sans-serif" fontSize="48" fill="#1E293B" letterSpacing="2">PRABU</text>
-                  <text x="250" y="235" textAnchor="middle" fontFamily="sans-serif" fontWeight="900" fontSize="22" fill="#DC3545" letterSpacing="4">GYM</text>
-                </svg>
+                <img
+                  src="/logo-transparent.png"
+                  alt="Prabu Gym Logo"
+                  className="h-16 w-auto object-contain mb-1"
+                />
                 <div className="text-[10px] text-center font-bold whitespace-pre-line leading-tight">
                   {branchAddress}
                 </div>
@@ -613,9 +603,11 @@ export default function TransaksiTunaiPage() {
           <div className="text-black font-mono text-[10px] leading-relaxed mx-auto w-full">
             {/* Logo section */}
             <div className="flex flex-col items-center justify-center text-center space-y-1 mb-2">
-              <div className="text-center font-extrabold text-sm tracking-widest uppercase">
-                PRABU GYM
-              </div>
+              <img
+                src="/logo-transparent.png"
+                alt="Prabu Gym Logo"
+                className="h-10 w-auto object-contain mb-1"
+              />
               <div className="text-[8px] text-center font-bold whitespace-pre-line leading-tight">
                 {branchAddress}
               </div>

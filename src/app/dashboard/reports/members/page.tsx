@@ -153,7 +153,8 @@ export default function MemberReportsPage() {
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 focus:border-[#DC3545] focus:outline-none px-3.5 py-2.5 text-xs transition-all rounded w-full"
+                  className="bg-slate-50 border border-slate-200 focus:border-[#DC3545] focus:outline-none px-3.5 py-2.5 text-xs transition-all rounded w-full cursor-pointer"
+                  onClick={(e) => { try { e.currentTarget.showPicker(); } catch {} }}
                   required
                 />
               </div>
@@ -165,7 +166,8 @@ export default function MemberReportsPage() {
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 focus:border-[#DC3545] focus:outline-none px-3.5 py-2.5 text-xs transition-all rounded w-full"
+                  className="bg-slate-50 border border-slate-200 focus:border-[#DC3545] focus:outline-none px-3.5 py-2.5 text-xs transition-all rounded w-full cursor-pointer"
+                  onClick={(e) => { try { e.currentTarget.showPicker(); } catch {} }}
                   required
                 />
               </div>

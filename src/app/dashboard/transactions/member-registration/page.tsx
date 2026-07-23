@@ -291,9 +291,11 @@ export default function MemberRegistrationPage() {
               {/* Header Box (Image 3) */}
               <div className="border border-black p-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <svg className="w-12 h-12 text-[#DC3545]" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M2 4l3 5 7-7 7 7 3-5v13H2V4zm0 15h20v2H2v-2z" />
-                  </svg>
+                  <img
+                    src="/logo-transparent.png"
+                    alt="Prabu Gym Logo"
+                    className="h-12 w-auto object-contain"
+                  />
                   <div className="text-left leading-none">
                     <h1 className="text-2xl font-black tracking-widest">PRABU</h1>
                     <span className="text-[9px] uppercase font-bold text-slate-400">Gym & Fitness Center</span>
@@ -479,7 +481,8 @@ export default function MemberRegistrationPage() {
                     type="date"
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-mono"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-mono cursor-pointer"
+                    onClick={(e) => { try { e.currentTarget.showPicker(); } catch {} }}
                   />
                 </div>
 
@@ -614,7 +617,8 @@ export default function MemberRegistrationPage() {
                           type="date"
                           value={startDateInput}
                           onChange={(e) => setStartDateInput(e.target.value)}
-                          className="bg-white border border-slate-300 text-slate-800 font-semibold px-3 py-1.5 text-xs focus:outline-none rounded flex-1 font-mono"
+                          className="bg-white border border-slate-300 text-slate-800 font-semibold px-3 py-1.5 text-xs focus:outline-none rounded flex-1 font-mono cursor-pointer"
+                          onClick={(e) => { try { e.currentTarget.showPicker(); } catch {} }}
                         />
                       </div>
                       <div className="flex items-center gap-4">

@@ -209,7 +209,8 @@ export default function LaporanPenjualanPage() {
                   type="date"
                   value={dateFrom}
                   onChange={(e) => setDateFrom(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 text-xs focus:outline-none focus:border-[#17A2B8] rounded h-10"
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 text-xs focus:outline-none focus:border-[#17A2B8] rounded h-10 cursor-pointer"
+                  onClick={(e) => { try { e.currentTarget.showPicker(); } catch {} }}
                 />
               </div>
 
@@ -221,7 +222,8 @@ export default function LaporanPenjualanPage() {
                   type="date"
                   value={dateTo}
                   onChange={(e) => setDateTo(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 text-xs focus:outline-none focus:border-[#17A2B8] rounded h-10"
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 text-xs focus:outline-none focus:border-[#17A2B8] rounded h-10 cursor-pointer"
+                  onClick={(e) => { try { e.currentTarget.showPicker(); } catch {} }}
                 />
               </div>
 
@@ -412,18 +414,11 @@ export default function LaporanPenjualanPage() {
             {/* Header Box */}
             <div className="border border-black p-4 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                {/* Crown shape inline SVG representing Prabu Gym logo */}
-                <svg className="w-12 h-12 text-black" viewBox="0 0 500 240" fill="currentColor">
-                  <path d="M170 55 L200 85 L250 45 L300 85 L330 55 L320 100 L180 100 Z" />
-                  <rect x="70" y="110" width="15" height="50" rx="4" />
-                  <rect x="90" y="100" width="15" height="70" rx="4" />
-                  <rect x="110" y="90" width="18" height="90" rx="6" />
-                  <rect x="128" y="130" width="244" height="10" />
-                  <rect x="372" y="90" width="18" height="90" rx="6" />
-                  <rect x="395" y="100" width="15" height="70" rx="4" />
-                  <rect x="415" y="110" width="15" height="50" rx="4" />
-                  <path d="M210 145 C210 120, 290 120, 290 145 C290 160, 210 160, 210 145 Z" />
-                </svg>
+                <img
+                  src="/logo-transparent.png"
+                  alt="Prabu Gym Logo"
+                  className="h-12 w-auto object-contain"
+                />
                 <div className="text-left leading-none">
                   <h1 className="text-xl font-black tracking-widest">PRABU</h1>
                   <span className="text-[8px] uppercase font-bold text-slate-500">Gym & Fitness Center</span>

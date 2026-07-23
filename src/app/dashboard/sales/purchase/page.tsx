@@ -594,7 +594,8 @@ export default function PurchaseTransactionsPage() {
                     type="date"
                     value={transactionDate}
                     onChange={(e) => setTransactionDate(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono cursor-pointer"
+                    onClick={(e) => { try { e.currentTarget.showPicker(); } catch {} }}
                     required
                   />
                 </div>

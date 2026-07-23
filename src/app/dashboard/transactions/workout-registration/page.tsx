@@ -33,11 +33,11 @@ interface PTRegistration {
 
 export default function PTRegistrationPage() {
   const { activeBranchID, user } = useAuth();
-  
+
   // Members & Trainers
   const [members, setMembers] = useState<Member[]>([]);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
-  
+
   // Form options grouping
   const [memberScope, setMemberScope] = useState<'one' | 'all'>('one');
 
@@ -77,10 +77,10 @@ export default function PTRegistrationPage() {
     setLoadingMembers(true);
     setFetchError('');
     try {
-      const url = memberScope === 'one' 
+      const url = memberScope === 'one'
         ? `/admin/members?branch_id=${activeBranchID}&per_page=200`
         : `/admin/members?per_page=200`;
-      
+
       const res = await api.get<any>(url);
       if (res.success && res.data) {
         setMembers(res.data);
@@ -418,7 +418,8 @@ export default function PTRegistrationPage() {
                         required
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
-                        className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full font-bold"
+                        className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full font-bold cursor-pointer"
+                        onClick={(e) => { try { e.currentTarget.showPicker(); } catch { } }}
                       />
                     </div>
 
@@ -446,9 +447,10 @@ export default function PTRegistrationPage() {
                     className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full"
                   >
                     <option value="">-Pilih-</option>
-                    <option value="Qris">Qris</option>
                     <option value="Tunai">Tunai</option>
                     <option value="Transfer">Transfer</option>
+                    <option value="QRIS">QRIS</option>
+                    <option value="Debit Card">Debit Card</option>
                   </select>
                 </div>
 
@@ -504,20 +506,22 @@ export default function PTRegistrationPage() {
 
           {/* Prabu Official Receipt Container (Visible on print & screen preview) */}
           <div id="pt-receipt-print-area" className="bg-white border border-black p-8 rounded text-black space-y-6 max-w-4xl mx-auto print:border-0 print:p-0">
-            
+
             {/* Header Box */}
             <div className="grid grid-cols-[1.2fr_2fr] border border-black divide-x divide-black">
               {/* Logo Box */}
               <div className="p-4 flex flex-col items-center justify-center text-center">
-                <svg className="w-14 h-14 text-red-650" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M2 4l3 5 7-7 7 7 3-5v13H2V4zm0 15h20v2H2v-2z" />
-                </svg>
+                <img
+                  src="/logo-transparent.png"
+                  alt="Prabu Gym Logo"
+                  className="h-14 w-auto object-contain"
+                />
                 <div className="text-center leading-none mt-2">
                   <h1 className="text-xl font-black tracking-widest">PRABU</h1>
                   <span className="text-[8px] uppercase font-bold text-slate-500">Gym & Fitness Center</span>
                 </div>
               </div>
-              
+
               {/* Title Box */}
               <div className="p-4 flex items-center justify-center text-center">
                 <h2 className="text-3xl font-black uppercase tracking-widest text-slate-800">

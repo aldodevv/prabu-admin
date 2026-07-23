@@ -73,11 +73,13 @@ const PrintContainer: React.FC<PrintContainerProps> = ({ onClose, title, childre
   );
 };
 
-// Crown shape inline SVG representing Prabu Gym logo
+// Official Prabu Gym transparent logo image
 const LogoIcon = () => (
-  <svg className="w-12 h-12 text-[#DC3545]" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M2 4l3 5 7-7 7 7 3-5v13H2V4zm0 15h20v2H2v-2z" />
-  </svg>
+  <img
+    src="/logo-transparent.png"
+    alt="Prabu Gym Logo"
+    className="h-12 w-auto object-contain"
+  />
 );
 
 // 1. Official Receipt Template
@@ -196,9 +198,11 @@ export const SessionReceiptTemplate: React.FC<SessionReceiptProps> = ({ onClose,
         {/* Header Box */}
         <div className="grid grid-cols-[1.2fr_2fr] border border-black divide-x divide-black">
           <div className="p-4 flex flex-col items-center justify-center text-center">
-            <svg className="w-14 h-14 text-red-650" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M2 4l3 5 7-7 7 7 3-5v13H2V4zm0 15h20v2H2v-2z" />
-            </svg>
+            <img
+              src="/logo-transparent.png"
+              alt="Prabu Gym Logo"
+              className="h-14 w-auto object-contain"
+            />
             <div className="text-center leading-none mt-2">
               <h1 className="text-xl font-black tracking-widest">PRABU</h1>
               <span className="text-[8px] uppercase font-bold text-slate-500">Gym & Fitness Center</span>

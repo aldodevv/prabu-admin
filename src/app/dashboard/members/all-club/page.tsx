@@ -666,7 +666,8 @@ export default function AllClubMembersPanel() {
                     type="date"
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full font-mono"
+                    className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full font-mono cursor-pointer"
+                    onClick={(e) => { try { e.currentTarget.showPicker(); } catch {} }}
                   />
                 </div>
 

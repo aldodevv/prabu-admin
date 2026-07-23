@@ -124,7 +124,8 @@ export default function CheckinsPage() {
               setDateFrom(e.target.value);
               setPage(1);
             }}
-            className="bg-slate-50 border border-slate-200 focus:border-[#DC3545] focus:outline-none text-slate-800 px-3 py-2 text-xs transition-all rounded font-mono"
+            className="bg-slate-50 border border-slate-200 focus:border-[#DC3545] focus:outline-none text-slate-800 px-3 py-2 text-xs transition-all rounded font-mono cursor-pointer"
+            onClick={(e) => { try { e.currentTarget.showPicker(); } catch {} }}
           />
         </div>
         <div>
@@ -138,7 +139,8 @@ export default function CheckinsPage() {
               setDateTo(e.target.value);
               setPage(1);
             }}
-            className="bg-slate-50 border border-slate-200 focus:border-[#DC3545] focus:outline-none text-slate-800 px-3 py-2 text-xs transition-all rounded font-mono"
+            className="bg-slate-50 border border-slate-200 focus:border-[#DC3545] focus:outline-none text-slate-800 px-3 py-2 text-xs transition-all rounded font-mono cursor-pointer"
+            onClick={(e) => { try { e.currentTarget.showPicker(); } catch {} }}
           />
         </div>
         <button

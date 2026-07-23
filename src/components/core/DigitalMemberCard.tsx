@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { toPng } from 'html-to-image';
 import { Download, Mail, Check, Copy } from 'lucide-react';
 
@@ -32,24 +32,92 @@ export function getBranchAddress(branchCodeOrName?: string): string {
 
 const BG_IMAGE_URL = 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=1200&auto=format&fit=crop';
 
+async function toDataURL(url: string): Promise<string> {
+  try {
+    const response = await fetch(url, { mode: 'cors' });
+    const blob = await response.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(url);
+      reader.readAsDataURL(blob);
+    });
+  } catch (err) {
+    console.warn('Gagal mengubah URL gambar ke base64:', url, err);
+    return url;
+  }
+}
+
 export function DigitalMemberCard({ member, branchCodeOrName, branchName }: DigitalMemberCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
   const [copiedTemplate, setCopiedTemplate] = useState(false);
+  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
+  const [bgDataUrl, setBgDataUrl] = useState<string | null>(null);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
   const address = getBranchAddress(branchCodeOrName || branchName);
 
   // Format username with spaces for card display e.g. 1 6 7 1 6 2 8 1 0
   const formattedCode = (member.username || '').split('').join(' ');
 
+  // Preload image assets as Base64 to ensure 100% reliable canvas rendering
+  useEffect(() => {
+    let isMounted = true;
+
+    async function preloadImages() {
+      if (typeof window === 'undefined') return;
+      const origin = window.location.origin;
+      const logoUrl = `${origin}/logo-transparent.png`;
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${member.username}`;
+
+      const [b64Logo, b64Bg, b64Qr] = await Promise.all([
+        toDataURL(logoUrl),
+        toDataURL(BG_IMAGE_URL),
+        toDataURL(qrUrl),
+      ]);
+
+      if (isMounted) {
+        if (b64Logo.startsWith('data:')) setLogoDataUrl(b64Logo);
+        if (b64Bg.startsWith('data:')) setBgDataUrl(b64Bg);
+        if (b64Qr.startsWith('data:')) setQrDataUrl(b64Qr);
+      }
+    }
+
+    preloadImages();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [member.username]);
+
   // Download Card as PNG Image using html-to-image
   const handleDownloadImage = async () => {
     if (!cardRef.current) return;
     setDownloading(true);
     try {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const logoUrl = `${origin}/logo-transparent.png`;
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${member.username}`;
+
+      // Convert images to Base64 if not already cached
+      const [b64Logo, b64Bg, b64Qr] = await Promise.all([
+        logoDataUrl ? Promise.resolve(logoDataUrl) : toDataURL(logoUrl),
+        bgDataUrl ? Promise.resolve(bgDataUrl) : toDataURL(BG_IMAGE_URL),
+        qrDataUrl ? Promise.resolve(qrDataUrl) : toDataURL(qrUrl),
+      ]);
+
+      if (b64Logo.startsWith('data:')) setLogoDataUrl(b64Logo);
+      if (b64Bg.startsWith('data:')) setBgDataUrl(b64Bg);
+      if (b64Qr.startsWith('data:')) setQrDataUrl(b64Qr);
+
+      // Brief delay to allow React state to settle
+      await new Promise((r) => setTimeout(r, 100));
+
       const dataUrl = await toPng(cardRef.current, {
-        cacheBust: true,
+        cacheBust: false,
         pixelRatio: 3,
+        backgroundColor: '#0f172a',
       });
       const link = document.createElement('a');
       link.href = dataUrl;
@@ -93,7 +161,8 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
       <div
         ref={cardRef}
         style={{
-          backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.75)), url('${BG_IMAGE_URL}')`,
+          backgroundColor: '#0f172a',
+          backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.75)), url('${bgDataUrl || BG_IMAGE_URL}')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           borderColor: '#334155',
@@ -111,7 +180,7 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
           {/* Logo Header */}
           <div className="relative z-10 pt-1 flex flex-col items-center">
             <img
-              src="/logo-transparent.png"
+              src={logoDataUrl || '/logo-transparent.png'}
               alt="PrabuGym Logo"
               className="h-16 w-auto object-contain drop-shadow-xs"
               crossOrigin="anonymous"
@@ -132,7 +201,7 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
             className="w-52 h-52 bg-white rounded-2xl p-3 shadow-md border border-slate-200/80 flex items-center justify-center"
           >
             <img
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${member.username}`}
+              src={qrDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${member.username}`}
               alt={`QR Code ${member.username}`}
               className="w-full h-full object-contain rounded-lg"
               crossOrigin="anonymous"

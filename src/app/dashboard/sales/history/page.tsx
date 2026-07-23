@@ -537,9 +537,11 @@ export default function TransactionHistoryPage() {
           <div className="text-black font-mono text-[10px] leading-relaxed mx-auto w-full">
             {/* Logo section */}
             <div className="flex flex-col items-center justify-center text-center space-y-1 mb-2">
-              <div className="text-center font-extrabold text-sm tracking-widest uppercase">
-                PRABU GYM
-              </div>
+              <img
+                src="/logo-transparent.png"
+                alt="Prabu Gym Logo"
+                className="h-10 w-auto object-contain mb-1"
+              />
               <div className="text-[8px] text-center font-bold whitespace-pre-line leading-tight">
                 {branchAddress}
               </div>

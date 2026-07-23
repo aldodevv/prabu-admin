@@ -109,7 +109,8 @@ export default function AllVisitsPage() {
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="bg-slate-50 border border-slate-350 rounded px-3 py-1.5 text-xs focus:outline-none focus:border-[#3bbbc8] text-slate-800 font-mono shadow-sm"
+                className="bg-slate-50 border border-slate-350 rounded px-3 py-1.5 text-xs focus:outline-none focus:border-[#3bbbc8] text-slate-800 font-mono shadow-sm cursor-pointer"
+                onClick={(e) => { try { e.currentTarget.showPicker(); } catch {} }}
               />
             </div>
           </div>
