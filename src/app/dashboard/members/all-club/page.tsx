@@ -18,7 +18,7 @@ import { DigitalMemberCard } from '@/components/core/DigitalMemberCard';
 
 export default function AllClubMembersPanel() {
   const { user } = useAuth();
-  
+
   // Navigation states: 'list' | 'detail' | 'edit'
   const [step, setStep] = useState<'list' | 'detail' | 'edit'>('list');
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
@@ -33,7 +33,7 @@ export default function AllClubMembersPanel() {
   const debouncedSearch = useDebounce(search, 400);
   const [isTyping, setIsTyping] = useState(false);
   const [loading, setLoading] = useState(true);
-  
+
   // Filters matching Search Box
   const [statusFilter, setStatusFilter] = useState('Semua');
 
@@ -310,13 +310,13 @@ export default function AllClubMembersPanel() {
   return (
     <div className="space-y-8 font-sans">
       <div className="no-print space-y-6">
-        
+
         {/* Main List Step */}
         {step === 'list' && (
           <div className="space-y-6">
-            <PageHeader 
-              title="Data Anggota" 
-              description="Seluruh Cabang — Daftar Anggota & Riwayat Keuangan Aktif" 
+            <PageHeader
+              title="Data Anggota"
+              description="Seluruh Cabang — Daftar Anggota & Riwayat Keuangan Aktif"
             />
 
             {/* Search Box */}
@@ -365,8 +365,8 @@ export default function AllClubMembersPanel() {
         {/* Member Details Step */}
         {step === 'detail' && selectedMember && (
           <div className="space-y-6 animate-fadeIn">
-            <PageHeader 
-              title="Daftar Anggota" 
+            <PageHeader
+              title="Daftar Anggota"
               action={
                 <div className="flex items-center gap-3">
                   <button
@@ -426,7 +426,7 @@ export default function AllClubMembersPanel() {
                   🪪 Lihat Kartu Member Digital
                 </button>
               </div>
-              
+
               <div className="grid grid-cols-[140px_1fr] gap-6 items-start max-md:grid-cols-1">
                 {/* Profile Photo */}
                 <div className="flex flex-col items-center gap-2">
@@ -489,26 +489,24 @@ export default function AllClubMembersPanel() {
             {/* Transaksi Pembayaran Section */}
             <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden p-6 space-y-4">
               <h3 className="font-heading text-lg font-bold border-b border-slate-100 pb-2 text-slate-800">Transaksi Pembayaran</h3>
-              
+
               {/* Tabs */}
               <div className="flex gap-4 border-b border-slate-200 text-xs no-print select-none">
                 <button
                   onClick={() => setDetailTab('anggota')}
-                  className={`py-2 px-4 font-bold border-b-2 transition-all cursor-pointer ${
-                    detailTab === 'anggota'
+                  className={`py-2 px-4 font-bold border-b-2 transition-all cursor-pointer ${detailTab === 'anggota'
                       ? 'border-[#007BFF] text-[#007BFF]'
                       : 'border-transparent text-slate-500 hover:text-slate-800'
-                  }`}
+                    }`}
                 >
                   Transaksi Pembayaran Anggota
                 </button>
                 <button
                   onClick={() => setDetailTab('latihan')}
-                  className={`py-2 px-4 font-bold border-b-2 transition-all cursor-pointer ${
-                    detailTab === 'latihan'
+                  className={`py-2 px-4 font-bold border-b-2 transition-all cursor-pointer ${detailTab === 'latihan'
                       ? 'border-[#007BFF] text-[#007BFF]'
                       : 'border-transparent text-slate-500 hover:text-slate-800'
-                  }`}
+                    }`}
                 >
                   Transaksi Pembayaran Latihan
                 </button>
@@ -615,7 +613,7 @@ export default function AllClubMembersPanel() {
                       🪪 Kartu Member Digital
                     </span>
                     <span className="text-[10px] font-bold text-slate-400">
-                      Format PNG (9:16)
+                      Format PNG
                     </span>
                   </div>
 
@@ -717,8 +715,8 @@ export default function AllClubMembersPanel() {
         {/* Ubah Data Anggota Step */}
         {step === 'edit' && selectedMember && (
           <div className="space-y-6 animate-fadeIn max-w-4xl mx-auto">
-            <PageHeader 
-              title="Ubah Data Anggota" 
+            <PageHeader
+              title="Ubah Data Anggota"
               action={
                 <button
                   onClick={() => setStep('list')}
@@ -786,7 +784,7 @@ export default function AllClubMembersPanel() {
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
                     className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full font-mono cursor-pointer"
-                    onClick={(e) => { try { e.currentTarget.showPicker(); } catch {} }}
+                    onClick={(e) => { try { e.currentTarget.showPicker(); } catch { } }}
                   />
                 </div>
 
