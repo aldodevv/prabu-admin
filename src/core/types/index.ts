@@ -188,3 +188,41 @@ export interface Distributor {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface MembershipPackage {
+  id: string;
+  branch_id?: string;
+  name: string;
+  duration_days: number;
+  package_type: string;
+  price: number;
+  description?: string;
+  created_by_name: string;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PTPackage {
+  id: string;
+  branch_id?: string;
+  name: string;
+  duration_days: number;
+  session_count: number;
+  price: number;
+  description?: string;
+  created_by_name: string;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface GymClass {
+  id: string;
+  branch_id?: string;
+  name: string;
+  created_by_name: string;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}

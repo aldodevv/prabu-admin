@@ -55,8 +55,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
+  const filteredNavigation = NAVIGATION_MENU.filter((group) => {
+    if (user?.role === 'karyawan') {
+      if (group.id === 'data-staff' || group.id === 'pengaturan') {
+        return false;
+      }
+    }
+    return true;
+  });
+
   const hasSubmenu = activeGroup && activeGroup !== 'beranda';
-  const activeGroupConfig = NAVIGATION_MENU.find(g => g.id === activeGroup);
+  const activeGroupConfig = filteredNavigation.find(g => g.id === activeGroup);
 
   const MenuIcon = resolveIcon('Menu');
   const XIcon = resolveIcon('X');
@@ -79,7 +88,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* Navigation Icon List */}
           <nav className="flex-1 flex flex-col pt-4 overflow-y-auto">
-            {NAVIGATION_MENU.map((group) => {
+            {filteredNavigation.map((group) => {
               const Icon = resolveIcon(group.iconName);
               const isBeranda = group.id === 'beranda';
               const isGroupActive = isBeranda 
@@ -201,23 +210,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           )}
 
           <div className="flex items-center gap-2 sm:gap-4 lg:gap-6 ml-auto shrink-0">
-            {/* Branch Selector Dropdown */}
+            {/* Branch Selector Dropdown / Locked Badge for CS */}
             {branches.length > 0 && (
               <div className="relative">
-                <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-bold text-slate-650 bg-slate-50 border border-slate-200 px-2 sm:px-3.5 py-1.5 sm:py-2 rounded-lg shadow-sm">
+                <div className={`flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-bold text-slate-650 bg-slate-50 border border-slate-200 px-2 sm:px-3.5 py-1.5 sm:py-2 rounded-lg shadow-sm ${user?.role === 'karyawan' ? 'bg-slate-100/80 cursor-not-allowed select-none' : ''}`}>
                   <BuildingIcon className="w-3.5 h-3.5 text-[#DC3545] shrink-0" />
                   <span className="uppercase tracking-wider hidden sm:inline">Cabang:</span>
-                  <select
-                    value={activeBranchID || ''}
-                    onChange={(e) => selectBranch(e.target.value)}
-                    className="bg-transparent focus:outline-none cursor-pointer uppercase text-slate-800 font-extrabold pr-1 max-w-[120px] sm:max-w-none truncate"
-                  >
-                    {branches.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.name.replace('Prabu Gym ', '')}
-                      </option>
-                    ))}
-                  </select>
+                  {user?.role === 'karyawan' ? (
+                    <span className="uppercase text-slate-800 font-extrabold flex items-center gap-1.5 px-0.5" title="Akses cabang terkunci khusus untuk CS/Karyawan">
+                      {(branches.find(b => b.id === (user.branch_id || activeBranchID))?.name || '').replace('Prabu Gym ', '')}
+                      <Icons.Lock className="w-3 h-3 text-slate-400 shrink-0" />
+                    </span>
+                  ) : (
+                    <select
+                      value={activeBranchID || ''}
+                      onChange={(e) => selectBranch(e.target.value)}
+                      className="bg-transparent focus:outline-none cursor-pointer uppercase text-slate-800 font-extrabold pr-1 max-w-[120px] sm:max-w-none truncate"
+                    >
+                      {branches.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.name.replace('Prabu Gym ', '')}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               </div>
             )}

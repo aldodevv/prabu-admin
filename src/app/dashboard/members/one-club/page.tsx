@@ -9,7 +9,7 @@ import { PageHeader } from '@/components/core/PageHeader';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 import { DataTable, Column } from '@/components/core/DataTable';
 import { OfficialReceiptTemplate } from '@/components/core/PrintTemplates';
-import { Search, Eye, Edit, ArrowLeft, Save, Printer, FileText, FileSpreadsheet, RotateCcw } from 'lucide-react';
+import { Search, Eye, Edit, ArrowLeft, Save, Printer, FileText, FileSpreadsheet, RotateCcw, Download } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { exportToExcel } from '@/lib/excelExport';
 import { compressImage } from '@/utils/imageCompressor';
@@ -18,7 +18,7 @@ import { DigitalMemberCard } from '@/components/core/DigitalMemberCard';
 
 export default function OneClubMembersPanel() {
   const { activeBranchID, user } = useAuth();
-  
+
   // Navigation states: 'list' | 'detail' | 'edit'
   const [step, setStep] = useState<'list' | 'detail' | 'edit'>('list');
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
@@ -33,7 +33,7 @@ export default function OneClubMembersPanel() {
   const debouncedSearch = useDebounce(search, 400);
   const [isTyping, setIsTyping] = useState(false);
   const [loading, setLoading] = useState(true);
-  
+
   // Filters matching Search Box
   const [statusFilter, setStatusFilter] = useState('Semua');
 
@@ -319,13 +319,13 @@ export default function OneClubMembersPanel() {
   return (
     <div className="space-y-8 font-sans">
       <div className="no-print space-y-6">
-        
+
         {/* Main List Step */}
         {step === 'list' && (
           <div className="space-y-6">
-            <PageHeader 
-              title="Data Anggota" 
-              description="Cabang Grogol — Daftar Anggota & Riwayat Keuangan Aktif" 
+            <PageHeader
+              title="Data Anggota"
+              description="Cabang Grogol — Daftar Anggota & Riwayat Keuangan Aktif"
             />
 
             {/* Search Box */}
@@ -374,8 +374,8 @@ export default function OneClubMembersPanel() {
         {/* Member Details Step */}
         {step === 'detail' && selectedMember && (
           <div className="space-y-6 animate-fadeIn">
-            <PageHeader 
-              title="Daftar Anggota" 
+            <PageHeader
+              title="Daftar Anggota"
               action={
                 <div className="flex items-center gap-3">
                   <button
@@ -435,7 +435,7 @@ export default function OneClubMembersPanel() {
                   🪪 Lihat Kartu Member Digital
                 </button>
               </div>
-              
+
               <div className="grid grid-cols-[140px_1fr] gap-6 items-start max-md:grid-cols-1">
                 {/* Profile Photo */}
                 <div className="flex flex-col items-center gap-2">
@@ -498,26 +498,24 @@ export default function OneClubMembersPanel() {
             {/* Transaksi Pembayaran Section */}
             <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden p-6 space-y-4">
               <h3 className="font-heading text-lg font-bold border-b border-slate-100 pb-2 text-slate-800">Transaksi Pembayaran</h3>
-              
+
               {/* Tabs */}
               <div className="flex gap-4 border-b border-slate-200 text-xs no-print select-none">
                 <button
                   onClick={() => setDetailTab('anggota')}
-                  className={`py-2 px-4 font-bold border-b-2 transition-all cursor-pointer ${
-                    detailTab === 'anggota'
+                  className={`py-2 px-4 font-bold border-b-2 transition-all cursor-pointer ${detailTab === 'anggota'
                       ? 'border-[#007BFF] text-[#007BFF]'
                       : 'border-transparent text-slate-500 hover:text-slate-800'
-                  }`}
+                    }`}
                 >
                   Transaksi Pembayaran Anggota
                 </button>
                 <button
                   onClick={() => setDetailTab('latihan')}
-                  className={`py-2 px-4 font-bold border-b-2 transition-all cursor-pointer ${
-                    detailTab === 'latihan'
+                  className={`py-2 px-4 font-bold border-b-2 transition-all cursor-pointer ${detailTab === 'latihan'
                       ? 'border-[#007BFF] text-[#007BFF]'
                       : 'border-transparent text-slate-500 hover:text-slate-800'
-                  }`}
+                    }`}
                 >
                   Transaksi Pembayaran Latihan
                 </button>
@@ -601,6 +599,125 @@ export default function OneClubMembersPanel() {
                 </div>
               )}
             </div>
+
+            {/* Re-download Section: Kartu Member Digital & Struk Pembayaran */}
+            <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden p-6 space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-3 gap-2">
+                <div className="flex items-center gap-2">
+                  <Download className="w-5 h-5 text-[#17A2B8]" />
+                  <h3 className="font-heading text-lg font-bold text-slate-800">
+                    Re-Download Dokumen & Kartu Anggota
+                  </h3>
+                </div>
+                <span className="text-xs font-semibold text-slate-500">
+                  Unduh ulang Kartu Member Digital (PNG) & Struk Pembayaran (PDF)
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                {/* Digital Member Card Box */}
+                <div className="flex flex-col items-center bg-slate-50 p-6 rounded-xl border border-slate-200/80 space-y-4">
+                  <div className="w-full flex items-center justify-between border-b border-slate-200 pb-2">
+                    <span className="text-xs font-black uppercase text-slate-700 tracking-wider">
+                      🪪 Kartu Member Digital
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-400">
+                      Format PNG
+                    </span>
+                  </div>
+
+                  <DigitalMemberCard
+                    member={{
+                      username: selectedMember.username,
+                      full_name: selectedMember.full_name,
+                      email: selectedMember.email,
+                      phone: selectedMember.phone,
+                      membership_type: selectedMember.membership_type,
+                      membership_start: selectedMember.membership_start,
+                      membership_end: selectedMember.membership_end,
+                    }}
+                    branchName={selectedMember.branch_name}
+                  />
+                </div>
+
+                {/* Struk / Receipt Re-download Box */}
+                <div className="flex flex-col bg-slate-50 p-6 rounded-xl border border-slate-200/80 space-y-4">
+                  <div className="w-full flex items-center justify-between border-b border-slate-200 pb-2">
+                    <span className="text-xs font-black uppercase text-slate-700 tracking-wider">
+                      🧾 Struk / Receipt Pembayaran
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-400">
+                      Official Receipt
+                    </span>
+                  </div>
+
+                  {memberTransactions.length > 0 ? (
+                    <div className="space-y-4">
+                      <p className="text-xs text-slate-600 font-semibold leading-relaxed">
+                        Pilih transaksi di bawah ini untuk melihat, mencetak, atau mengunduh ulang Struk Pembayaran Resmi:
+                      </p>
+
+                      <div className="space-y-3 max-h-[580px] overflow-y-auto pr-1">
+                        {memberTransactions.map((tx) => (
+                          <div
+                            key={tx.id}
+                            className="bg-white p-4 rounded-lg border border-slate-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                          >
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold bg-[#007BFF]/10 text-[#007BFF] px-2 py-0.5 rounded font-mono">
+                                  #{tx.transaction_number}
+                                </span>
+                                <span className="text-xs font-bold text-slate-800">
+                                  {formatIDR(tx.total_amount)}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-slate-500 font-semibold">
+                                📅 {formatDateLabel(tx.transaction_date)} • {getMembershipTypeFromNotes(tx.notes || '')}
+                              </p>
+                              {tx.admin_name && (
+                                <p className="text-[10px] text-slate-400">
+                                  Kasir: {tx.admin_name}
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-2 w-full sm:w-auto">
+                              <button
+                                onClick={() => {
+                                  setReceiptTx(tx);
+                                  setTimeout(() => {
+                                    window.print();
+                                  }, 100);
+                                }}
+                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-[#007BFF] hover:bg-[#0069D9] text-white text-xs font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
+                              >
+                                <Printer className="w-3.5 h-3.5" />
+                                <span>Cetak</span>
+                              </button>
+                              <button
+                                onClick={() => setReceiptTx(tx)}
+                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-[#6C7A89] hover:bg-[#5a6673] text-white text-xs font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
+                              >
+                                <FileText className="w-3.5 h-3.5" />
+                                <span>Lihat Struk</span>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-16 text-center text-slate-400 space-y-2">
+                      <FileText className="w-8 h-8 mx-auto text-slate-300" />
+                      <p className="text-xs font-bold uppercase tracking-wider">
+                        Belum ada riwayat transaksi pembayaran untuk anggota ini.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -668,7 +785,7 @@ export default function OneClubMembersPanel() {
                       value={dob}
                       onChange={(e) => setDob(e.target.value)}
                       className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full font-mono cursor-pointer"
-                      onClick={(e) => { try { e.currentTarget.showPicker(); } catch {} }}
+                      onClick={(e) => { try { e.currentTarget.showPicker(); } catch { } }}
                     />
                   </div>
 

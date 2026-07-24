@@ -8,6 +8,9 @@ import { Printer, ArrowLeft, CheckCircle, UserPlus, Check } from 'lucide-react';
 import { compressImage } from '@/utils/imageCompressor';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { DigitalMemberCard } from '@/components/core/DigitalMemberCard';
+import { DatePicker } from '@/components/core/DatePicker';
+
+import { packagesApi } from '@/core/api';
 
 interface SuccessData {
   member: any;
@@ -21,7 +24,7 @@ interface SuccessData {
   price: number;
 }
 
-const PACKAGES = [
+const DEFAULT_PACKAGES = [
   { name: '1 bulan', price: 250000, days: 30 },
   { name: '1 bulan (daftar)', price: 200000, days: 30 },
   { name: '1 bulan (perpanjang)', price: 250000, days: 30 },
@@ -38,6 +41,7 @@ const PACKAGES = [
 
 export default function MemberRegistrationPage() {
   const { activeBranchID, user } = useAuth();
+  const [packages, setPackages] = useState<{ name: string; price: number; days: number }[]>(DEFAULT_PACKAGES);
 
   // Form Personal Data states
   const [fullName, setFullName] = useState('');
@@ -66,9 +70,27 @@ export default function MemberRegistrationPage() {
 
   useEffect(() => {
     setStartDateInput(new Date().toISOString().split('T')[0]);
-  }, []);
 
-  const selectedPkg = PACKAGES.find(p => p.name === packageName);
+    // Fetch dynamic packages from database
+    const fetchDbPackages = async () => {
+      try {
+        const res = await packagesApi.listMembershipPackages(activeBranchID || undefined);
+        if (res.data && res.data.length > 0) {
+          const mapped = res.data.map((p: any) => ({
+            name: p.name,
+            price: p.price,
+            days: p.duration_days
+          }));
+          setPackages(mapped);
+        }
+      } catch (err) {
+        console.error('Gagal mengambil data paket dari database, menggunakan default:', err);
+      }
+    };
+    fetchDbPackages();
+  }, [activeBranchID]);
+
+  const selectedPkg = packages.find(p => p.name === packageName);
   const calculatedEnd = selectedPkg && startDateInput ? (() => {
     const d = new Date(startDateInput);
     d.setDate(d.getDate() + selectedPkg.days);
@@ -263,7 +285,7 @@ export default function MemberRegistrationPage() {
             <div className="flex gap-3 flex-wrap">
               <button
                 onClick={handlePrint}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#007BFF] hover:bg-[#0069D9] text-white text-xs font-bold uppercase tracking-wider rounded transition-colors cursor-pointer shadow-sm"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-blue hover:bg-[#0069D9] text-white text-xs font-bold uppercase tracking-wider rounded transition-colors cursor-pointer shadow-sm"
               >
                 <Printer className="w-4 h-4" />
                 Cetak Receipt
@@ -277,7 +299,7 @@ export default function MemberRegistrationPage() {
             </div>
             <button
               onClick={() => setSuccessData(null)}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#DC3545] hover:bg-[#C82333] text-white text-xs font-bold uppercase tracking-wider rounded transition-colors cursor-pointer shadow-sm"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-red hover:bg-[#C82333] text-white text-xs font-bold uppercase tracking-wider rounded transition-colors cursor-pointer shadow-sm"
             >
               <ArrowLeft className="w-4 h-4" />
               Kembali Ke Form
@@ -287,7 +309,7 @@ export default function MemberRegistrationPage() {
           <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start">
             {/* Prabu Official Receipt Preview Container (Visible on print & screen preview) */}
             <div id="receipt-print-area" className="bg-white border border-slate-200 p-8 rounded shadow-sm space-y-6 text-black print:border-0 print:p-0">
-              
+
               {/* Header Box (Image 3) */}
               <div className="border border-black p-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -392,18 +414,16 @@ export default function MemberRegistrationPage() {
 
           <div className="p-6 md:p-8">
             <form onSubmit={handleSubmit} className="space-y-6 w-full">
-              
+
               <div className="space-y-5">
                 {/* Tanggal Transaksi */}
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left">
                     Tanggal Transaksi
                   </label>
-                  <input
-                    type="text"
-                    disabled
-                    value={todayFormatted}
-                    className="w-full bg-slate-100 border border-slate-300 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none font-mono rounded"
+                  <DatePicker
+                    value={startDateInput}
+                    onChange={(val) => setStartDateInput(val)}
                   />
                 </div>
 
@@ -451,7 +471,7 @@ export default function MemberRegistrationPage() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Masukkan Nama Anggota"
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-semibold"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-semibold"
                   />
                 </div>
 
@@ -464,7 +484,7 @@ export default function MemberRegistrationPage() {
                     required
                     value={gender}
                     onChange={(e) => setGender(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded"
                   >
                     <option value="">-Pilih-</option>
                     <option value="Laki-laki">Laki-laki</option>
@@ -477,12 +497,10 @@ export default function MemberRegistrationPage() {
                   <label className="text-sm font-bold text-slate-700 text-left">
                     Tanggal Lahir
                   </label>
-                  <input
-                    type="date"
+                  <DatePicker
                     value={dob}
-                    onChange={(e) => setDob(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-mono cursor-pointer"
-                    onClick={(e) => { try { e.currentTarget.showPicker(); } catch {} }}
+                    onChange={(val) => setDob(val)}
+                    placeholder="Pilih Tanggal Lahir"
                   />
                 </div>
 
@@ -496,7 +514,7 @@ export default function MemberRegistrationPage() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
                     placeholder="Masukkan Nomor HP (Contoh: 081234567890)"
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-mono"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-mono"
                   />
                 </div>
 
@@ -510,7 +528,7 @@ export default function MemberRegistrationPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Masukkan Email"
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded"
                   />
                 </div>
 
@@ -524,7 +542,7 @@ export default function MemberRegistrationPage() {
                     value={socialMedia}
                     onChange={(e) => setSocialMedia(e.target.value)}
                     placeholder="Instagram / Facebook / Tiktok"
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded"
                   />
                 </div>
 
@@ -537,7 +555,7 @@ export default function MemberRegistrationPage() {
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     placeholder="Masukkan Alamat Lengkap"
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded resize-none h-[72px]"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded resize-none h-[72px]"
                   />
                 </div>
 
@@ -550,10 +568,10 @@ export default function MemberRegistrationPage() {
                     required
                     value={packageName}
                     onChange={(e) => setPackageName(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-bold"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-bold"
                   >
                     <option value="">-Pilih-</option>
-                    {PACKAGES.map((pkg) => (
+                    {packages.map((pkg) => (
                       <option key={pkg.name} value={pkg.name}>
                         {pkg.name} (Rp. {pkg.price.toLocaleString('id-ID')})
                       </option>
@@ -570,7 +588,7 @@ export default function MemberRegistrationPage() {
                     required
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded"
                   >
                     <option value="">-Pilih-</option>
                     <option value="Tunai">Tunai</option>
@@ -588,7 +606,7 @@ export default function MemberRegistrationPage() {
                     required
                     value={clubType}
                     onChange={(e) => setClubType(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded"
                   >
                     <option value="One Club">One Club</option>
                     <option value="All Club">All Club</option>
@@ -613,22 +631,21 @@ export default function MemberRegistrationPage() {
                       </div>
                       <div className="flex items-center gap-4">
                         <span className="w-28 text-xs font-semibold text-slate-600">Mulai Aktif:</span>
-                        <input
-                          type="date"
-                          value={startDateInput}
-                          onChange={(e) => setStartDateInput(e.target.value)}
-                          className="bg-white border border-slate-300 text-slate-800 font-semibold px-3 py-1.5 text-xs focus:outline-none rounded flex-1 font-mono cursor-pointer"
-                          onClick={(e) => { try { e.currentTarget.showPicker(); } catch {} }}
-                        />
+                        <div className="flex-1">
+                          <DatePicker
+                            value={startDateInput}
+                            onChange={(val) => setStartDateInput(val)}
+                          />
+                        </div>
                       </div>
                       <div className="flex items-center gap-4">
-                        <span className="w-28 text-xs font-semibold text-slate-600">Masa Aktif:</span>
-                        <input
-                          type="date"
-                          readOnly
-                          value={calculatedEnd}
-                          className="bg-slate-100 border border-slate-200 text-slate-600 px-3 py-1.5 text-xs rounded flex-1 font-mono"
-                        />
+                        <span className="w-28 text-xs font-semibold text-slate-600">Masa Aktif Berakhir:</span>
+                        <div className="flex-1">
+                          <DatePicker
+                            value={calculatedEnd}
+                            readOnly
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -643,7 +660,7 @@ export default function MemberRegistrationPage() {
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Masukkan Keterangan Tambahan..."
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded resize-none h-[80px]"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded resize-none h-[80px]"
                   />
                 </div>
 

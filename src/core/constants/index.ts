@@ -150,7 +150,13 @@ export const ROUTES = {
   REPORT_WORKOUTS: '/dashboard/reports/workouts',
   REPORT_PT_SESSIONS: '/dashboard/reports/pt-sessions',
   REPORT_CLASS_COMMISSIONS: '/dashboard/reports/class-commissions',
-  REPORT_CARD_REPLACEMENTS: '/dashboard/reports/card-replacements'
+  REPORT_CARD_REPLACEMENTS: '/dashboard/reports/card-replacements',
+  STAFF_CS: '/dashboard/staff/cs',
+  STAFF_ADMIN: '/dashboard/staff/admin',
+  STAFF_TRAINERS: '/dashboard/staff/trainers',
+  SETTINGS_MEMBERSHIP_PACKAGES: '/dashboard/settings/membership-packages',
+  SETTINGS_PT_PACKAGES: '/dashboard/settings/pt-packages',
+  SETTINGS_CLASSES: '/dashboard/settings/classes',
 };
 
 /**
@@ -174,7 +180,7 @@ export interface NavigationGroup {
 }
 
 /**
- * Centalized modular navigation configuration
+ * Centralized modular navigation configuration
  */
 export const NAVIGATION_MENU: NavigationGroup[] = [
   {
@@ -232,6 +238,27 @@ export const NAVIGATION_MENU: NavigationGroup[] = [
       { label: 'Laporan Komisi Kelas', href: ROUTES.REPORT_CLASS_COMMISSIONS, iconName: 'FileText' },
       { label: 'Laporan Pergantian Cabang', href: ROUTES.REPORT_CARD_REPLACEMENTS, iconName: 'FileText' },
     ]
+  },
+  {
+    id: 'data-staff',
+    label: 'Data Staff',
+    iconName: 'Folder',
+    items: [
+      { label: 'Data Customer Service', href: ROUTES.STAFF_CS, iconName: 'Users' },
+      { label: 'Data Admin', href: ROUTES.STAFF_ADMIN, iconName: 'Users' },
+      { label: 'Data Pelatih', href: ROUTES.STAFF_TRAINERS, iconName: 'Users' },
+    ]
+  },
+  {
+    id: 'pengaturan',
+    label: 'Pengaturan',
+    iconName: 'Settings',
+    items: [
+      { label: 'Paket Anggota', href: ROUTES.SETTINGS_MEMBERSHIP_PACKAGES, iconName: 'List' },
+      { label: 'Paket Personal Trainer', href: ROUTES.SETTINGS_PT_PACKAGES, iconName: 'List' },
+      { label: 'Daftar Nama Kelas', href: ROUTES.SETTINGS_CLASSES, iconName: 'List' },
+    ]
   }
 ];
+
 

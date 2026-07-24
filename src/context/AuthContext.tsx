@@ -143,6 +143,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const handleSelectBranch = (branchID: string) => {
+    // Karyawan / CS staff is strictly locked to their assigned branch_id
+    if (user && user.role === 'karyawan' && user.branch_id) {
+      branchID = user.branch_id;
+    } else if (!user) {
+      const storedUser = localStorage.getItem('prabu_admin_user');
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser);
+          if (parsed.role === 'karyawan' && parsed.branch_id) {
+            branchID = parsed.branch_id;
+          }
+        } catch { }
+      }
+    }
     localStorage.setItem('prabu_admin_branch_id', branchID);
     document.cookie = `prabu_admin_branch_id=${branchID}; path=/; max-age=${24 * 60 * 60}; SameSite=Lax`;
     setActiveBranchID(branchID);

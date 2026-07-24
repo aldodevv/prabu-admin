@@ -5,6 +5,9 @@ import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { Save, Printer, ArrowLeft, UserCheck } from 'lucide-react';
 
+import { packagesApi } from '@/core/api';
+import { DatePicker } from '@/components/core/DatePicker';
+
 interface Member {
   id: string;
   full_name: string;
@@ -31,12 +34,22 @@ interface PTRegistration {
   notes?: string;
 }
 
+const DEFAULT_PT_PACKAGES = [
+  { id: '1', name: 'Bonus 1 Sesi PT - Promo januari (free)', session_count: 1, price: 0 },
+  { id: '2', name: 'Bonus 2 Sesi PT - Promo januari (free)', session_count: 2, price: 0 },
+  { id: '3', name: 'PT 1 Sesi [Harga 150k]', session_count: 1, price: 150000 },
+  { id: '4', name: 'PT 3 Sesi [Harga 400k]', session_count: 3, price: 400000 },
+  { id: '5', name: 'PT 6 Sesi [Harga 750k]', session_count: 6, price: 750000 },
+  { id: '6', name: 'PT 12 Sesi [Harga 1200k]', session_count: 12, price: 1200000 }
+];
+
 export default function PTRegistrationPage() {
   const { activeBranchID, user } = useAuth();
 
-  // Members & Trainers
+  // Members & Trainers & Dynamic Packages
   const [members, setMembers] = useState<Member[]>([]);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
+  const [ptPackagesList, setPtPackagesList] = useState<any[]>(DEFAULT_PT_PACKAGES);
 
   // Form options grouping
   const [memberScope, setMemberScope] = useState<'one' | 'all'>('one');
@@ -68,10 +81,22 @@ export default function PTRegistrationPage() {
     if (activeBranchID) {
       fetchMembers();
       fetchTrainers();
+      fetchPtPackages();
     }
     const today = new Date().toISOString().split('T')[0];
     setStartDate(today);
   }, [activeBranchID, memberScope]);
+
+  const fetchPtPackages = async () => {
+    try {
+      const res = await packagesApi.listPTPackages(activeBranchID || undefined);
+      if (res.data && res.data.length > 0) {
+        setPtPackagesList(res.data);
+      }
+    } catch (err) {
+      console.error('Gagal mengambil paket PT dari DB:', err);
+    }
+  };
 
   const fetchMembers = async () => {
     setLoadingMembers(true);
@@ -118,26 +143,32 @@ export default function PTRegistrationPage() {
       return;
     }
 
-    if (selectedPackage.includes('Bonus 1 Sesi')) {
-      setSessionCount(1);
-      setTotalAmount(0);
-    } else if (selectedPackage.includes('Bonus 2 Sesi')) {
-      setSessionCount(2);
-      setTotalAmount(0);
-    } else if (selectedPackage.includes('PT 1 Sesi')) {
-      setSessionCount(1);
-      setTotalAmount(150000);
-    } else if (selectedPackage.includes('PT 3 Sesi')) {
-      setSessionCount(3);
-      setTotalAmount(400000);
-    } else if (selectedPackage.includes('PT 6 Sesi')) {
-      setSessionCount(6);
-      setTotalAmount(750000);
-    } else if (selectedPackage.includes('PT 12 Sesi')) {
-      setSessionCount(12);
-      setTotalAmount(1200000);
+    const matched = ptPackagesList.find(p => p.name === selectedPackage || selectedPackage.includes(p.name));
+    if (matched) {
+      setSessionCount(matched.session_count || 1);
+      setTotalAmount(matched.price || 0);
+    } else {
+      if (selectedPackage.includes('Bonus 1 Sesi')) {
+        setSessionCount(1);
+        setTotalAmount(0);
+      } else if (selectedPackage.includes('Bonus 2 Sesi')) {
+        setSessionCount(2);
+        setTotalAmount(0);
+      } else if (selectedPackage.includes('12 Sesi')) {
+        setSessionCount(12);
+        setTotalAmount(1200000);
+      } else if (selectedPackage.includes('6 Sesi')) {
+        setSessionCount(6);
+        setTotalAmount(750000);
+      } else if (selectedPackage.includes('3 Sesi')) {
+        setSessionCount(3);
+        setTotalAmount(400000);
+      } else {
+        setSessionCount(1);
+        setTotalAmount(150000);
+      }
     }
-  }, [selectedPackage]);
+  }, [selectedPackage, ptPackagesList]);
 
   // Recalculate expiry date: exactly 1 month minus 1 day from Start Gym
   useEffect(() => {
@@ -374,12 +405,11 @@ export default function PTRegistrationPage() {
                     className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full font-bold"
                   >
                     <option value="">-Pilih-</option>
-                    <option value="Bonus 1 Sesi PT - Promo januari (free)">Bonus 1 Sesi PT - Promo januari (free)</option>
-                    <option value="Bonus 2 Sesi PT - Promo januari (free)">Bonus 2 Sesi PT - Promo januari (free)</option>
-                    <option value="PT 1 Sesi [Harga 150k]">PT 1 Sesi [Harga 150k]</option>
-                    <option value="PT 3 Sesi [Harga 400k]">PT 3 Sesi [Harga 400k]</option>
-                    <option value="PT 6 Sesi [Harga 750k]">PT 6 Sesi [Harga 750k]</option>
-                    <option value="PT 12 Sesi [Harga 1200k]">PT 12 Sesi [Harga 1200k]</option>
+                    {ptPackagesList.map((pkg: any) => (
+                      <option key={pkg.id || pkg.name} value={pkg.name}>
+                        {pkg.name} {pkg.price > 0 ? `[Harga Rp. ${pkg.price.toLocaleString('id-ID')}]` : '(Free)'}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -413,25 +443,18 @@ export default function PTRegistrationPage() {
                     {/* Mulai Gym */}
                     <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                       <label className="text-sm font-bold text-slate-700 text-left">Mulai Gym</label>
-                      <input
-                        type="date"
-                        required
+                      <DatePicker
                         value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full font-bold cursor-pointer"
-                        onClick={(e) => { try { e.currentTarget.showPicker(); } catch { } }}
+                        onChange={(val) => setStartDate(val)}
                       />
                     </div>
 
                     {/* Masa Aktif */}
                     <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
-                      <label className="text-sm font-bold text-slate-700 text-left">Masa Aktif</label>
-                      <input
-                        type="date"
-                        readOnly
-                        disabled
+                      <label className="text-sm font-bold text-slate-700 text-left">Masa Aktif Berakhir</label>
+                      <DatePicker
                         value={endDate}
-                        className="bg-slate-100 border border-slate-300 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-bold"
+                        readOnly
                       />
                     </div>
                   </>

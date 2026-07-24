@@ -121,9 +121,10 @@ export const purchaseTransactionsApi = {
 
 
 export const employeesApi = {
-  list: (params: { branch_id?: string; page?: number; per_page?: number }) => {
+  list: (params: { branch_id?: string; role?: string; page?: number; per_page?: number }) => {
     const q = new URLSearchParams();
     if (params.branch_id) q.append('branch_id', params.branch_id);
+    if (params.role) q.append('role', params.role);
     if (params.page) q.append('page', String(params.page));
     if (params.per_page) q.append('per_page', String(params.per_page));
     return api.get<any[]>(`/admin/employees?${q.toString()}`);
@@ -141,4 +142,31 @@ export const distributorsApi = {
   update: (id: string, data: Partial<Distributor>) => api.put<void>(`/admin/distributors/${id}`, data),
   delete: (id: string) => api.delete<void>(`/admin/distributors/${id}`),
 };
+
+export const packagesApi = {
+  listMembershipPackages: (branchId?: string) => {
+    const q = branchId ? `?branch_id=${branchId}` : '';
+    return api.get<any[]>(`/admin/membership-packages${q}`);
+  },
+  createMembershipPackage: (data: any) => api.post<any>('/admin/membership-packages', data),
+  updateMembershipPackage: (id: string, data: any) => api.put<void>(`/admin/membership-packages/${id}`, data),
+  deleteMembershipPackage: (id: string) => api.delete<void>(`/admin/membership-packages/${id}`),
+
+  listPTPackages: (branchId?: string) => {
+    const q = branchId ? `?branch_id=${branchId}` : '';
+    return api.get<any[]>(`/admin/pt-packages${q}`);
+  },
+  createPTPackage: (data: any) => api.post<any>('/admin/pt-packages', data),
+  updatePTPackage: (id: string, data: any) => api.put<void>(`/admin/pt-packages/${id}`, data),
+  deletePTPackage: (id: string) => api.delete<void>(`/admin/pt-packages/${id}`),
+
+  listGymClasses: (branchId?: string) => {
+    const q = branchId ? `?branch_id=${branchId}` : '';
+    return api.get<any[]>(`/admin/classes${q}`);
+  },
+  createGymClass: (data: any) => api.post<any>('/admin/classes', data),
+  updateGymClass: (id: string, data: any) => api.put<void>(`/admin/classes/${id}`, data),
+  deleteGymClass: (id: string) => api.delete<void>(`/admin/classes/${id}`),
+};
+
 

@@ -30,7 +30,23 @@ export function getBranchAddress(branchCodeOrName?: string): string {
   return 'JALAN GROGOL RAYA NO. 42, GROGOL-DEPOK';
 }
 
-const BG_IMAGE_URL = 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=1200&auto=format&fit=crop';
+function InstagramIcon({ className = 'w-4 h-4' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+    </svg>
+  );
+}
+
+function WhatsAppIcon({ className = 'w-3.5 h-3.5' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.99c-.002 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c-.001 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+    </svg>
+  );
+}
 
 async function toDataURL(url: string): Promise<string> {
   try {
@@ -53,7 +69,6 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
   const [downloading, setDownloading] = useState(false);
   const [copiedTemplate, setCopiedTemplate] = useState(false);
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
-  const [bgDataUrl, setBgDataUrl] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
   const address = getBranchAddress(branchCodeOrName || branchName);
@@ -69,17 +84,15 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
       if (typeof window === 'undefined') return;
       const origin = window.location.origin;
       const logoUrl = `${origin}/logo-transparent.png`;
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${member.username}`;
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${member.username}`;
 
-      const [b64Logo, b64Bg, b64Qr] = await Promise.all([
+      const [b64Logo, b64Qr] = await Promise.all([
         toDataURL(logoUrl),
-        toDataURL(BG_IMAGE_URL),
         toDataURL(qrUrl),
       ]);
 
       if (isMounted) {
         if (b64Logo.startsWith('data:')) setLogoDataUrl(b64Logo);
-        if (b64Bg.startsWith('data:')) setBgDataUrl(b64Bg);
         if (b64Qr.startsWith('data:')) setQrDataUrl(b64Qr);
       }
     }
@@ -98,17 +111,15 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
     try {
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
       const logoUrl = `${origin}/logo-transparent.png`;
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${member.username}`;
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${member.username}`;
 
       // Convert images to Base64 if not already cached
-      const [b64Logo, b64Bg, b64Qr] = await Promise.all([
+      const [b64Logo, b64Qr] = await Promise.all([
         logoDataUrl ? Promise.resolve(logoDataUrl) : toDataURL(logoUrl),
-        bgDataUrl ? Promise.resolve(bgDataUrl) : toDataURL(BG_IMAGE_URL),
         qrDataUrl ? Promise.resolve(qrDataUrl) : toDataURL(qrUrl),
       ]);
 
       if (b64Logo.startsWith('data:')) setLogoDataUrl(b64Logo);
-      if (b64Bg.startsWith('data:')) setBgDataUrl(b64Bg);
       if (b64Qr.startsWith('data:')) setQrDataUrl(b64Qr);
 
       // Brief delay to allow React state to settle
@@ -117,7 +128,7 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
       const dataUrl = await toPng(cardRef.current, {
         cacheBust: false,
         pixelRatio: 3,
-        backgroundColor: '#0f172a',
+        backgroundColor: '#EBEBEB',
       });
       const link = document.createElement('a');
       link.href = dataUrl;
@@ -132,8 +143,8 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
 
   // Pre-filled Email Template with explicit CRLF (\r\n) for email clients
   const emailSubject = encodeURIComponent(`Kartu Keanggotaan Digital PrabuGym - ${member.full_name}`);
-  
-  const emailBodyRaw = 
+
+  const emailBodyRaw =
     `Halo ${member.full_name},\r\n\r\n` +
     `Selamat bergabung di PrabuGym! Berikut adalah rincian keanggotaan digital Anda:\r\n\r\n` +
     `• Nama Lengkap: ${member.full_name}\r\n` +
@@ -157,94 +168,98 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
 
   return (
     <div className="flex flex-col items-center gap-6 w-full max-w-sm mx-auto">
-      {/* Visual Digital Membership Card DOM Container */}
+      {/* Visual Digital Membership Card DOM Container (Instagram Ratio 9:16) */}
       <div
         ref={cardRef}
         style={{
-          backgroundColor: '#0f172a',
-          backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.75)), url('${bgDataUrl || BG_IMAGE_URL}')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          borderColor: '#334155',
+          backgroundColor: '#EBEBEB',
         }}
-        className="w-[350px] p-5 rounded-3xl shadow-2xl text-white font-sans border border-slate-700 relative overflow-hidden select-none"
+        className="w-90 h-175 p-5 flex flex-col justify-between items-center relative overflow-hidden select-none font-sans"
       >
-        {/* Card Main Inner Container */}
-        <div
-          style={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0' }}
-          className="bg-white rounded-2xl p-6 shadow-xl border border-slate-200 relative flex flex-col items-center gap-5"
-        >
-          {/* Subtle Top Polygonal Pattern Background Header */}
-          <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-slate-100/90 to-transparent pointer-events-none rounded-t-2xl" />
+        {/* Main Inner Card (White Container with Geometric Faceted Header) */}
+        <div className="w-full bg-white rounded-3xl shadow-xl border border-slate-200/60 relative flex flex-col items-center justify-between pt-6 overflow-hidden flex-1 mb-2">
+          {/* Low-Poly Geometric Facet Header Background with Angled V-Cutout Accent */}
+          <div className="absolute top-0 inset-x-0 h-50 pointer-events-none z-0 overflow-hidden rounded-t-3xl">
+            <svg className="w-full h-full" viewBox="0 0 360 220" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* Geometric Low-Poly Facet Triangles (Shades of Light Grey & Off-White) */}
+              <polygon points="0,0 90,0 45,45" fill="#F1F5F9" />
+              <polygon points="90,0 180,0 135,50" fill="#E2E8F0" opacity="0.9" />
+              <polygon points="180,0 270,0 225,45" fill="#F8FAFC" />
+              <polygon points="270,0 360,0 315,55" fill="#EDF2F7" />
+
+              <polygon points="0,0 45,45 0,90" fill="#E2E8F0" opacity="0.8" />
+              <polygon points="45,45 135,50 90,95" fill="#CBD5E1" opacity="0.45" />
+              <polygon points="135,50 225,45 180,100" fill="#F1F5F9" opacity="0.9" />
+              <polygon points="225,45 315,55 270,105" fill="#E2E8F0" opacity="0.7" />
+              <polygon points="315,55 360,0 360,85" fill="#F8FAFC" />
+
+              <polygon points="0,90 90,95 45,145" fill="#F8FAFC" opacity="0.8" />
+              <polygon points="90,95 180,100 135,150" fill="#E2E8F0" opacity="0.6" />
+              <polygon points="180,100 270,105 225,150" fill="#CBD5E1" opacity="0.4" />
+              <polygon points="270,105 360,85 315,155" fill="#F1F5F9" opacity="0.9" />
+              <polygon points="360,85 360,165 315,155" fill="#E2E8F0" opacity="0.7" />
+
+              {/* Angled White V-Chevron Cutout Transition into Pure White Card Body */}
+            </svg>
+          </div>
 
           {/* Logo Header */}
-          <div className="relative z-10 pt-1 flex flex-col items-center">
+          <div className="relative z-10 pt-2 flex flex-col items-center justify-center w-full">
             <img
               src={logoDataUrl || '/logo-transparent.png'}
               alt="PrabuGym Logo"
-              className="h-16 w-auto object-contain drop-shadow-xs"
+              className="h-35 w-auto object-contain relative z-10 drop-shadow-xs"
               crossOrigin="anonymous"
             />
           </div>
 
-          {/* Card Title */}
-          <h2
-            style={{ color: '#0f172a' }}
-            className="text-xl font-extrabold tracking-wider uppercase text-slate-900 font-heading -mt-1"
-          >
+          {/* Card Title (Aggressive Gym Font - Bebas Neue) */}
+          <h2 className="relative z-10 text-4xl font-normal uppercase text-slate-950 font-['Bebas_Neue','Oswald',sans-serif] leading-none my-1 text-center">
             MEMBERSHIP CARD
           </h2>
 
-          {/* QR Code Container */}
-          <div
-            style={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0' }}
-            className="w-52 h-52 bg-white rounded-2xl p-3 shadow-md border border-slate-200/80 flex items-center justify-center"
-          >
+          {/* QR Code Box */}
+          <div className="w-56 h-56 bg-white rounded-3xl p-4 shadow-[0_10px_30px_rgba(0,0,0,0.12)] border border-slate-100 flex items-center justify-center my-1">
             <img
-              src={qrDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${member.username}`}
+              src={qrDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${member.username}`}
               alt={`QR Code ${member.username}`}
-              className="w-full h-full object-contain rounded-lg"
+              className="w-full h-full object-contain"
               crossOrigin="anonymous"
             />
           </div>
 
-          {/* Member Code Bar */}
-          <div
-            style={{ backgroundColor: '#1E1E1E', color: '#ffffff' }}
-            className="w-full bg-[#1E1E1E] text-white py-2.5 px-4 rounded-xl text-center font-mono font-bold tracking-[0.25em] text-base shadow-sm"
-          >
+          {/* Member Code Bar (Bold Athletic Font - Oswald) */}
+          <div className="w-full bg-slate-950 text-white py-3 px-4 rounded-b-3xl text-center font-['Oswald','monospace',sans-serif] font-extrabold text-xl shadow-sm mt-3">
             {formattedCode}
           </div>
         </div>
 
-        {/* Card Footer Section */}
-        <div className="mt-4 flex flex-col items-center text-center space-y-2">
-          <h3
-            style={{ color: '#ffffff' }}
-            className="font-extrabold text-sm uppercase tracking-widest text-white font-heading drop-shadow-md"
-          >
+        {/* Card Footer Section (Outside white card on #EBEBEB canvas) */}
+        <div className="w-full flex flex-col items-center text-center space-y-1.5 pt-1 pb-1">
+          {/* Brand Name (Bebas Neue Athletic Brand Header) */}
+          <h3 className="font-['Bebas_Neue','Oswald',sans-serif] text-xl font-normal uppercase tracking-[0.2em] text-slate-950 leading-none">
             PRABU GYM
           </h3>
 
-          {/* Social Media & Contact */}
-          <div
-            style={{ color: '#f8fafc' }}
-            className="flex items-center justify-center gap-4 text-[10px] font-bold text-slate-50 whitespace-nowrap drop-shadow-xs"
-          >
-            <span>📷 @prabugym.official</span>
-            <span>💬 +62 851-5888-9050</span>
+          {/* Social Media & WhatsApp Contact Row */}
+          <div className="flex items-center justify-center gap-3 text-[11px] font-semibold text-slate-900 font-['Oswald',sans-serif] tracking-wide whitespace-nowrap">
+            <span className="flex items-center gap-1">
+              <InstagramIcon className="w-3 h-3 text-slate-950" />
+              <span>@prabugym.official</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <WhatsAppIcon className="w-3 h-3 text-slate-950" />
+              <span>+62 851-5888-9050</span>
+            </span>
           </div>
 
           {/* Branch Address Line with Side Accents */}
-          <div className="w-full flex items-center gap-2 pt-1">
-            <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.4)' }} className="h-[1px] bg-white/40 flex-1" />
-            <span
-              style={{ color: '#ffffff' }}
-              className="text-[9px] font-extrabold uppercase tracking-wide text-white px-1 text-center leading-tight drop-shadow-xs"
-            >
+          <div className="w-full flex items-center gap-2 pt-1 px-1">
+            <div className="h-px bg-slate-400 flex-1" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-950 font-['Oswald',sans-serif] text-center leading-tight whitespace-nowrap">
               {address}
             </span>
-            <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.4)' }} className="h-[1px] bg-white/40 flex-1" />
+            <div className="h-px bg-slate-400 flex-1" />
           </div>
         </div>
       </div>
@@ -256,7 +271,7 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
           type="button"
           onClick={handleDownloadImage}
           disabled={downloading}
-          className="w-full py-2.5 px-4 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+          className="w-full py-2.5 px-4 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
         >
           <Download className="w-4 h-4" />
           <span>{downloading ? 'Mengunduh Gambar...' : 'Download Kartu Member (PNG)'}</span>
@@ -287,3 +302,4 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
     </div>
   );
 }
+
