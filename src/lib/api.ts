@@ -131,6 +131,19 @@ class ApiClient {
       return { success: false, error: err.message || 'Koneksi gagal' };
     }
   }
+
+  async uploadImage(formData: FormData): Promise<ApiResponse<{ url: string }>> {
+    try {
+      const res = await fetch(`${BASE_URL}/admin/upload`, {
+        method: 'POST',
+        headers: this.getHeaders(true),
+        body: formData,
+      });
+      return this.handleResponse<{ url: string }>(res);
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Koneksi gagal' };
+    }
+  }
 }
 
 export const api = new ApiClient();

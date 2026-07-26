@@ -157,6 +157,7 @@ export const ROUTES = {
   SETTINGS_MEMBERSHIP_PACKAGES: '/dashboard/settings/membership-packages',
   SETTINGS_PT_PACKAGES: '/dashboard/settings/pt-packages',
   SETTINGS_CLASSES: '/dashboard/settings/classes',
+  SETTINGS_CMS: '/dashboard/settings/cms',
 };
 
 /**
@@ -257,6 +258,7 @@ export const NAVIGATION_MENU: NavigationGroup[] = [
       { label: 'Paket Anggota', href: ROUTES.SETTINGS_MEMBERSHIP_PACKAGES, iconName: 'List' },
       { label: 'Paket Personal Trainer', href: ROUTES.SETTINGS_PT_PACKAGES, iconName: 'List' },
       { label: 'Daftar Nama Kelas', href: ROUTES.SETTINGS_CLASSES, iconName: 'List' },
+      { label: 'Manajemen CMS (News & Promo)', href: ROUTES.SETTINGS_CMS, iconName: 'FileText' },
     ]
   }
 ];

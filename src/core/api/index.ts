@@ -169,4 +169,13 @@ export const packagesApi = {
   deleteGymClass: (id: string) => api.delete<void>(`/admin/classes/${id}`),
 };
 
+export const contentsApi = {
+  listAdmin: (contentType?: string) => api.get<any[]>(`/admin/contents${contentType ? `?type=${contentType}` : ''}`),
+  get: (id: string) => api.get<any>(`/admin/contents/${id}`),
+  create: (data: any) => api.post<any>('/admin/contents', data),
+  update: (id: string, data: any) => api.put<any>(`/admin/contents/${id}`, data),
+  delete: (id: string) => api.delete<void>(`/admin/contents/${id}`),
+};
+
+
 
