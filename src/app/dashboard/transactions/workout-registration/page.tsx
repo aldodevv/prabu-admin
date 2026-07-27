@@ -7,6 +7,7 @@ import { Save, Printer, ArrowLeft, UserCheck } from 'lucide-react';
 
 import { packagesApi } from '@/core/api';
 import { DatePicker } from '@/components/core/DatePicker';
+import FieldInfo from '@/components/core/FieldInfo';
 
 interface Member {
   id: string;
@@ -397,7 +398,10 @@ export default function PTRegistrationPage() {
 
                 {/* Paket Latihan Anggota */}
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-sm font-bold text-slate-700 text-left">Paket Latihan Anggota *</label>
+                  <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                    Paket Latihan Anggota *
+                    <FieldInfo text="Wajib memilih dari daftar paket Personal Trainer aktif." />
+                  </label>
                   <select
                     required
                     value={selectedPackage}
@@ -405,8 +409,8 @@ export default function PTRegistrationPage() {
                     className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full font-bold"
                   >
                     <option value="">-Pilih-</option>
-                    {ptPackagesList.map((pkg: any) => (
-                      <option key={pkg.id || pkg.name} value={pkg.name}>
+                    {ptPackagesList.map((pkg: any, idx: number) => (
+                      <option key={pkg.id || `${pkg.name}-${idx}`} value={pkg.name}>
                         {pkg.name} {pkg.price > 0 ? `[Harga Rp. ${pkg.price.toLocaleString('id-ID')}]` : '(Free)'}
                       </option>
                     ))}
@@ -418,7 +422,10 @@ export default function PTRegistrationPage() {
                   <>
                     {/* Jumlah Sesi */}
                     <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
-                      <label className="text-sm font-bold text-slate-700 text-left">Jumlah Sesi</label>
+                      <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                        Jumlah Sesi
+                        <FieldInfo text="Total kuota sesi pertemuan latihan yang didapatkan." />
+                      </label>
                       <input
                         type="number"
                         readOnly
@@ -430,7 +437,10 @@ export default function PTRegistrationPage() {
 
                     {/* Total Bayar */}
                     <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
-                      <label className="text-sm font-bold text-slate-700 text-left">Total Bayar</label>
+                      <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                        Total Bayar
+                        <FieldInfo text="Total nominal biaya paket pendaftaran latihan PT." />
+                      </label>
                       <input
                         type="text"
                         readOnly
@@ -442,7 +452,10 @@ export default function PTRegistrationPage() {
 
                     {/* Mulai Gym */}
                     <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
-                      <label className="text-sm font-bold text-slate-700 text-left">Mulai Gym</label>
+                      <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                        Mulai Gym
+                        <FieldInfo text="Pilih tanggal pertama kali dimulainya sesi latihan." />
+                      </label>
                       <DatePicker
                         value={startDate}
                         onChange={(val) => setStartDate(val)}
@@ -451,7 +464,10 @@ export default function PTRegistrationPage() {
 
                     {/* Masa Aktif */}
                     <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
-                      <label className="text-sm font-bold text-slate-700 text-left">Masa Aktif Berakhir</label>
+                      <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                        Masa Aktif Berakhir
+                        <FieldInfo text="Tanggal otomatis kadaluarsa/berakhirnya masa aktif paket." />
+                      </label>
                       <DatePicker
                         value={endDate}
                         readOnly
@@ -462,7 +478,10 @@ export default function PTRegistrationPage() {
 
                 {/* Jenis Pembayaran */}
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-sm font-bold text-slate-700 text-left">Jenis Pembayaran *</label>
+                  <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                    Jenis Pembayaran *
+                    <FieldInfo text="Wajib memilih metode pembayaran (Tunai, Transfer, QRIS, atau Debit)." />
+                  </label>
                   <select
                     required
                     value={paymentMethod}
@@ -479,7 +498,10 @@ export default function PTRegistrationPage() {
 
                 {/* Keterangan */}
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-start max-sm:grid-cols-1">
-                  <label className="text-sm font-bold text-slate-700 text-left mt-2">Keterangan</label>
+                  <label className="text-sm font-bold text-slate-700 text-left mt-2 inline-flex items-center">
+                    Keterangan
+                    <FieldInfo text="Catatan khusus atau keterangan tambahan (opsional)." />
+                  </label>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}

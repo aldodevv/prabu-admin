@@ -1,3 +1,5 @@
+import { translateRC } from './rcMapper';
+
 const getBaseUrl = () => {
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
@@ -15,6 +17,7 @@ const BASE_URL = getBaseUrl();
 
 export interface ApiResponse<T> {
   success: boolean;
+  rc?: string;
   data?: T;
   error?: string;
   message?: string;
@@ -28,6 +31,7 @@ export interface ApiResponse<T> {
 
 export interface PaginatedResponse<T> {
   success: boolean;
+  rc?: string;
   data: T[];
   meta: {
     page: number;
@@ -63,9 +67,11 @@ class ApiClient {
     if (contentType && contentType.includes('application/json')) {
       const data = await res.json();
       if (!res.ok) {
+        const mappedError = translateRC(data.rc, data.error || 'Terjadi kesalahan pada server');
         return {
           success: false,
-          error: data.error || 'Terjadi kesalahan pada server',
+          rc: data.rc,
+          error: mappedError,
           message: data.message,
         };
       }
@@ -75,11 +81,12 @@ class ApiClient {
     if (!res.ok) {
       return {
         success: false,
-        error: `HTTP Error ${res.status}: ${res.statusText}`,
+        rc: 'SYS99',
+        error: translateRC('SYS99', `HTTP Error ${res.status}: ${res.statusText}`),
       };
     }
     
-    return { success: true };
+    return { success: true, rc: '00' };
   }
 
   async get<T>(path: string): Promise<ApiResponse<T>> {

@@ -9,6 +9,7 @@ import { compressImage } from '@/utils/imageCompressor';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { DigitalMemberCard } from '@/components/core/DigitalMemberCard';
 import { DatePicker } from '@/components/core/DatePicker';
+import FieldInfo from '@/components/core/FieldInfo';
 
 import { packagesApi } from '@/core/api';
 
@@ -406,7 +407,7 @@ export default function MemberRegistrationPage() {
 
       {/* Main Registration Form - Full Width Grid Layout */}
       {!successData && (
-        <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden w-full no-print">
+        <div className="bg-white border border-slate-200 rounded shadow-sm overflow-visible w-full no-print">
           <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
             <UserPlus className="w-4 h-4" />
             <span className="text-sm uppercase tracking-wider font-heading">Pendaftaran Anggota</span>
@@ -418,8 +419,9 @@ export default function MemberRegistrationPage() {
               <div className="space-y-5">
                 {/* Tanggal Transaksi */}
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-sm font-bold text-slate-700 text-left">
+                  <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Tanggal Transaksi
+                    <FieldInfo text="Tanggal pendaftaran transaksi otomatis disesuaikan hari ini." />
                   </label>
                   <DatePicker
                     value={startDateInput}
@@ -427,10 +429,11 @@ export default function MemberRegistrationPage() {
                   />
                 </div>
 
-                {/* Photo Input (Larger w-32 h-32) */}
+                {/* Photo Input */}
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-sm font-bold text-slate-700 text-left">
+                  <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Foto Anggota
+                    <FieldInfo text="Format foto (JPG, PNG, atau WebP), ukuran maksimal file 5MB." />
                   </label>
                   <div className="flex gap-4 items-center">
                     <div className="w-28 h-28 bg-slate-50 border border-slate-300 rounded flex items-center justify-center text-slate-400 text-xs select-none relative overflow-hidden">
@@ -462,8 +465,9 @@ export default function MemberRegistrationPage() {
 
                 {/* Nama Anggota */}
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-sm font-bold text-slate-700 text-left">
+                  <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Nama Anggota *
+                    <FieldInfo text="Wajib diisi. Maksimal 100 karakter (gunakan nama sesuai KTP/identitas)." />
                   </label>
                   <input
                     type="text"
@@ -477,8 +481,9 @@ export default function MemberRegistrationPage() {
 
                 {/* Jenis Kelamin */}
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-sm font-bold text-slate-700 text-left">
+                  <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Jenis Kelamin *
+                    <FieldInfo text="Wajib memilih salah satu: Laki-laki atau Perempuan." />
                   </label>
                   <select
                     required
@@ -494,8 +499,9 @@ export default function MemberRegistrationPage() {
 
                 {/* Tanggal Lahir */}
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-sm font-bold text-slate-700 text-left">
+                  <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Tanggal Lahir
+                    <FieldInfo text="Pilih tanggal lahir anggota dari kalender." />
                   </label>
                   <DatePicker
                     value={dob}
@@ -506,8 +512,9 @@ export default function MemberRegistrationPage() {
 
                 {/* Nomor HP */}
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-sm font-bold text-slate-700 text-left">
+                  <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Nomor HP (Angka)
+                    <FieldInfo text="Hanya angka tanpa spasi/simbol, maksimal 20 digit (contoh: 08123456789)." />
                   </label>
                   <input
                     type="tel"
@@ -520,8 +527,9 @@ export default function MemberRegistrationPage() {
 
                 {/* Email */}
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-sm font-bold text-slate-700 text-left">
+                  <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Email
+                    <FieldInfo text="Format email valid (user@domain.com), tidak lebih dari 100 karakter." />
                   </label>
                   <input
                     type="email"
@@ -534,8 +542,9 @@ export default function MemberRegistrationPage() {
 
                 {/* Sosial Media */}
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-sm font-bold text-slate-700 text-left">
-                    Sosial Media <span className="text-slate-400 font-normal">(Opsional)</span>
+                  <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                    Sosial Media <span className="text-slate-400 font-normal ml-1">(Opsional)</span>
+                    <FieldInfo text="Username sosial media (Instagram/TikTok/Facebook), maksimal 100 karakter." />
                   </label>
                   <input
                     type="text"
@@ -548,8 +557,9 @@ export default function MemberRegistrationPage() {
 
                 {/* Alamat */}
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-start max-sm:grid-cols-1">
-                  <label className="text-sm font-bold text-slate-700 text-left mt-2">
+                  <label className="text-sm font-bold text-slate-700 text-left mt-2 inline-flex items-center">
                     Alamat
+                    <FieldInfo text="Alamat tempat tinggal lengkap anggota." />
                   </label>
                   <textarea
                     value={address}
@@ -561,8 +571,9 @@ export default function MemberRegistrationPage() {
 
                 {/* Paket Anggota */}
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1 pt-4 border-t border-slate-100">
-                  <label className="text-sm font-bold text-slate-700 text-left">
+                  <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Paket Anggota *
+                    <FieldInfo text="Wajib pilih salah satu paket membership yang tersedia." />
                   </label>
                   <select
                     required
@@ -571,8 +582,8 @@ export default function MemberRegistrationPage() {
                     className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-bold"
                   >
                     <option value="">-Pilih-</option>
-                    {packages.map((pkg) => (
-                      <option key={pkg.name} value={pkg.name}>
+                    {packages.map((pkg, idx) => (
+                      <option key={`${pkg.name}-${idx}`} value={pkg.name}>
                         {pkg.name} (Rp. {pkg.price.toLocaleString('id-ID')})
                       </option>
                     ))}
