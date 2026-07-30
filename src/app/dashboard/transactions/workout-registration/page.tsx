@@ -52,9 +52,6 @@ export default function PTRegistrationPage() {
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [ptPackagesList, setPtPackagesList] = useState<any[]>(DEFAULT_PT_PACKAGES);
 
-  // Form options grouping
-  const [memberScope, setMemberScope] = useState<'one' | 'all'>('one');
-
   // Form Fields
   const [selectedMemberID, setSelectedMemberID] = useState('');
   const [selectedTrainerID, setSelectedTrainerID] = useState('');
@@ -86,7 +83,7 @@ export default function PTRegistrationPage() {
     }
     const today = new Date().toISOString().split('T')[0];
     setStartDate(today);
-  }, [activeBranchID, memberScope]);
+  }, [activeBranchID]);
 
   const fetchPtPackages = async () => {
     try {
@@ -103,11 +100,7 @@ export default function PTRegistrationPage() {
     setLoadingMembers(true);
     setFetchError('');
     try {
-      const url = memberScope === 'one'
-        ? `/admin/members?branch_id=${activeBranchID}&per_page=200`
-        : `/admin/members?per_page=200`;
-
-      const res = await api.get<any>(url);
+      const res = await api.get<any>(`/admin/members?branch_id=${activeBranchID}&per_page=200`);
       if (res.success && res.data) {
         setMembers(res.data);
       } else {
@@ -256,6 +249,10 @@ export default function PTRegistrationPage() {
     <div className="space-y-8 font-sans">
       <style jsx global>{`
         @media print {
+          @page {
+            size: 210mm 148mm !important; /* A5 Landscape (210mm x 148mm) */
+            margin: 5mm !important;
+          }
           header, aside, button, .no-print {
             display: none !important;
           }
@@ -264,10 +261,14 @@ export default function PTRegistrationPage() {
             color: black !important;
             padding: 0 !important;
             margin: 0 !important;
+            width: 200mm !important;
           }
           #pt-receipt-print-area {
-            width: 100% !important;
+            width: 200mm !important;
+            max-width: 200mm !important;
             display: block !important;
+            position: relative !important;
+            margin: 0 auto !important;
           }
           table {
             border-collapse: collapse !important;
@@ -277,6 +278,11 @@ export default function PTRegistrationPage() {
             border: 1px solid black !important;
             padding: 6px 8px !important;
             color: black !important;
+          }
+          thead th {
+            background-color: #f2f2f2 !important;
+            color: black !important;
+            font-weight: 900 !important;
           }
         }
       `}</style>
@@ -321,33 +327,6 @@ export default function PTRegistrationPage() {
                     value={todayFormatted}
                     className="bg-slate-100 border border-slate-300 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-mono font-bold"
                   />
-                </div>
-
-                {/* Kelompok Anggota Toggle */}
-                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-sm font-bold text-slate-700 text-left">Kelompok Anggota</label>
-                  <div className="flex gap-4">
-                    <label className="inline-flex items-center gap-1.5 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="scope"
-                        checked={memberScope === 'one'}
-                        onChange={() => setMemberScope('one')}
-                        className="text-[#17A2B8] focus:ring-[#17A2B8]"
-                      />
-                      <span className="text-xs font-bold text-slate-700">One Club (Cabang Aktif)</span>
-                    </label>
-                    <label className="inline-flex items-center gap-1.5 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="scope"
-                        checked={memberScope === 'all'}
-                        onChange={() => setMemberScope('all')}
-                        className="text-[#17A2B8] focus:ring-[#17A2B8]"
-                      />
-                      <span className="text-xs font-bold text-slate-700">All Club (Semua Cabang)</span>
-                    </label>
-                  </div>
                 </div>
 
                 {/* Nama Anggota */}
@@ -562,47 +541,47 @@ export default function PTRegistrationPage() {
                   className="h-14 w-auto object-contain"
                 />
                 <div className="text-center leading-none mt-2">
-                  <h1 className="text-xl font-black tracking-widest">PRABU</h1>
-                  <span className="text-[8px] uppercase font-bold text-slate-500">Gym & Fitness Center</span>
+                  <h1 className="text-xl font-black tracking-widest font-heading">PRABU GYM</h1>
+                  <span className="text-[8px] uppercase font-bold text-slate-600 tracking-wider">Gym & Fitness Center</span>
                 </div>
               </div>
 
               {/* Title Box */}
               <div className="p-4 flex items-center justify-center text-center">
-                <h2 className="text-3xl font-black uppercase tracking-widest text-slate-800">
+                <h2 className="text-3xl font-black uppercase tracking-widest text-slate-900">
                   PRABU OFFICIAL RECEIPT
                 </h2>
               </div>
             </div>
 
-            {/* Metadata Summary Row */}
-            <div className="border border-black py-2.5 px-4 flex justify-between text-xs font-semibold">
+            {/* Metadata Summary Row - Bold & Prominent */}
+            <div className="border border-black py-2.5 px-4 flex justify-between text-xs font-extrabold text-black uppercase tracking-wide">
               <span>Tanggal : {formatDateLabel(new Date().toISOString())}</span>
-              <span>Kategori : Personal Trainner</span>
+              <span>Kategori : Personal Trainer</span>
               <span>No Invoice : {successTx.transaction_number}</span>
             </div>
 
-            {/* Details Table */}
+            {/* Details Table - Bold Header Row */}
             <div className="border border-black overflow-hidden rounded-xs">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-black font-extrabold uppercase text-[10px] text-slate-700">
-                    <th className="py-2.5 px-3 border-r border-black">Nomor Anggota</th>
-                    <th className="py-2.5 px-3 border-r border-black">Nama Anggota</th>
-                    <th className="py-2.5 px-3 border-r border-black">Paket Anggota</th>
-                    <th className="py-2.5 px-3 border-r border-black">Jumlah Sesi</th>
-                    <th className="py-2.5 px-3 border-r border-black">Masa Aktif</th>
-                    <th className="py-2.5 px-3">Harga Paket</th>
+                  <tr className="bg-slate-100 border-b border-black font-black uppercase text-[11px] text-black">
+                    <th className="py-2.5 px-3 border-r border-black font-black">NOMOR ANGGOTA</th>
+                    <th className="py-2.5 px-3 border-r border-black font-black">NAMA ANGGOTA</th>
+                    <th className="py-2.5 px-3 border-r border-black font-black">PAKET ANGGOTA</th>
+                    <th className="py-2.5 px-3 border-r border-black font-black text-center">JUMLAH SESI</th>
+                    <th className="py-2.5 px-3 border-r border-black font-black">MASA AKTIF</th>
+                    <th className="py-2.5 px-3 font-black">HARGA PAKET</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="font-semibold text-slate-800">
-                    <td className="py-3 px-3 border-r border-black font-mono">{successTx.member_username}</td>
-                    <td className="py-3 px-3 border-r border-black font-bold">{successTx.member_name}</td>
-                    <td className="py-3 px-3 border-r border-black uppercase text-[10px]">{successTx.package_name}</td>
-                    <td className="py-3 px-3 border-r border-black text-center">{sessionCount}</td>
-                    <td className="py-3 px-3 border-r border-black font-mono text-[10px]">{formatDateLabel(endDate)}</td>
-                    <td className="py-3 px-3 font-bold">Rp. {successTx.total_amount.toLocaleString('id-ID')}</td>
+                  <tr className="font-bold text-slate-900">
+                    <td className="py-3 px-3 border-r border-black font-mono font-bold">{successTx.member_username}</td>
+                    <td className="py-3 px-3 border-r border-black font-extrabold">{successTx.member_name}</td>
+                    <td className="py-3 px-3 border-r border-black uppercase text-[10px] font-bold">{successTx.package_name}</td>
+                    <td className="py-3 px-3 border-r border-black text-center font-extrabold">{sessionCount}</td>
+                    <td className="py-3 px-3 border-r border-black font-mono text-[10px] font-bold">{formatDateLabel(endDate)}</td>
+                    <td className="py-3 px-3 font-extrabold">Rp. {successTx.total_amount.toLocaleString('id-ID')}</td>
                   </tr>
                 </tbody>
               </table>

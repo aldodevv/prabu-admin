@@ -7,6 +7,7 @@ import { Branch } from '@/core/types';
 import { PageHeader } from '@/components/core/PageHeader';
 import { DataTable, Column } from '@/components/core/DataTable';
 import { Users, UserPlus, Edit, Trash2, Save, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { FetchErrorAlert } from '@/components/core/FetchErrorAlert';
 
 export default function CSStaffManagementPage() {
   const { user } = useAuth();
@@ -230,6 +231,8 @@ export default function CSStaffManagementPage() {
           )
         }
       />
+
+      <FetchErrorAlert error={error} featureName="Data Customer Service (CS)" onRetry={fetchCSList} />
 
       {error && (
         <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-bold uppercase tracking-wider">

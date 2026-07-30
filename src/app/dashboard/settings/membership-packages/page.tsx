@@ -223,7 +223,7 @@ export default function MembershipPackagesPage() {
       )}
 
       {(step === 'create' || step === 'edit') && (
-        <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden max-w-2xl mx-auto">
+        <div className="bg-white border border-slate-200 rounded shadow-xs overflow-hidden w-full">
           <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold select-none flex items-center gap-2">
             <List className="w-4 h-4" />
             <span className="text-sm uppercase tracking-wider font-heading">

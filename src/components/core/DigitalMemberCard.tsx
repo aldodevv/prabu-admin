@@ -3,6 +3,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { toPng } from 'html-to-image';
 import { Download, Mail, Check, Copy } from 'lucide-react';
+import { getBranchAddress, toDataURL } from '@/utils';
 
 export interface DigitalMemberCardProps {
   member: {
@@ -16,18 +17,6 @@ export interface DigitalMemberCardProps {
   };
   branchCodeOrName?: string;
   branchName?: string;
-}
-
-export function getBranchAddress(branchCodeOrName?: string): string {
-  if (!branchCodeOrName) return 'JALAN GROGOL RAYA NO. 42, GROGOL-DEPOK';
-  const upper = branchCodeOrName.toUpperCase();
-  if (upper.includes('PITARA') || upper.includes('PANCORAN')) {
-    return 'JALAN PITARA RAYA NO. 89, PITARA-DEPOK';
-  }
-  if (upper.includes('LIMO')) {
-    return 'JALAN LIMO RAYA NO. 112, LIMO-DEPOK';
-  }
-  return 'JALAN GROGOL RAYA NO. 42, GROGOL-DEPOK';
 }
 
 function InstagramIcon({ className = 'w-4 h-4' }: { className?: string }) {
@@ -48,22 +37,6 @@ function WhatsAppIcon({ className = 'w-3.5 h-3.5' }: { className?: string }) {
   );
 }
 
-async function toDataURL(url: string): Promise<string> {
-  try {
-    const response = await fetch(url, { mode: 'cors' });
-    const blob = await response.blob();
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = () => resolve(url);
-      reader.readAsDataURL(blob);
-    });
-  } catch (err) {
-    console.warn('Gagal mengubah URL gambar ke base64:', url, err);
-    return url;
-  }
-}
-
 export function DigitalMemberCard({ member, branchCodeOrName, branchName }: DigitalMemberCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
@@ -73,7 +46,7 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
 
   const address = getBranchAddress(branchCodeOrName || branchName);
 
-  // Format username with spaces for card display e.g. 1 6 7 1 6 2 8 1 0
+  // Format username with spaces for card display e.g. 1 6 5 1 2 0 0 4
   const formattedCode = (member.username || '').split('').join(' ');
 
   // Preload image assets as Base64 to ensure 100% reliable canvas rendering
@@ -92,8 +65,8 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
       ]);
 
       if (isMounted) {
-        if (b64Logo.startsWith('data:')) setLogoDataUrl(b64Logo);
-        if (b64Qr.startsWith('data:')) setQrDataUrl(b64Qr);
+        if (b64Logo && b64Logo.startsWith('data:')) setLogoDataUrl(b64Logo);
+        if (b64Qr && b64Qr.startsWith('data:')) setQrDataUrl(b64Qr);
       }
     }
 
@@ -113,22 +86,22 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
       const logoUrl = `${origin}/logo-transparent.png`;
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${member.username}`;
 
-      // Convert images to Base64 if not already cached
       const [b64Logo, b64Qr] = await Promise.all([
         logoDataUrl ? Promise.resolve(logoDataUrl) : toDataURL(logoUrl),
         qrDataUrl ? Promise.resolve(qrDataUrl) : toDataURL(qrUrl),
       ]);
 
-      if (b64Logo.startsWith('data:')) setLogoDataUrl(b64Logo);
-      if (b64Qr.startsWith('data:')) setQrDataUrl(b64Qr);
+      if (b64Logo && b64Logo.startsWith('data:')) setLogoDataUrl(b64Logo);
+      if (b64Qr && b64Qr.startsWith('data:')) setQrDataUrl(b64Qr);
 
-      // Brief delay to allow React state to settle
-      await new Promise((r) => setTimeout(r, 100));
+      await new Promise((r) => setTimeout(r, 120));
 
       const dataUrl = await toPng(cardRef.current, {
         cacheBust: false,
         pixelRatio: 3,
         backgroundColor: '#EBEBEB',
+        fontEmbedCSS: '',
+        skipFonts: true,
       });
       const link = document.createElement('a');
       link.href = dataUrl;
@@ -141,9 +114,8 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
     }
   };
 
-  // Pre-filled Email Template with explicit CRLF (\r\n) for email clients
+  // Pre-filled Email Template
   const emailSubject = encodeURIComponent(`Kartu Keanggotaan Digital PrabuGym - ${member.full_name}`);
-
   const emailBodyRaw =
     `Halo ${member.full_name},\r\n\r\n` +
     `Selamat bergabung di PrabuGym! Berikut adalah rincian keanggotaan digital Anda:\r\n\r\n` +
@@ -178,10 +150,9 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
       >
         {/* Main Inner Card (White Container with Geometric Faceted Header) */}
         <div className="w-full bg-white rounded-3xl shadow-xl border border-slate-200/60 relative flex flex-col items-center justify-between pt-6 overflow-hidden flex-1 mb-2">
-          {/* Low-Poly Geometric Facet Header Background with Angled V-Cutout Accent */}
+          {/* Low-Poly Geometric Facet Header Background */}
           <div className="absolute top-0 inset-x-0 h-50 pointer-events-none z-0 overflow-hidden rounded-t-3xl">
             <svg className="w-full h-full" viewBox="0 0 360 220" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-              {/* Geometric Low-Poly Facet Triangles (Shades of Light Grey & Off-White) */}
               <polygon points="0,0 90,0 45,45" fill="#F1F5F9" />
               <polygon points="90,0 180,0 135,50" fill="#E2E8F0" opacity="0.9" />
               <polygon points="180,0 270,0 225,45" fill="#F8FAFC" />
@@ -198,23 +169,27 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
               <polygon points="180,100 270,105 225,150" fill="#CBD5E1" opacity="0.4" />
               <polygon points="270,105 360,85 315,155" fill="#F1F5F9" opacity="0.9" />
               <polygon points="360,85 360,165 315,155" fill="#E2E8F0" opacity="0.7" />
-
-              {/* Angled White V-Chevron Cutout Transition into Pure White Card Body */}
             </svg>
           </div>
 
-          {/* Logo Header */}
-          <div className="relative z-10 pt-2 flex flex-col items-center justify-center w-full">
+          {/* Logo Header - CrossOrigin omitted for local URLs to prevent iOS Chrome/Safari WebKit CORS blocking */}
+          <div className="relative z-10 pt-2 flex flex-col items-center justify-center w-full min-h-[110px]">
             <img
               src={logoDataUrl || '/logo-transparent.png'}
               alt="PrabuGym Logo"
-              className="h-35 w-auto object-contain relative z-10 drop-shadow-xs"
-              crossOrigin="anonymous"
+              className="h-32 w-auto max-w-[200px] object-contain relative z-10 drop-shadow-xs"
+              loading="eager"
             />
           </div>
 
-          {/* Card Title (Aggressive Gym Font - Bebas Neue) */}
-          <h2 className="relative z-10 text-4xl font-normal uppercase text-slate-950 font-['Bebas_Neue','Oswald',sans-serif] leading-none my-1 text-center">
+          {/* Card Title (Aggressive Athletic Condensed Font) */}
+          <h2
+            style={{
+              fontFamily: "'Bebas Neue', 'Oswald', Impact, 'Arial Narrow', sans-serif",
+              letterSpacing: '0.04em',
+            }}
+            className="relative z-10 text-[42px] font-normal uppercase text-slate-950 leading-none my-1 text-center"
+          >
             MEMBERSHIP CARD
           </h2>
 
@@ -224,25 +199,42 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
               src={qrDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${member.username}`}
               alt={`QR Code ${member.username}`}
               className="w-full h-full object-contain"
-              crossOrigin="anonymous"
+              loading="eager"
             />
           </div>
 
-          {/* Member Code Bar (Bold Athletic Font - Oswald) */}
-          <div className="w-full bg-slate-950 text-white py-3 px-4 rounded-b-3xl text-center font-['Oswald','monospace',sans-serif] font-extrabold text-xl shadow-sm mt-3">
+          {/* Member Code Bar (Bold Athletic Font) */}
+          <div
+            style={{
+              fontFamily: "'Oswald', 'Bebas Neue', Impact, 'Arial Narrow', monospace, sans-serif",
+              letterSpacing: '0.2em',
+            }}
+            className="w-full bg-slate-950 text-white py-3 px-4 rounded-b-3xl text-center font-extrabold text-2xl shadow-sm mt-3"
+          >
             {formattedCode}
           </div>
         </div>
 
-        {/* Card Footer Section (Outside white card on #EBEBEB canvas) */}
+        {/* Card Footer Section */}
         <div className="w-full flex flex-col items-center text-center space-y-1.5 pt-1 pb-1">
-          {/* Brand Name (Bebas Neue Athletic Brand Header) */}
-          <h3 className="font-['Bebas_Neue','Oswald',sans-serif] text-xl font-normal uppercase tracking-[0.2em] text-slate-950 leading-none">
+          {/* Brand Name */}
+          <h3
+            style={{
+              fontFamily: "'Bebas Neue', 'Oswald', Impact, sans-serif",
+              letterSpacing: '0.22em',
+            }}
+            className="text-2xl font-normal uppercase text-slate-950 leading-none"
+          >
             PRABU GYM
           </h3>
 
           {/* Social Media & WhatsApp Contact Row */}
-          <div className="flex items-center justify-center gap-3 text-[11px] font-semibold text-slate-900 font-['Oswald',sans-serif] tracking-wide whitespace-nowrap">
+          <div
+            style={{
+              fontFamily: "'Oswald', 'Inter', sans-serif",
+            }}
+            className="flex items-center justify-center gap-3 text-[11px] font-bold text-slate-900 tracking-wide whitespace-nowrap"
+          >
             <span className="flex items-center gap-1">
               <InstagramIcon className="w-3 h-3 text-slate-950" />
               <span>@prabugym.official</span>
@@ -256,7 +248,12 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
           {/* Branch Address Line with Side Accents */}
           <div className="w-full flex items-center gap-2 pt-1 px-1">
             <div className="h-px bg-slate-400 flex-1" />
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-950 font-['Oswald',sans-serif] text-center leading-tight whitespace-nowrap">
+            <span
+              style={{
+                fontFamily: "'Oswald', 'Inter', sans-serif",
+              }}
+              className="text-[10px] font-bold uppercase tracking-wider text-slate-950 text-center leading-tight whitespace-nowrap"
+            >
               {address}
             </span>
             <div className="h-px bg-slate-400 flex-1" />
@@ -266,7 +263,6 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
 
       {/* Action Buttons */}
       <div className="flex flex-col gap-3 w-full">
-        {/* Download Button */}
         <button
           type="button"
           onClick={handleDownloadImage}
@@ -277,7 +273,6 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
           <span>{downloading ? 'Mengunduh Gambar...' : 'Download Kartu Member (PNG)'}</span>
         </button>
 
-        {/* Mailto Button */}
         {member.email ? (
           <a
             href={mailtoUrl}
@@ -302,4 +297,3 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
     </div>
   );
 }
-

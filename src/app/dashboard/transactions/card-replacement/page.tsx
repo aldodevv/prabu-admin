@@ -132,6 +132,15 @@ export default function CardReplacementPage() {
       return;
     }
 
+    // Check if membership has already been transferred previously (1x limit per membership)
+    const hasAlreadyTransferred = logs.some(
+      l => l.old_username === mObj.username || l.new_username === mObj.username
+    );
+    if (hasAlreadyTransferred) {
+      setFormError('Membership ini sudah pernah ditransfer sebelumnya. Transfer membership hanya diperbolehkan 1x per membership.');
+      return;
+    }
+
     if (!activeBranchID) {
       setFormError('ID cabang aktif tidak ditemukan');
       return;

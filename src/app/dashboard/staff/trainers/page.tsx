@@ -7,9 +7,12 @@ import { Trainer, Branch } from '@/core/types';
 import { PageHeader } from '@/components/core/PageHeader';
 import { DataTable, Column } from '@/components/core/DataTable';
 import { UserCheck, UserPlus, Edit, Trash2, Save, ArrowLeft } from 'lucide-react';
+import { permissions } from '@/lib/permissions';
+import { FetchErrorAlert } from '@/components/core/FetchErrorAlert';
 
 export default function TrainerStaffManagementPage() {
   const { user } = useAuth();
+  const canWrite = !permissions.isReadOnly(user?.role);
   const [trainerList, setTrainerList] = useState<Trainer[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
@@ -141,7 +144,7 @@ export default function TrainerStaffManagementPage() {
     {
       key: 'actions',
       header: 'Aksi',
-      render: (row) => (
+      render: (row) => canWrite ? (
         <div className="flex gap-1.5 justify-center">
           <button
             onClick={() => handleOpenEdit(row)}
@@ -159,7 +162,7 @@ export default function TrainerStaffManagementPage() {
             Hapus
           </button>
         </div>
-      ),
+      ) : <span className="text-[10px] text-slate-400 font-semibold italic">Read Only</span>,
       className: 'text-center'
     }
   ];
@@ -171,13 +174,15 @@ export default function TrainerStaffManagementPage() {
         description="Data Staff"
         action={
           step === 'list' ? (
-            <button
-              onClick={handleOpenCreate}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>+ Tambah Pelatih</span>
-            </button>
+            canWrite && (
+              <button
+                onClick={handleOpenCreate}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>+ Tambah Pelatih</span>
+              </button>
+            )
           ) : (
             <button
               onClick={() => setStep('list')}
@@ -190,11 +195,7 @@ export default function TrainerStaffManagementPage() {
         }
       />
 
-      {error && (
-        <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-bold uppercase tracking-wider">
-          ⚠️ {error}
-        </div>
-      )}
+      <FetchErrorAlert error={error} featureName="Data Pelatih (Trainer)" onRetry={fetchTrainerList} />
 
       {success && (
         <div className="p-4 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-700 text-xs font-bold uppercase tracking-wider">

@@ -2,86 +2,240 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import api from '@/lib/api';
+import { SearchFilterBar } from '@/components/core/SearchFilterBar';
+import { FetchErrorAlert } from '@/components/core/FetchErrorAlert';
+import { formatDateLabel, formatIDR } from '@/core/constants';
+import { Printer, Dumbbell } from 'lucide-react';
+import { exportToExcel } from '@/lib/excelExport';
 
-interface WorkoutReport {
-  date: string;
-  total_checkins: number;
-  total_checkouts: number;
-  avg_duration_minutes: number;
+interface PTRegistrationReportItem {
+  id: string;
+  transaction_number?: string;
+  member_id: string;
+  member_name: string;
+  member_username?: string;
+  trainer_id: string;
+  trainer_name: string;
+  package_name: string;
+  payment_method: string;
+  total_amount: number;
+  notes?: string;
+  created_at: string;
+  admin_name?: string;
 }
 
 export default function WorkoutReportsPage() {
   const { activeBranchID } = useAuth();
-  const [reports, setReports] = useState<WorkoutReport[]>([]);
+  const [registrations, setRegistrations] = useState<PTRegistrationReportItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   useEffect(() => {
     if (activeBranchID) {
-      fetchReports();
+      fetchRegistrations();
     }
-  }, [activeBranchID]);
+  }, [activeBranchID, dateFrom, dateTo]);
 
-  const fetchReports = async () => {
+  const fetchRegistrations = async () => {
     setLoading(true);
+    setError('');
     try {
-      setTimeout(() => {
-        setReports([
-          { date: '15-07-2026', total_checkins: 45, total_checkouts: 42, avg_duration_minutes: 72 },
-          { date: '14-07-2026', total_checkins: 38, total_checkouts: 35, avg_duration_minutes: 68 },
-          { date: '13-07-2026', total_checkins: 52, total_checkouts: 50, avg_duration_minutes: 75 }
-        ]);
-        setLoading(false);
-      }, 500);
-    } catch (err) {
+      let url = `/admin/pt-registrations?branch_id=${activeBranchID}&per_page=200`;
+      if (dateFrom) url += `&date_from=${dateFrom}`;
+      if (dateTo) url += `&date_to=${dateTo}`;
+
+      const res = await api.get<any>(url);
+      if (res.success && res.data) {
+        setRegistrations(res.data);
+      } else {
+        setError(res.error || 'Gagal memuat data transaksi pendaftaran latihan');
+      }
+    } catch (err: any) {
       console.error(err);
+      setError(err.message || 'Terjadi kesalahan koneksi server');
+    } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="space-y-8 font-sans">
-      <div>
-        <h2 className="text-3xl font-heading text-slate-800">LAPORAN KUNJUNGAN & LATIHAN</h2>
-        <p className="text-slate-500 text-sm mt-1 uppercase tracking-widest font-accent">
-          Laporan riwayat kunjungan latihan masuk / keluar anggota per tanggal
-        </p>
-      </div>
+  const getFilteredRegistrations = () => {
+    if (!searchQuery.trim()) return registrations;
+    const q = searchQuery.toLowerCase();
+    return registrations.filter(
+      r =>
+        r.member_name.toLowerCase().includes(q) ||
+        (r.member_username && r.member_username.toLowerCase().includes(q)) ||
+        r.package_name.toLowerCase().includes(q) ||
+        r.trainer_name.toLowerCase().includes(q)
+    );
+  };
 
-      {loading ? (
-        <div className="text-center py-20 text-slate-500 font-accent uppercase tracking-widest text-xs">
-          Loading laporan latihan...
-        </div>
-      ) : (
-        <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
-          <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold select-none">
-            <span className="text-sm uppercase tracking-wider">Rekap Jumlah Check-in & Durasi Latihan Harian</span>
+  const filteredList = getFilteredRegistrations();
+  const grandTotal = filteredList.reduce((acc, curr) => acc + curr.total_amount, 0);
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleExportExcel = () => {
+    const headers = [
+      'No',
+      'Tanggal Transaksi',
+      'Nomor Transaksi',
+      'Nomor Anggota',
+      'Nama Anggota',
+      'Paket Latihan',
+      'Pelatih / PT',
+      'Metode Bayar',
+      'Total Biaya',
+    ];
+    const data = filteredList.map((r, idx) => [
+      idx + 1,
+      formatDateLabel(r.created_at),
+      r.transaction_number || `PRABU-PT-${r.id.substring(0, 7).toUpperCase()}`,
+      r.member_username ? `@${r.member_username}` : '-',
+      r.member_name,
+      r.package_name,
+      r.trainer_name,
+      r.payment_method,
+      r.total_amount,
+    ]);
+
+    exportToExcel({
+      filename: `Laporan_Pendaftaran_Latihan_${new Date().toISOString().split('T')[0]}`,
+      title: 'LAPORAN TRANSAKSI PENDAFTARAN LATIHAN (PT) - PRABU GYM',
+      headers,
+      data,
+    });
+  };
+
+  return (
+    <div className="space-y-6 font-sans">
+      <style jsx global>{`
+        @media print {
+          header, aside, button, .no-print {
+            display: none !important;
+          }
+          body, .min-h-screen, main, #print-report-area {
+            background: white !important;
+            color: black !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+        }
+      `}</style>
+
+      <div className="no-print space-y-6">
+        <div className="flex justify-between items-start">
+          <div>
+            <h2 className="text-3xl font-heading text-slate-800 uppercase tracking-tight">LAPORAN PENDAFTARAN LATIHAN (PT)</h2>
+            <p className="text-slate-500 text-xs mt-1 uppercase tracking-widest font-accent">
+              Rekapitulasi Seluruh Transaksi Pendaftaran Latihan / Sesi PT Anggota
+            </p>
           </div>
-          <div className="p-6">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-650">
-                <thead className="bg-[#6C7A89] text-white text-[10px] uppercase tracking-wider font-bold select-none">
-                  <tr>
-                    <th className="py-3 px-4 border-r border-slate-300/40">Tanggal</th>
-                    <th className="py-3 px-4 border-r border-slate-300/40 text-center">Total Scan Masuk (Check-in)</th>
-                    <th className="py-3 px-4 border-r border-slate-300/40 text-center">Total Scan Keluar (Check-out)</th>
-                    <th className="py-3 px-4 text-right">Rata-rata Durasi Latihan</th>
+          <button
+            onClick={handlePrint}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer"
+          >
+            <Printer className="w-4 h-4" />
+            <span>Cetak Laporan</span>
+          </button>
+        </div>
+
+        <SearchFilterBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Cari nama member, nomor anggota, paket, atau pelatih..."
+          onExportExcel={handleExportExcel}
+        >
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={e => setDateFrom(e.target.value)}
+              className="bg-slate-50 border border-slate-300 text-slate-700 px-3 py-2 text-xs rounded font-mono"
+            />
+            <span className="text-slate-400 text-xs font-bold">s/d</span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={e => setDateTo(e.target.value)}
+              className="bg-slate-50 border border-slate-300 text-slate-700 px-3 py-2 text-xs rounded font-mono"
+            />
+          </div>
+        </SearchFilterBar>
+
+        <FetchErrorAlert error={error} featureName="Laporan Pendaftaran Latihan" onRetry={fetchRegistrations} />
+
+        <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden" id="print-report-area">
+          <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex items-center justify-between select-none">
+            <span className="text-sm uppercase tracking-wider font-heading flex items-center gap-2">
+              <Dumbbell className="w-4 h-4" />
+              <span>Daftar Transaksi Pendaftaran Latihan</span>
+            </span>
+            <span className="text-xs font-mono">Total: {filteredList.length} Transaksi</span>
+          </div>
+
+          <div className="p-6 space-y-4">
+            <div className="overflow-x-auto border border-slate-200 rounded">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-[#6C7A89] text-white text-[10px] uppercase tracking-wider font-bold select-none">
+                    <th className="py-2.5 px-3 border-r border-slate-350 w-10 text-center">No</th>
+                    <th className="py-2.5 px-3 border-r border-slate-350">Tanggal</th>
+                    <th className="py-2.5 px-3 border-r border-slate-350">Nomor Transaksi</th>
+                    <th className="py-2.5 px-3 border-r border-slate-350">Nama Anggota</th>
+                    <th className="py-2.5 px-3 border-r border-slate-350">Paket Latihan</th>
+                    <th className="py-2.5 px-3 border-r border-slate-350">Pelatih (PT)</th>
+                    <th className="py-2.5 px-3 border-r border-slate-350">Bayar</th>
+                    <th className="py-2.5 px-3 text-right">Total Biaya</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700 font-semibold">
-                  {reports.map((r) => (
-                    <tr key={r.date} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-3.5 px-4 font-mono font-bold text-slate-800 border-r border-slate-100">{r.date}</td>
-                      <td className="py-3.5 px-4 border-r border-slate-100 text-center font-bold text-slate-800">{r.total_checkins} Orang</td>
-                      <td className="py-3.5 px-4 border-r border-slate-100 text-center text-slate-600">{r.total_checkouts} Orang</td>
-                      <td className="py-3.5 px-4 text-right text-emerald-700 font-black">{r.avg_duration_minutes} Menit</td>
+                <tbody className="divide-y divide-slate-100 text-slate-700">
+                  {filteredList.length > 0 ? (
+                    filteredList.map((r, idx) => (
+                      <tr key={r.id} className="hover:bg-slate-50/50">
+                        <td className="py-2.5 px-3 text-center border-r border-slate-100 font-mono">{idx + 1}</td>
+                        <td className="py-2.5 px-3 border-r border-slate-100 font-mono">{formatDateLabel(r.created_at)}</td>
+                        <td className="py-2.5 px-3 border-r border-slate-100 font-mono font-bold text-slate-800">
+                          {r.transaction_number || `PRABU-PT-${r.id.substring(0, 7).toUpperCase()}`}
+                        </td>
+                        <td className="py-2.5 px-3 border-r border-slate-100 font-bold text-slate-800">
+                          {r.member_name} {r.member_username ? <span className="font-mono text-slate-400 font-normal">(@{r.member_username})</span> : ''}
+                        </td>
+                        <td className="py-2.5 px-3 border-r border-slate-100 font-semibold uppercase">{r.package_name}</td>
+                        <td className="py-2.5 px-3 border-r border-slate-100 text-slate-800">{r.trainer_name}</td>
+                        <td className="py-2.5 px-3 border-r border-slate-100 font-semibold">{r.payment_method}</td>
+                        <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
+                          Rp. {r.total_amount.toLocaleString('id-ID')}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={8} className="py-8 text-center text-slate-400 italic">
+                        Tidak ada transaksi pendaftaran latihan.
+                      </td>
                     </tr>
-                  ))}
+                  )}
+                  <tr className="bg-slate-100 font-bold border-t-2 border-slate-300">
+                    <td colSpan={7} className="py-3 px-4 text-right uppercase tracking-wider text-xs text-slate-700">
+                      Grand Total
+                    </td>
+                    <td className="py-3 px-4 text-right font-mono font-black text-sm text-[#DC3545]">
+                      Rp. {grandTotal.toLocaleString('id-ID')}
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

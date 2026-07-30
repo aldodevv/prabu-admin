@@ -13,7 +13,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const [userDropdown, setUserDropdown] = useState(false);
-  
+
   // Compact sidebar active group dropdown state
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const [mobileActiveGroup, setMobileActiveGroup] = useState<string | null>(null);
@@ -26,7 +26,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Auto-expand menu group on page load/navigation based on pathname
   useEffect(() => {
-    const matched = NAVIGATION_MENU.find(group => 
+    const matched = NAVIGATION_MENU.find(group =>
       group.items.some(item => pathname === item.href || pathname.startsWith(item.href + '/'))
     );
     if (matched) {
@@ -74,13 +74,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const ChevronDownIcon = resolveIcon('ChevronDown');
 
   return (
-    <div className="min-h-screen bg-[#F4F6F9] flex font-sans text-slate-800">
-      
+    <div className="min-h-screen bg-brand-bg flex font-sans text-slate-800">
+
       {/* 1. Main Sidebar - Compact Desktop (110px width) */}
-      <aside className="w-[110px] bg-[#343A40] flex flex-col justify-between max-lg:hidden fixed h-screen z-40 select-none shadow-md">
+      <aside className="w-27.5 bg-brand-dark flex flex-col justify-between max-lg:hidden fixed h-screen z-40 select-none shadow-md">
         <div className="flex flex-col h-full">
           {/* Prabu Gym Brand Banner */}
-          <div className="h-16 bg-[#DC3545] flex items-center justify-center text-white flex-shrink-0">
+          <div className="h-16 bg-brand-red flex items-center justify-center text-white flex-shrink-0">
             <span className="font-heading text-base tracking-widest font-extrabold text-center leading-tight">
               PRABU
             </span>
@@ -91,8 +91,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {filteredNavigation.map((group) => {
               const Icon = resolveIcon(group.iconName);
               const isBeranda = group.id === 'beranda';
-              const isGroupActive = isBeranda 
-                ? pathname === ROUTES.DASHBOARD 
+              const isGroupActive = isBeranda
+                ? pathname === ROUTES.DASHBOARD
                 : activeGroup === group.id;
 
               return (
@@ -105,17 +105,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       setActiveGroup(activeGroup === group.id ? null : group.id);
                     }
                   }}
-                  className={`w-full flex flex-col items-center justify-center py-5 text-center transition-all duration-150 relative cursor-pointer border-b border-slate-700/10 ${
-                    isGroupActive
-                      ? 'bg-[#2A2F35] text-white'
-                      : 'text-slate-300 hover:bg-[#2A2F35]/50 hover:text-white'
-                  }`}
+                  className={`w-full flex flex-col items-center justify-center py-5 text-center transition-all duration-150 relative cursor-pointer border-b border-slate-700/10 ${isGroupActive
+                    ? 'bg-[#2A2F35] text-white'
+                    : 'text-slate-300 hover:bg-[#2A2F35]/50 hover:text-white'
+                    }`}
                 >
                   {/* Arrow Indicator pointing right to sub-menu */}
                   {isGroupActive && !isBeranda && (
                     <div className="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-r-[6px] border-r-[#2A2F35] z-50" />
                   )}
-                  
+
                   <Icon className="w-5 h-5 mb-1.5" />
                   <span className="text-[9px] font-bold uppercase tracking-wider leading-tight text-center px-1 block break-words max-w-[95%] font-accent">
                     {group.label}
@@ -146,11 +145,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Link
                   key={item.label}
                   href={item.href}
-                  className={`flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold uppercase tracking-wider transition-all rounded ${
-                    isItemActive
-                      ? 'bg-[#DC3545] text-white font-extrabold shadow-sm'
-                      : 'hover:bg-slate-700/40 text-slate-350 hover:text-white'
-                  }`}
+                  className={`flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold uppercase tracking-wider transition-all rounded ${isItemActive
+                    ? 'bg-[#DC3545] text-white font-extrabold shadow-sm'
+                    : 'hover:bg-slate-700/40 text-slate-350 hover:text-white'
+                    }`}
                 >
                   <SubIcon className="w-3.5 h-3.5" />
                   <span>{item.label}</span>
@@ -187,10 +185,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       )}
 
       {/* 3. Main Content Wrapper */}
-      <div 
-        className={`flex-1 flex flex-col min-h-screen w-full max-w-full overflow-x-hidden transition-all duration-300 ${
-          hasSubmenu ? 'lg:pl-[366px]' : 'lg:pl-[110px]'
-        }`}
+      <div
+        className={`flex-1 flex flex-col min-h-screen w-full max-w-full overflow-x-hidden transition-all duration-300 ${hasSubmenu ? 'lg:pl-[366px]' : 'lg:pl-[110px]'
+          }`}
       >
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-3 sm:px-6 sticky top-0 z-30 shadow-sm w-full max-w-full">
@@ -209,12 +206,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           )}
 
+          {/* Read-Only Badge for Admin */}
+          {user?.role === 'admin' && (
+            <div className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-300 text-amber-700 font-bold text-[10px] rounded-full uppercase tracking-wider shadow-xs no-print shrink-0">
+              <Icons.Eye className="w-3.5 h-3.5 text-amber-600" />
+              <span>Akses Membaca (Read-Only)</span>
+            </div>
+          )}
+
           <div className="flex items-center gap-2 sm:gap-4 lg:gap-6 ml-auto shrink-0">
             {/* Branch Selector Dropdown / Locked Badge for CS */}
             {branches.length > 0 && (
               <div className="relative">
                 <div className={`flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-bold text-slate-650 bg-slate-50 border border-slate-200 px-2 sm:px-3.5 py-1.5 sm:py-2 rounded-lg shadow-sm ${user?.role === 'karyawan' ? 'bg-slate-100/80 cursor-not-allowed select-none' : ''}`}>
-                  <BuildingIcon className="w-3.5 h-3.5 text-[#DC3545] shrink-0" />
+                  <BuildingIcon className="w-3.5 h-3.5 text-brand-red shrink-0" />
                   <span className="uppercase tracking-wider hidden sm:inline">Cabang:</span>
                   {user?.role === 'karyawan' ? (
                     <span className="uppercase text-slate-800 font-extrabold flex items-center gap-1.5 px-0.5" title="Akses cabang terkunci khusus untuk CS/Karyawan">
@@ -283,7 +288,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {mobileSidebar && (
         <div className="fixed inset-0 z-50 flex lg:hidden animate-fade-in">
           {/* Backdrop overlay */}
-          <div 
+          <div
             className="fixed inset-0 bg-black/50 backdrop-blur-xs"
             onClick={() => setMobileSidebar(false)}
           />
@@ -305,8 +310,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {NAVIGATION_MENU.map((group) => {
                   const Icon = resolveIcon(group.iconName);
                   const isBeranda = group.id === 'beranda';
-                  const isMobileActive = isBeranda 
-                    ? pathname === ROUTES.DASHBOARD 
+                  const isMobileActive = isBeranda
+                    ? pathname === ROUTES.DASHBOARD
                     : mobileActiveGroup === group.id;
 
                   if (isBeranda) {
@@ -315,11 +320,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         key={group.id}
                         href={ROUTES.DASHBOARD}
                         onClick={() => setMobileSidebar(false)}
-                        className={`flex items-center gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wider transition-all rounded ${
-                          pathname === ROUTES.DASHBOARD
-                            ? 'bg-[#DC3545] text-white border-l-4 border-white'
-                            : 'text-slate-300 hover:bg-[#2A2F35]/50'
-                        }`}
+                        className={`flex items-center gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wider transition-all rounded ${pathname === ROUTES.DASHBOARD
+                          ? 'bg-[#DC3545] text-white border-l-4 border-white'
+                          : 'text-slate-300 hover:bg-[#2A2F35]/50'
+                          }`}
                       >
                         <Icon className="w-4 h-4" />
                         <span>{group.label}</span>
@@ -331,11 +335,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <div key={group.id} className="space-y-1">
                       <button
                         onClick={() => setMobileActiveGroup(mobileActiveGroup === group.id ? null : group.id)}
-                        className={`w-full flex items-center justify-between px-4 py-3 text-xs font-semibold uppercase tracking-wider transition-all rounded cursor-pointer ${
-                          isMobileActive
-                            ? 'bg-[#2A2F35] text-white border-l-4 border-[#DC3545]'
-                            : 'text-slate-300 hover:bg-[#2A2F35]/50'
-                        }`}
+                        className={`w-full flex items-center justify-between px-4 py-3 text-xs font-semibold uppercase tracking-wider transition-all rounded cursor-pointer ${isMobileActive
+                          ? 'bg-[#2A2F35] text-white border-l-4 border-[#DC3545]'
+                          : 'text-slate-300 hover:bg-[#2A2F35]/50'
+                          }`}
                       >
                         <div className="flex items-center gap-3">
                           <Icon className="w-4 h-4" />
@@ -343,7 +346,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         </div>
                         <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform duration-200 ${mobileActiveGroup === group.id ? 'rotate-180' : ''}`} />
                       </button>
-                      
+
                       {mobileActiveGroup === group.id && (
                         <div className="pl-6 space-y-1 py-1">
                           {group.items.map((item) => {
@@ -354,11 +357,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 key={item.label}
                                 href={item.href}
                                 onClick={() => setMobileSidebar(false)}
-                                className={`flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-wider transition-all rounded ${
-                                  isSubActive
-                                    ? 'text-white bg-[#DC3545]'
-                                    : 'text-slate-400 hover:text-white'
-                                }`}
+                                className={`flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-wider transition-all rounded ${isSubActive
+                                  ? 'text-white bg-[#DC3545]'
+                                  : 'text-slate-400 hover:text-white'
+                                  }`}
                               >
                                 <SubIcon className="w-3.5 h-3.5" />
                                 <span>{item.label}</span>

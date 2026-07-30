@@ -8,6 +8,8 @@ import { Transaction } from '@/core/types';
 import { PageHeader } from '@/components/core/PageHeader';
 import { ReportTemplate } from '@/components/core/PrintTemplates';
 import { FileText, ArrowLeft, Printer } from 'lucide-react';
+import FieldInfo from '@/components/core/FieldInfo';
+import { DatePicker } from '@/components/core/DatePicker';
 
 export default function MemberReportsPage() {
   const { activeBranchID, user } = useAuth();
@@ -51,33 +53,7 @@ export default function MemberReportsPage() {
       if (res.success && res.data && res.data.length > 0) {
         txsList = res.data;
       } else {
-        // Fallback seeded demo data matching the exact screenshot (Image 3) if no transactions exist
-        txsList = [
-          {
-            id: 'demo-tx-1',
-            branch_id: activeBranchID || 'b1',
-            transaction_number: 'PRABU-POM-0000789',
-            member_id: '15719475',
-            member_name: 'Sandi Hidayat',
-            admin_id: 'a1',
-            admin_name: 'Prabu GYM Admin',
-            transaction_date: '2026-07-15T10:30:00Z',
-            total_amount: 300000,
-            notes: 'Pendaftaran Anggota: Sandi Hidayat - Paket: 1 Bulan (Daftar) - Metode: QRIS',
-          },
-          {
-            id: 'demo-tx-2',
-            branch_id: activeBranchID || 'b1',
-            transaction_number: 'PRABU-POM-0000790',
-            member_id: '15719488',
-            member_name: 'Fathan Ramadhan',
-            admin_id: 'a1',
-            admin_name: 'Prabu GYM Admin',
-            transaction_date: '2026-07-12T14:20:00Z',
-            total_amount: 350000,
-            notes: 'Pendaftaran Anggota: Fathan Ramadhan - Paket: 1 Bulan - Metode: Tunai',
-          }
-        ];
+        txsList = [];
       }
 
       // Filter transactions to only those belonging to member transactions (registration or manual payment)
@@ -136,107 +112,129 @@ export default function MemberReportsPage() {
 
   return (
     <div className="space-y-6 font-sans text-slate-800">
+      {/* Top Header */}
+      {step === 'form' && (
+        <div className="flex justify-between items-center flex-wrap gap-4 no-print">
+          <div>
+            <h2 className="text-3xl font-heading text-slate-800 uppercase">LAPORAN FITNES ANGGOTA</h2>
+            <p className="text-slate-500 text-sm mt-1 uppercase tracking-widest font-accent">
+              REKAP & LAPORAN TRANSAKSI ANGGOTA FITNES CLUB GYM
+            </p>
+          </div>
+        </div>
+      )}
+
       {step === 'form' ? (
-        <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden max-w-3xl mx-auto">
-          <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold select-none flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            <span className="text-sm uppercase tracking-wider font-heading">Laporan Fitnes Anggota</span>
+        <div className="bg-white border border-slate-200 rounded shadow-sm overflow-visible w-full no-print">
+          <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
+            <FileText className="w-4 h-4" />
+            <span className="text-sm uppercase tracking-wider font-heading">LAPORAN FITNES ANGGOTA</span>
           </div>
 
-          <div className="p-8">
-            <form onSubmit={handleGenerate} className="space-y-5 max-w-xl mx-auto text-slate-700">
-              
-              {/* Dari Tanggal */}
-              <div className="grid grid-cols-[1.5fr_3fr] gap-4 items-center max-sm:grid-cols-1">
-                <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Dari Tanggal</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 focus:border-[#DC3545] focus:outline-none px-3.5 py-2.5 text-xs transition-all rounded w-full cursor-pointer"
-                  onClick={(e) => { try { e.currentTarget.showPicker(); } catch {} }}
-                  required
-                />
-              </div>
-
-              {/* Sampai Tanggal */}
-              <div className="grid grid-cols-[1.5fr_3fr] gap-4 items-center max-sm:grid-cols-1">
-                <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Sampai Tanggal</label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 focus:border-[#DC3545] focus:outline-none px-3.5 py-2.5 text-xs transition-all rounded w-full cursor-pointer"
-                  onClick={(e) => { try { e.currentTarget.showPicker(); } catch {} }}
-                  required
-                />
-              </div>
-
-              {/* Jenis Transaksi */}
-              <div className="grid grid-cols-[1.5fr_3fr] gap-4 items-center max-sm:grid-cols-1">
-                <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Jenis Transaksi</label>
-                <div className="space-y-2">
-                  <select
-                    value={transactionType}
-                    onChange={(e) => setTransactionType(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 focus:border-[#DC3545] focus:outline-none px-3.5 py-2.5 text-xs transition-all rounded w-full"
-                  >
-                    <option value="Semua Transaksi">Semua Transaksi</option>
-                    <option value="Tunai">Tunai</option>
-                    <option value="BCA Transfer">BCA Transfer</option>
-                    <option value="manual">Input Manual...</option>
-                  </select>
-                  {transactionType === 'manual' && (
-                    <input
-                      type="text"
-                      placeholder="Masukkan jenis transaksi kustom..."
-                      value={manualTxType}
-                      onChange={(e) => setManualTxType(e.target.value)}
-                      className="bg-slate-50 border border-slate-200 focus:border-[#DC3545] focus:outline-none px-3.5 py-2 text-xs transition-all rounded w-full"
-                      required
-                    />
-                  )}
+          <div className="p-6 md:p-8">
+            <form onSubmit={handleGenerate} className="space-y-6 w-full text-slate-700">
+              <div className="space-y-5">
+                
+                {/* Dari Tanggal */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                    Dari Tanggal
+                    <FieldInfo text="Pilih tanggal mulai periode laporan" />
+                  </label>
+                  <DatePicker
+                    value={startDate}
+                    onChange={(val) => setStartDate(val)}
+                  />
                 </div>
-              </div>
 
-              {/* Jumlah Hari */}
-              <div className="grid grid-cols-[1.5fr_3fr] gap-4 items-center max-sm:grid-cols-1">
-                <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Jumlah Hari</label>
-                <div className="space-y-2">
-                  <select
-                    value={daysCount}
-                    onChange={(e) => setDaysCount(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 focus:border-[#DC3545] focus:outline-none px-3.5 py-2.5 text-xs transition-all rounded w-full"
-                  >
-                    <option value="Semua Hari">Semua Hari</option>
-                    <option value="30 Hari">30 Hari</option>
-                    <option value="90 Hari">90 Hari</option>
-                    <option value="manual">Input Manual...</option>
-                  </select>
-                  {daysCount === 'manual' && (
-                    <input
-                      type="text"
-                      placeholder="Masukkan jumlah hari kustom (contoh: 15)..."
-                      value={manualDaysCount}
-                      onChange={(e) => setManualDaysCount(e.target.value)}
-                      className="bg-slate-50 border border-slate-200 focus:border-[#DC3545] focus:outline-none px-3.5 py-2 text-xs transition-all rounded w-full"
-                      required
-                    />
-                  )}
+                {/* Sampai Tanggal */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                    Sampai Tanggal
+                    <FieldInfo text="Pilih tanggal akhir periode laporan" />
+                  </label>
+                  <DatePicker
+                    value={endDate}
+                    onChange={(val) => setEndDate(val)}
+                  />
                 </div>
-              </div>
 
-              {/* Format PPN */}
-              <div className="grid grid-cols-[1.5fr_3fr] gap-4 items-center max-sm:grid-cols-1">
-                <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Format PPN</label>
-                <select
-                  value={ppnFormat}
-                  onChange={(e) => setPpnFormat(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 focus:border-[#DC3545] focus:outline-none px-3.5 py-2.5 text-xs transition-all rounded w-full"
-                >
-                  <option value="PPN 10%">PPN 10%</option>
-                  <option value="Non-PPN">Tanpa PPN (Non-PPN)</option>
-                </select>
+                {/* Jenis Transaksi */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                    Jenis Transaksi
+                    <FieldInfo text="Pilih metode pembayaran atau jenis transaksi" />
+                  </label>
+                  <div className="space-y-2 w-full">
+                    <select
+                      value={transactionType}
+                      onChange={(e) => setTransactionType(e.target.value)}
+                      className="w-full border border-slate-200 rounded-md px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#17A2B8]/20 focus:border-[#17A2B8] transition-all bg-white cursor-pointer"
+                    >
+                      <option value="Semua Transaksi">Semua Transaksi</option>
+                      <option value="Tunai">Tunai</option>
+                      <option value="BCA Transfer">BCA Transfer</option>
+                      <option value="manual">Input Manual...</option>
+                    </select>
+                    {transactionType === 'manual' && (
+                      <input
+                        type="text"
+                        placeholder="Masukkan jenis transaksi kustom..."
+                        value={manualTxType}
+                        onChange={(e) => setManualTxType(e.target.value)}
+                        className="w-full border border-slate-200 rounded-md px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#17A2B8]/20 focus:border-[#17A2B8] transition-all bg-white"
+                        required
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* Jumlah Hari */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                    Jumlah Hari
+                    <FieldInfo text="Filter berdasarkan jumlah hari rentang transaksi" />
+                  </label>
+                  <div className="space-y-2 w-full">
+                    <select
+                      value={daysCount}
+                      onChange={(e) => setDaysCount(e.target.value)}
+                      className="w-full border border-slate-200 rounded-md px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#17A2B8]/20 focus:border-[#17A2B8] transition-all bg-white cursor-pointer"
+                    >
+                      <option value="Semua Hari">Semua Hari</option>
+                      <option value="30 Hari">30 Hari</option>
+                      <option value="90 Hari">90 Hari</option>
+                      <option value="manual">Input Manual...</option>
+                    </select>
+                    {daysCount === 'manual' && (
+                      <input
+                        type="text"
+                        placeholder="Masukkan jumlah hari kustom (contoh: 15)..."
+                        value={manualDaysCount}
+                        onChange={(e) => setManualDaysCount(e.target.value)}
+                        className="w-full border border-slate-200 rounded-md px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#17A2B8]/20 focus:border-[#17A2B8] transition-all bg-white"
+                        required
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* Format PPN */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                    Format PPN
+                    <FieldInfo text="Pilih format PPN 10% atau tanpa PPN" />
+                  </label>
+                  <select
+                    value={ppnFormat}
+                    onChange={(e) => setPpnFormat(e.target.value)}
+                    className="w-full border border-slate-200 rounded-md px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#17A2B8]/20 focus:border-[#17A2B8] transition-all bg-white cursor-pointer"
+                  >
+                    <option value="PPN 10%">PPN 10%</option>
+                    <option value="Non-PPN">Tanpa PPN (Non-PPN)</option>
+                  </select>
+                </div>
+
               </div>
 
               {/* Submit Button */}

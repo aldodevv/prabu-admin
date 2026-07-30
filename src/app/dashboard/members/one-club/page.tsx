@@ -15,6 +15,8 @@ import { exportToExcel } from '@/lib/excelExport';
 import { compressImage } from '@/utils/imageCompressor';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { DigitalMemberCard } from '@/components/core/DigitalMemberCard';
+import { permissions } from '@/lib/permissions';
+import { FetchErrorAlert } from '@/components/core/FetchErrorAlert';
 
 export default function OneClubMembersPanel() {
   const { activeBranchID, user } = useAuth();
@@ -28,11 +30,12 @@ export default function OneClubMembersPanel() {
   const [members, setMembers] = useState<Member[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [filterColumn, setFilterColumn] = useState('');
   const debouncedSearch = useDebounce(search, 400);
   const [isTyping, setIsTyping] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   // Filters matching Search Box
   const [statusFilter, setStatusFilter] = useState('Semua');
@@ -71,21 +74,20 @@ export default function OneClubMembersPanel() {
     }
   }, [activeBranchID, page]);
 
-  const fetchMembers = async (forceSearch = '') => {
+  const fetchMembers = async (searchQuery = debouncedSearch) => {
     setLoading(true);
+    setFetchError(null);
     try {
-      const qSearch = forceSearch !== undefined ? forceSearch : search;
       const res = await membersApi.list({
         branch_id: activeBranchID || undefined,
+        search: searchQuery || undefined,
         page,
-        search: qSearch,
         per_page: 20
       });
       if (res.success && res.data) {
         let list = res.data;
-        // Filter status client-side if statusFilter is not 'Semua'
         if (statusFilter === 'Aktif') {
-          list = list.filter((m: Member) => m.is_active && new Date(m.membership_end) >= new Date());
+          list = list.filter((m: Member) => m.is_active);
         } else if (statusFilter === 'Expired') {
           list = list.filter((m: Member) => m.is_active && new Date(m.membership_end) < new Date());
         } else if (statusFilter === 'Nonaktif') {
@@ -93,9 +95,14 @@ export default function OneClubMembersPanel() {
         }
         setMembers(list);
         setTotal(res.meta?.total || 0);
+      } else {
+        if (res.error) setFetchError(res.error);
+        setMembers([]);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setFetchError(err.message || 'Gagal mengambil data anggota One Club');
+      setMembers([]);
     } finally {
       setLoading(false);
     }
@@ -143,16 +150,16 @@ export default function OneClubMembersPanel() {
     setStep('detail');
     setLoadingTransactions(true);
     try {
-      // Query branch transactions and filter client-side for member payments
       const res = await transactionsApi.list({
         branch_id: activeBranchID || undefined,
-        per_page: 100
+        member_id: m.id,
+        per_page: 200
       });
       if (res.success && res.data) {
         const filtered = res.data.filter(
           (tx: Transaction) =>
             tx.member_id === m.id ||
-            (tx.notes && tx.notes.toLowerCase().includes(m.full_name.toLowerCase()))
+            (tx.notes && (tx.notes.toLowerCase().includes(m.full_name.toLowerCase()) || tx.notes.includes(m.username)))
         );
         setMemberTransactions(filtered);
       }
@@ -304,13 +311,15 @@ export default function OneClubMembersPanel() {
           >
             <Eye className="w-3.5 h-3.5" />
           </button>
-          <button
-            onClick={() => handleOpenEdit(m)}
-            title="Ubah Data Anggota"
-            className="p-2 bg-[#17A2B8] hover:bg-[#138496] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
-          >
-            <Edit className="w-3.5 h-3.5" />
-          </button>
+          {!permissions.isReadOnly(user?.role) && (
+            <button
+              onClick={() => handleOpenEdit(m)}
+              title="Ubah Data Anggota"
+              className="p-2 bg-[#17A2B8] hover:bg-[#138496] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
+            >
+              <Edit className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       )
     }
@@ -325,8 +334,10 @@ export default function OneClubMembersPanel() {
           <div className="space-y-6">
             <PageHeader
               title="Data Anggota"
-              description="Cabang Grogol — Daftar Anggota & Riwayat Keuangan Aktif"
+              description="Daftar Anggota & Riwayat Keuangan Aktif"
             />
+
+            <FetchErrorAlert error={fetchError} featureName="Data Anggota" onRetry={fetchMembers} />
 
             {/* Search Box */}
             <SearchFilterBar
@@ -525,79 +536,156 @@ export default function OneClubMembersPanel() {
                 <div className="text-center py-8 text-slate-500 font-semibold text-xs">
                   Loading history transaksi...
                 </div>
-              ) : detailTab === 'anggota' ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs border border-slate-200 border-collapse">
-                    <thead className="bg-[#6C7A89] text-white text-[10px] font-bold uppercase tracking-wider">
-                      <tr>
-                        <th className="py-2.5 px-3 border-r border-slate-200 w-10 text-center">No</th>
-                        <th className="py-2.5 px-3 border-r border-slate-200">Tanggal Pembayaran</th>
-                        <th className="py-2.5 px-3 border-r border-slate-200">Nomor Transaksi</th>
-                        <th className="py-2.5 px-3 border-r border-slate-200">Paket Anggota</th>
-                        <th className="py-2.5 px-3 border-r border-slate-200">Masa Aktif</th>
-                        <th className="py-2.5 px-3 border-r border-slate-200 text-right">Total Pembayaran</th>
-                        <th className="py-2.5 px-3 border-r border-slate-200">Keterangan</th>
-                        <th className="py-2.5 px-3 border-r border-slate-200">Nama CS</th>
-                        <th className="py-2.5 px-3 text-center no-print">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 text-slate-700 font-semibold">
-                      {memberTransactions.length > 0 ? (
-                        memberTransactions.map((tx, idx) => {
-                          const pkg = getMembershipTypeFromNotes(tx.notes || '');
-                          return (
-                            <tr key={tx.id}>
-                              <td className="py-2.5 px-3 border-r border-slate-100 text-center">{idx + 1}</td>
-                              <td className="py-2.5 px-3 border-r border-slate-100 font-mono">{formatDateLabel(tx.transaction_date)}</td>
-                              <td className="py-2.5 px-3 border-r border-slate-100 font-mono font-bold text-slate-800">{tx.transaction_number}</td>
-                              <td className="py-2.5 px-3 border-r border-slate-100 uppercase text-[10px]">{pkg}</td>
-                              <td className="py-2.5 px-3 border-r border-slate-100 font-mono text-[10px]">
-                                {formatDateLabel(selectedMember.membership_start)} s/d {formatDateLabel(selectedMember.membership_end)}
-                              </td>
-                              <td className="py-2.5 px-3 border-r border-slate-100 text-right text-slate-800 font-black">{formatIDR(tx.total_amount)}</td>
-                              <td className="py-2.5 px-3 border-r border-slate-100 text-slate-500 font-normal leading-relaxed">{tx.notes || '-'}</td>
-                              <td className="py-2.5 px-3 border-r border-slate-100 text-slate-600">{tx.admin_name}</td>
-                              <td className="py-2.5 px-3 text-center select-none no-print">
-                                <div className="flex gap-1.5 justify-center">
-                                  <button
-                                    onClick={() => {
-                                      setReceiptTx(tx);
-                                      setTimeout(() => {
-                                        window.print();
-                                      }, 100);
-                                    }}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#007BFF] hover:bg-[#0069D9] text-white text-[9px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
-                                  >
-                                    <Printer className="w-3.5 h-3.5" />
-                                    Cetak
-                                  </button>
-                                  <button
-                                    onClick={() => setReceiptTx(tx)}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#6C7A89] hover:bg-[#5a6673] text-white text-[9px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
-                                  >
-                                    <FileText className="w-3.5 h-3.5" />
-                                    Document
-                                  </button>
-                                </div>
+              ) : (() => {
+                const isPtTransaction = (tx: Transaction) => {
+                  const n = (tx.notes || '').toLowerCase();
+                  return (
+                    n.includes('personal trainer') ||
+                    n.includes('pt ') ||
+                    n.includes('pt:') ||
+                    n.includes('pt -') ||
+                    n.includes('latihan') ||
+                    n.includes('workout') ||
+                    n.includes('sesi')
+                  );
+                };
+
+                const anggotaTxs = memberTransactions.filter(tx => !isPtTransaction(tx));
+                const latihanTxs = memberTransactions.filter(tx => isPtTransaction(tx));
+
+                if (detailTab === 'anggota') {
+                  return (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs border border-slate-200 border-collapse">
+                        <thead className="bg-[#6C7A89] text-white text-[10px] font-bold uppercase tracking-wider">
+                          <tr>
+                            <th className="py-2.5 px-3 border-r border-slate-200 w-10 text-center">No</th>
+                            <th className="py-2.5 px-3 border-r border-slate-200">Tanggal Pembayaran</th>
+                            <th className="py-2.5 px-3 border-r border-slate-200">Nomor Transaksi</th>
+                            <th className="py-2.5 px-3 border-r border-slate-200">Paket Anggota</th>
+                            <th className="py-2.5 px-3 border-r border-slate-200">Masa Aktif</th>
+                            <th className="py-2.5 px-3 border-r border-slate-200 text-right">Total Pembayaran</th>
+                            <th className="py-2.5 px-3 border-r border-slate-200">Keterangan</th>
+                            <th className="py-2.5 px-3 border-r border-slate-200">Nama CS</th>
+                            <th className="py-2.5 px-3 text-center no-print">Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 text-slate-700 font-semibold">
+                          {anggotaTxs.length > 0 ? (
+                            anggotaTxs.map((tx, idx) => {
+                              const pkg = getMembershipTypeFromNotes(tx.notes || '');
+                              return (
+                                <tr key={tx.id}>
+                                  <td className="py-2.5 px-3 border-r border-slate-100 text-center">{idx + 1}</td>
+                                  <td className="py-2.5 px-3 border-r border-slate-100 font-mono">{formatDateLabel(tx.transaction_date)}</td>
+                                  <td className="py-2.5 px-3 border-r border-slate-100 font-mono font-bold text-slate-800">{tx.transaction_number}</td>
+                                  <td className="py-2.5 px-3 border-r border-slate-100 uppercase text-[10px]">{pkg}</td>
+                                  <td className="py-2.5 px-3 border-r border-slate-100 font-mono text-[10px]">
+                                    {formatDateLabel(selectedMember.membership_start)} s/d {formatDateLabel(selectedMember.membership_end)}
+                                  </td>
+                                  <td className="py-2.5 px-3 border-r border-slate-100 text-right text-slate-800 font-black">{formatIDR(tx.total_amount)}</td>
+                                  <td className="py-2.5 px-3 border-r border-slate-100 text-slate-500 font-normal leading-relaxed">{tx.notes || '-'}</td>
+                                  <td className="py-2.5 px-3 border-r border-slate-100 text-slate-600">{tx.admin_name}</td>
+                                  <td className="py-2.5 px-3 text-center select-none no-print">
+                                    <div className="flex gap-1.5 justify-center">
+                                      <button
+                                        onClick={() => {
+                                          setReceiptTx(tx);
+                                          setTimeout(() => {
+                                            window.print();
+                                          }, 100);
+                                        }}
+                                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#007BFF] hover:bg-[#0069D9] text-white text-[9px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
+                                      >
+                                        <Printer className="w-3.5 h-3.5" />
+                                        Cetak
+                                      </button>
+                                      <button
+                                        onClick={() => setReceiptTx(tx)}
+                                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#6C7A89] hover:bg-[#5a6673] text-white text-[9px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
+                                      >
+                                        <FileText className="w-3.5 h-3.5" />
+                                        Document
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          ) : (
+                            <tr>
+                              <td colSpan={9} className="py-6 text-center text-slate-400 font-bold select-none uppercase tracking-wider">
+                                Belum ada transaksi pembayaran keanggotaan untuk anggota ini.
                               </td>
                             </tr>
-                          );
-                        })
-                      ) : (
-                        <tr>
-                          <td colSpan={9} className="py-6 text-center text-slate-400 font-bold select-none uppercase tracking-wider">
-                            Belum ada transaksi pembayaran untuk anggota ini.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="py-8 text-center text-slate-400 font-bold select-none text-xs uppercase tracking-wider">
-                  Belum ada transaksi pembayaran latihan harian untuk anggota ini.
-                </div>
-              )}
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs border border-slate-200 border-collapse">
+                        <thead className="bg-[#17A2B8] text-white text-[10px] font-bold uppercase tracking-wider">
+                          <tr>
+                            <th className="py-2.5 px-3 border-r border-slate-200 w-10 text-center">No</th>
+                            <th className="py-2.5 px-3 border-r border-slate-200">Tanggal Pembayaran</th>
+                            <th className="py-2.5 px-3 border-r border-slate-200">Nomor Transaksi</th>
+                            <th className="py-2.5 px-3 border-r border-slate-200">Keterangan Latihan</th>
+                            <th className="py-2.5 px-3 border-r border-slate-200 text-right">Total Pembayaran</th>
+                            <th className="py-2.5 px-3 border-r border-slate-200">Nama CS</th>
+                            <th className="py-2.5 px-3 text-center no-print">Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 text-slate-700 font-semibold">
+                          {latihanTxs.length > 0 ? (
+                            latihanTxs.map((tx, idx) => (
+                              <tr key={tx.id}>
+                                <td className="py-2.5 px-3 border-r border-slate-100 text-center">{idx + 1}</td>
+                                <td className="py-2.5 px-3 border-r border-slate-100 font-mono">{formatDateLabel(tx.transaction_date)}</td>
+                                <td className="py-2.5 px-3 border-r border-slate-100 font-mono font-bold text-slate-800">{tx.transaction_number}</td>
+                                <td className="py-2.5 px-3 border-r border-slate-100 font-normal leading-relaxed">{tx.notes || '-'}</td>
+                                <td className="py-2.5 px-3 border-r border-slate-100 text-right text-slate-800 font-black">{formatIDR(tx.total_amount)}</td>
+                                <td className="py-2.5 px-3 border-r border-slate-100 text-slate-600">{tx.admin_name}</td>
+                                <td className="py-2.5 px-3 text-center select-none no-print">
+                                  <div className="flex gap-1.5 justify-center">
+                                    <button
+                                      onClick={() => {
+                                        setReceiptTx(tx);
+                                        setTimeout(() => {
+                                          window.print();
+                                        }, 100);
+                                      }}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#007BFF] hover:bg-[#0069D9] text-white text-[9px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
+                                    >
+                                      <Printer className="w-3.5 h-3.5" />
+                                      Cetak
+                                    </button>
+                                    <button
+                                      onClick={() => setReceiptTx(tx)}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#6C7A89] hover:bg-[#5a6673] text-white text-[9px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
+                                    >
+                                      <FileText className="w-3.5 h-3.5" />
+                                      Document
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan={7} className="py-6 text-center text-slate-400 font-bold select-none uppercase tracking-wider">
+                                Belum ada transaksi pembayaran latihan harian untuk anggota ini.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                }
+              })()}
             </div>
 
             {/* Re-download Section: Kartu Member Digital & Struk Pembayaran */}

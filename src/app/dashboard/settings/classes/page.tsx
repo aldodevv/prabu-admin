@@ -8,8 +8,11 @@ import { PageHeader } from '@/components/core/PageHeader';
 import { DataTable, Column } from '@/components/core/DataTable';
 import { List, Plus, Edit, Trash2, Save, ArrowLeft } from 'lucide-react';
 
+import { permissions } from '@/lib/permissions';
+
 export default function GymClassesPage() {
   const { user } = useAuth();
+  const canWrite = !permissions.isReadOnly(user?.role);
   const [classList, setClassList] = useState<GymClass[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -97,7 +100,7 @@ export default function GymClassesPage() {
     {
       key: 'actions',
       header: 'Aksi',
-      render: (row) => (
+      render: (row) => canWrite ? (
         <div className="flex gap-1.5 justify-center">
           <button
             onClick={() => handleOpenEdit(row)}
@@ -112,7 +115,7 @@ export default function GymClassesPage() {
             🗑 Hapus
           </button>
         </div>
-      ),
+      ) : <span className="text-[10px] text-slate-400 font-semibold italic">Read Only</span>,
       className: 'text-center'
     }
   ];
@@ -160,7 +163,7 @@ export default function GymClassesPage() {
       )}
 
       {(step === 'create' || step === 'edit') && (
-        <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden max-w-2xl mx-auto">
+        <div className="bg-white border border-slate-200 rounded shadow-xs overflow-hidden w-full">
           <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold select-none flex items-center gap-2">
             <List className="w-4 h-4" />
             <span className="text-sm uppercase tracking-wider font-heading">

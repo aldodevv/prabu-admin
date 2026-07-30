@@ -121,26 +121,11 @@ export default function MemberRegistrationPage() {
     }
 
     setLoading(true);
-    setLoadingText('Uploading Image & Menyimpan Transaksi...');
-
-    let finalPhotoUrl = '';
-    if (photoBase64) {
-      try {
-        setLoadingText('Proses Upload Foto ke Cloudinary...');
-        finalPhotoUrl = await uploadToCloudinary(photoBase64, 'prabugym/members');
-      } catch (err: any) {
-        console.error('Gagal mengunggah foto ke Cloudinary:', err);
-        setErrorMsg('Gagal mengunggah foto ke Cloudinary: ' + (err.message || 'Error'));
-        setLoading(false);
-        return;
-      }
-    }
-
-    setLoadingText('Menyimpan Transaksi...');
+    setLoadingText('Mendaftarkan Anggota Baru...');
 
     const price = selectedPkg ? selectedPkg.price : 0;
 
-    // 1. Create the member record
+    // 1. Create member record FIRST in database
     const memberBody = {
       branch_id: activeBranchID,
       full_name: fullName,
@@ -152,7 +137,6 @@ export default function MemberRegistrationPage() {
       membership_type: `${packageName} (${clubType})`,
       membership_start: startDateInput,
       membership_end: calculatedEnd,
-      photo_url: finalPhotoUrl || undefined,
     };
 
     try {
@@ -167,12 +151,35 @@ export default function MemberRegistrationPage() {
       const username = memRes.data.username;
       const password = memRes.data.password;
 
-      // 2. Create the associated sales transaction
+      // 2. If member creation succeeded, upload photo to cloud
+      let finalPhotoUrl = '';
+      if (photoBase64) {
+        try {
+          setLoadingText('Proses Upload Foto ke Cloudinary...');
+          finalPhotoUrl = await uploadToCloudinary(photoBase64, 'prabugym/members');
+
+          if (finalPhotoUrl) {
+            setLoadingText('Mengupdate Foto Anggota...');
+            await api.put(`/admin/members/${createdMember.id}`, {
+              photo_url: finalPhotoUrl,
+            });
+            createdMember.photo_url = finalPhotoUrl;
+          }
+        } catch (err: any) {
+          console.error('Gagal mengunggah foto ke Cloudinary:', err);
+        }
+      }
+
+      // 3. Create the associated sales transaction
+      setLoadingText('Menyimpan Transaksi...');
       const txNotes = `Pendaftaran Anggota: ${fullName} - Paket: ${packageName} (${clubType})${socialMedia ? ` - Sosial Media: ${socialMedia}` : ''}.${notes ? ` Catatan: ${notes}` : ''}`;
       const txBody = {
         member_id: createdMember.id,
         notes: txNotes.trim(),
         total_amount: price,
+        payment_method: paymentMethod || 'Tunai',
+        payment_amount: price,
+        change_amount: 0,
         items: [],
       };
 
@@ -237,6 +244,10 @@ export default function MemberRegistrationPage() {
     <div className="space-y-8 font-sans">
       <style jsx global>{`
         @media print {
+          @page {
+            size: 210mm 148mm !important; /* A5 Landscape (210mm x 148mm) */
+            margin: 5mm !important;
+          }
           header, aside, button, .no-print {
             display: none !important;
           }
@@ -245,12 +256,15 @@ export default function MemberRegistrationPage() {
             color: black !important;
             padding: 0 !important;
             margin: 0 !important;
+            width: 200mm !important;
           }
           #receipt-print-area {
-            width: 100% !important;
-            position: absolute;
-            left: 0;
-            top: 0;
+            width: 200mm !important;
+            max-width: 200mm !important;
+            position: relative !important;
+            left: 0 !important;
+            top: 0 !important;
+            margin: 0 auto !important;
           }
           table {
             border-collapse: collapse !important;
@@ -260,6 +274,11 @@ export default function MemberRegistrationPage() {
             border: 1px solid black !important;
             padding: 6px 8px !important;
             color: black !important;
+          }
+          thead th {
+            background-color: #f2f2f2 !important;
+            color: black !important;
+            font-weight: 900 !important;
           }
         }
       `}</style>
@@ -320,45 +339,45 @@ export default function MemberRegistrationPage() {
                     className="h-12 w-auto object-contain"
                   />
                   <div className="text-left leading-none">
-                    <h1 className="text-2xl font-black tracking-widest">PRABU</h1>
-                    <span className="text-[9px] uppercase font-bold text-slate-400">Gym & Fitness Center</span>
+                    <h1 className="text-2xl font-black tracking-widest font-heading">PRABU GYM</h1>
+                    <span className="text-[9px] uppercase font-bold text-slate-600 tracking-wider">Gym & Fitness Center</span>
                   </div>
                 </div>
                 <div className="text-right border-l border-black pl-8 pr-4">
-                  <h2 className="text-2xl font-black uppercase tracking-widest text-slate-800">OFFICIAL RECEIPT</h2>
+                  <h2 className="text-2xl font-black uppercase tracking-widest text-slate-900">OFFICIAL RECEIPT</h2>
                 </div>
               </div>
 
-              {/* Metadata Summary Row */}
-              <div className="border-t border-b border-black py-2.5 px-4 flex justify-between text-xs font-semibold">
+              {/* Metadata Summary Row - Bold & Prominent */}
+              <div className="border-t border-b border-black py-2.5 px-4 flex justify-between text-xs font-extrabold text-black uppercase tracking-wide">
                 <span>Tanggal : {formatDateLabel(successData.membershipStart)}</span>
                 <span>Kategori : Pendaftaran</span>
                 <span>No Invoice : {successData.transactionNumber}</span>
               </div>
 
-              {/* Main Details Table */}
+              {/* Main Details Table - Bold Header Row */}
               <div className="border border-black overflow-hidden rounded-xs">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-black font-extrabold uppercase text-[10px] text-slate-700">
-                      <th className="py-2.5 px-3 border-r border-black">Nomor Anggota</th>
-                      <th className="py-2.5 px-3 border-r border-black">Nama Anggota</th>
-                      <th className="py-2.5 px-3 border-r border-black">Paket Anggota</th>
-                      <th className="py-2.5 px-3 border-r border-black">Masa Aktif</th>
-                      <th className="py-2.5 px-3 border-r border-black">Jenis Pembayaran</th>
-                      <th className="py-2.5 px-3">Harga Paket</th>
+                    <tr className="bg-slate-100 border-b border-black font-black uppercase text-[11px] text-black">
+                      <th className="py-2.5 px-3 border-r border-black font-black">NOMOR ANGGOTA</th>
+                      <th className="py-2.5 px-3 border-r border-black font-black">NAMA ANGGOTA</th>
+                      <th className="py-2.5 px-3 border-r border-black font-black">PAKET ANGGOTA</th>
+                      <th className="py-2.5 px-3 border-r border-black font-black">MASA AKTIF</th>
+                      <th className="py-2.5 px-3 border-r border-black font-black">JENIS PEMBAYARAN</th>
+                      <th className="py-2.5 px-3 font-black">HARGA PAKET</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="font-semibold text-slate-800">
-                      <td className="py-3 px-3 border-r border-black font-mono">{successData.username}</td>
-                      <td className="py-3 px-3 border-r border-black font-bold">{successData.member.full_name}</td>
-                      <td className="py-3 px-3 border-r border-black uppercase text-[10px]">{successData.packageName}</td>
-                      <td className="py-3 px-3 border-r border-black font-mono text-[10px]">
+                    <tr className="font-bold text-slate-900">
+                      <td className="py-3 px-3 border-r border-black font-mono font-bold">{successData.username}</td>
+                      <td className="py-3 px-3 border-r border-black font-extrabold">{successData.member.full_name}</td>
+                      <td className="py-3 px-3 border-r border-black uppercase text-[10px] font-bold">{successData.packageName}</td>
+                      <td className="py-3 px-3 border-r border-black font-mono text-[10px] font-bold">
                         {formatDateLabel(successData.membershipStart)} s/d {formatDateLabel(successData.membershipEnd)}
                       </td>
-                      <td className="py-3 px-3 border-r border-black uppercase">{successData.paymentMethod}</td>
-                      <td className="py-3 px-3 font-bold">Rp. {successData.price.toLocaleString('id-ID')}</td>
+                      <td className="py-3 px-3 border-r border-black uppercase font-bold">{successData.paymentMethod}</td>
+                      <td className="py-3 px-3 font-extrabold">Rp. {successData.price.toLocaleString('id-ID')}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -617,10 +636,9 @@ export default function MemberRegistrationPage() {
                     required
                     value={clubType}
                     onChange={(e) => setClubType(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-bold"
                   >
                     <option value="One Club">One Club</option>
-                    <option value="All Club">All Club</option>
                   </select>
                 </div>
 
@@ -641,11 +659,17 @@ export default function MemberRegistrationPage() {
                         />
                       </div>
                       <div className="flex items-center gap-4">
-                        <span className="w-28 text-xs font-semibold text-slate-600">Mulai Aktif:</span>
+                        <span className="w-28 text-xs font-semibold text-slate-600">Tanggal Transaksi:</span>
                         <div className="flex-1">
                           <DatePicker
                             value={startDateInput}
-                            onChange={(val) => setStartDateInput(val)}
+                            onChange={(val) => {
+                              if (user?.role === 'owner' || user?.role === 'developer') {
+                                setStartDateInput(val);
+                              }
+                            }}
+                            readOnly={user?.role !== 'owner' && user?.role !== 'developer'}
+                            disabled={user?.role !== 'owner' && user?.role !== 'developer'}
                           />
                         </div>
                       </div>

@@ -8,10 +8,13 @@ import { Search, Plus, Eye, ArrowLeft, Save, Trash2, Edit2, FileSpreadsheet, Rot
 import { useDebounce } from '@/hooks/useDebounce';
 import { exportToExcel } from '@/lib/excelExport';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
+import { permissions } from '@/lib/permissions';
+
+import { FetchErrorAlert } from '@/components/core/FetchErrorAlert';
 
 export default function ProductsPage() {
   const { activeBranchID, user } = useAuth();
-  const isOwner = user?.role === 'owner';
+  const canWrite = !permissions.isReadOnly(user?.role);
 
   // view: 'list' | 'add' | 'edit' | 'detail'
   const [view, setView] = useState<'list' | 'add' | 'edit' | 'detail'>('list');
@@ -39,6 +42,7 @@ export default function ProductsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     if (activeBranchID) {
@@ -64,14 +68,22 @@ export default function ProductsPage() {
   const fetchProducts = async () => {
     if (!activeBranchID) return;
     setLoading(true);
+    setFetchError(null);
     try {
       const res = await productsApi.list(activeBranchID);
       if (res.success && res.data) {
         setProducts(res.data);
         setFilteredProducts(res.data);
+      } else {
+        if (res.error) setFetchError(res.error);
+        setProducts([]);
+        setFilteredProducts([]);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setFetchError(err.message || 'Gagal mengambil data barang dari server');
+      setProducts([]);
+      setFilteredProducts([]);
     } finally {
       setLoading(false);
     }
@@ -322,19 +334,23 @@ export default function ProductsPage() {
             onReset={handleReset}
           />
 
+          <FetchErrorAlert error={fetchError} featureName="Data Barang / Product" onRetry={fetchProducts} />
+
           {/* Card Table Product */}
           <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
             <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex justify-between items-center select-none">
               <span className="text-sm uppercase tracking-wider">Product</span>
             </div>
             <div className="p-6 space-y-4">
-              <button
-                onClick={handleOpenAdd}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Add Product
-              </button>
+              {canWrite && (
+                <button
+                  onClick={handleOpenAdd}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add Product
+                </button>
+              )}
 
               {loading ? (
                 <div className="text-center py-10 text-slate-500 font-accent uppercase tracking-widest text-xs">
@@ -383,7 +399,7 @@ export default function ProductsPage() {
                               >
                                 <Eye className="w-3.5 h-3.5" />
                               </button>
-                              {isOwner && (
+                              {canWrite && (
                                 <>
                                   <button
                                     onClick={() => handleOpenEdit(p)}

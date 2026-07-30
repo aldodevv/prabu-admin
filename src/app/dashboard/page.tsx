@@ -9,17 +9,40 @@ import { Member } from '@/core/types';
 import { PageHeader } from '@/components/core/PageHeader';
 import { StatsCard } from '@/components/core/StatsCard';
 import { DataTable, Column } from '@/components/core/DataTable';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  UserCheck, 
-  Clock, 
-  Calendar, 
-  User, 
-  BarChart3, 
+import { FetchErrorAlert } from '@/components/core/FetchErrorAlert';
+import {
+  TrendingUp,
+  TrendingDown,
+  UserCheck,
+  Clock,
+  Calendar,
+  User,
+  BarChart3,
   RefreshCw,
   PlusCircle
 } from 'lucide-react';
+
+interface MonthlyOmzetItem {
+  month_name: string;
+  month_key: string;
+  amount: number;
+}
+
+interface RevenueAnalytics {
+  monthly_omzet: MonthlyOmzetItem[];
+  current_month_sales: number;
+  last_month_sales: number;
+  month_growth_percent: number;
+  current_year_sales: number;
+  last_year_sales: number;
+  year_growth_percent: number;
+  total_transactions: number;
+  average_tx_value: number;
+  sales_by_duration_1m: number;
+  sales_by_duration_3m: number;
+  sales_by_duration_6m: number;
+  sales_by_duration_12m: number;
+}
 
 interface DashboardSummary {
   total_members: number;
@@ -38,63 +61,100 @@ interface DashboardSummary {
   age_31_41: number;
   age_42_75: number;
   expiring_members: Member[];
+  revenue_analytics?: RevenueAnalytics;
 }
 
 export default function SummaryPage() {
   const { activeBranchID } = useAuth();
   const router = useRouter();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [revenueAnalytics, setRevenueAnalytics] = useState<RevenueAnalytics | null>(null);
+  const [loadingSummary, setLoadingSummary] = useState(true);
+  const [loadingRevenue, setLoadingRevenue] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedTxType, setSelectedTxType] = useState<string>('all');
 
   useEffect(() => {
     if (activeBranchID) {
       fetchSummary();
+      fetchRevenue(selectedTxType);
     }
   }, [activeBranchID]);
 
+  useEffect(() => {
+    if (activeBranchID && summary) {
+      fetchRevenue(selectedTxType);
+    }
+  }, [selectedTxType]);
+
   const fetchSummary = async () => {
-    setLoading(true);
+    setLoadingSummary(true);
+    setError(null);
     try {
       const res = await dashboardApi.summary(activeBranchID || '');
       if (res.success && res.data) {
         setSummary(res.data);
+        if (res.data.revenue_analytics && !revenueAnalytics) {
+          setRevenueAnalytics(res.data.revenue_analytics);
+        }
       } else {
-        // Fallback demo data matching the screenshot counts if API is fresh/empty
+        if (res.error) setError(res.error);
         setSummary({
-          total_members: 389,
-          active_members: 3,
-          expired_members: 386,
+          total_members: 0,
+          active_members: 0,
+          expired_members: 0,
           new_this_month: 0,
           checkins_today: 0,
           sales_today: 0,
           checkouts_today: 0,
-          male_active: 1,
-          female_active: 2,
-          male_inactive: 276,
-          female_inactive: 108,
-          age_10_20: 74,
-          age_21_30: 235,
-          age_31_41: 53,
-          age_42_75: 25,
-          expiring_members: [
-            {
-              id: 'm1',
-              branch_id: activeBranchID || 'b1',
-              full_name: 'Fathan Ramadhan Ismail',
-              phone: '081318782534',
-              membership_type: '3 bulan (Perpanjang) - Promo Januari',
-              membership_start: '2026-04-30',
-              membership_end: '2026-07-30',
-              username: 'fathan123',
-              is_active: true
-            }
-          ]
+          male_active: 0,
+          female_active: 0,
+          male_inactive: 0,
+          female_inactive: 0,
+          age_10_20: 0,
+          age_21_30: 0,
+          age_31_41: 0,
+          age_42_75: 0,
+          expiring_members: []
         });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setError(err.message || 'Gagal menghubungi server untuk data dashboard');
+      setSummary({
+        total_members: 0,
+        active_members: 0,
+        expired_members: 0,
+        new_this_month: 0,
+        checkins_today: 0,
+        sales_today: 0,
+        checkouts_today: 0,
+        male_active: 0,
+        female_active: 0,
+        male_inactive: 0,
+        female_inactive: 0,
+        age_10_20: 0,
+        age_21_30: 0,
+        age_31_41: 0,
+        age_42_75: 0,
+        expiring_members: []
+      });
     } finally {
-      setLoading(false);
+      setLoadingSummary(false);
+    }
+  };
+
+  const fetchRevenue = async (txType: string) => {
+    setLoadingRevenue(true);
+    try {
+      const res = await dashboardApi.revenueAnalytics(activeBranchID || '', txType);
+      if (res.success && res.data) {
+        setRevenueAnalytics(res.data);
+      }
+    } catch (err: any) {
+      console.error('Gagal mengambil statistik omzet:', err);
+    } finally {
+      setLoadingRevenue(false);
     }
   };
 
@@ -109,7 +169,7 @@ export default function SummaryPage() {
     return diffDays > 0 ? diffDays : 0;
   };
 
-  if (loading || !summary) {
+  if (loadingSummary || !summary) {
     return (
       <div className="py-20 flex flex-col items-center justify-center gap-3 text-slate-400 font-semibold">
         <div className="w-8 h-8 border-4 border-slate-200 border-t-[#007BFF] rounded-full animate-spin" />
@@ -186,8 +246,8 @@ export default function SummaryPage() {
 
   return (
     <div className="space-y-6 font-sans">
-      <PageHeader 
-        title="Ringkasan Dashboard" 
+      <PageHeader
+        title="Ringkasan Dashboard"
         description="Monitoring Data Keanggotaan & Kehadiran Cabang"
         action={
           <button
@@ -200,44 +260,207 @@ export default function SummaryPage() {
         }
       />
 
+      <FetchErrorAlert error={error} featureName="Ringkasan Dashboard" onRetry={fetchSummary} />
+
       {/* Row 1 Metrics (Blue, Green, Red) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 select-none">
-        <StatsCard 
-          label="Total Anggota" 
-          value={summary.total_members} 
-          icon={TrendingUp} 
-          bg="bg-[#007BFF]" 
+        <StatsCard
+          label="Total Anggota"
+          value={summary.total_members}
+          icon={TrendingUp}
+          bg="bg-[#007BFF]"
         />
-        <StatsCard 
-          label="Total Anggota Aktif" 
-          value={summary.active_members} 
-          icon={TrendingUp} 
-          bg="bg-[#28A745]" 
+        <StatsCard
+          label="Total Anggota Aktif"
+          value={summary.active_members}
+          icon={TrendingUp}
+          bg="bg-[#28A745]"
         />
-        <StatsCard 
-          label="Total Anggota Tidak Aktif" 
-          value={summary.expired_members} 
-          icon={TrendingDown} 
-          bg="bg-[#DC3545]" 
+        <StatsCard
+          label="Total Anggota Tidak Aktif"
+          value={summary.expired_members}
+          icon={TrendingDown}
+          bg="bg-[#DC3545]"
         />
       </div>
 
       {/* Row 2 Metrics (Orange, Purple) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5 select-none">
-        <StatsCard 
-          label="Check In Hari Ini" 
-          value={summary.checkins_today} 
-          icon={UserCheck} 
+        <StatsCard
+          label="Check In Hari Ini"
+          value={summary.checkins_today}
+          icon={UserCheck}
           bg="bg-[#FD7E14]"
           onViewMore={() => router.push('/dashboard/members/visits-all')}
         />
-        <StatsCard 
-          label="Check In - Check Out Hari Ini" 
-          value={summary.checkouts_today} 
-          icon={Clock} 
+        <StatsCard
+          label="Check In - Check Out Hari Ini"
+          value={summary.checkouts_today}
+          icon={Clock}
           bg="bg-[#6F42C1]"
           onViewMore={() => router.push('/dashboard/members/visits-all')}
         />
+      </div>
+
+      {/* 📊 STATISTIK OMZET 12 BULAN & REVENUE ANALYTICS */}
+      <div className="space-y-4 select-none">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 border border-slate-200 rounded shadow-xs">
+          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest font-accent flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 text-[#17A2B8]" />
+            <span>Statistik Omzet 12 Bulan</span>
+            {loadingRevenue && (
+              <span className="w-3.5 h-3.5 border-2 border-slate-200 border-t-[#007BFF] rounded-full animate-spin ml-1" />
+            )}
+          </h3>
+          
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-accent">Filter Jenis Transaksi:</span>
+            <select
+              disabled={loadingRevenue}
+              value={selectedTxType}
+              onChange={(e) => setSelectedTxType(e.target.value)}
+              className="bg-slate-50 hover:bg-white border border-slate-300 text-slate-800 text-xs font-bold rounded px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#007BFF] transition-all cursor-pointer shadow-xs disabled:opacity-50"
+            >
+              <option value="all">Semua Jenis Transaksi</option>
+              <option value="anggota">Pendaftaran / Keanggotaan Anggota</option>
+              <option value="pelatihan">Pelatihan (Personal Trainer / Sesi)</option>
+              <option value="kelas">Rekap / Komisi Kelas</option>
+              <option value="tunai">Transaksi Tunai / Penjualan Retail</option>
+            </select>
+          </div>
+        </div>
+
+        {revenueAnalytics && (
+          <div className={`transition-opacity duration-200 space-y-4 ${loadingRevenue ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
+            {/* KPI Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              {/* 1. Bulan Ini vs Bulan Lalu */}
+              <div className="bg-white border border-slate-200 p-4 rounded shadow-sm flex flex-col justify-between">
+                <div className="flex justify-between items-start">
+                  <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider font-accent">Bulan Ini vs Lalu</span>
+                  <span className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                    revenueAnalytics.month_growth_percent >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                  }`}>
+                    {revenueAnalytics.month_growth_percent >= 0 ? '+' : ''}
+                    {revenueAnalytics.month_growth_percent.toFixed(1)}%
+                  </span>
+                </div>
+                <div className="mt-2">
+                  <div className="text-lg font-black font-mono text-slate-800">
+                    Rp. {revenueAnalytics.current_month_sales.toLocaleString('id-ID')}
+                  </div>
+                  <div className="text-[10px] text-slate-400 font-bold mt-0.5">
+                    Bulan Lalu: Rp. {revenueAnalytics.last_month_sales.toLocaleString('id-ID')}
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Tahun Ini vs Tahun Lalu */}
+              <div className="bg-white border border-slate-200 p-4 rounded shadow-sm flex flex-col justify-between">
+                <div className="flex justify-between items-start">
+                  <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider font-accent">Tahun Ini vs Lalu</span>
+                  <span className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                    revenueAnalytics.year_growth_percent >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                  }`}>
+                    {revenueAnalytics.year_growth_percent >= 0 ? '+' : ''}
+                    {revenueAnalytics.year_growth_percent.toFixed(1)}%
+                  </span>
+                </div>
+                <div className="mt-2">
+                  <div className="text-lg font-black font-mono text-slate-800">
+                    Rp. {revenueAnalytics.current_year_sales.toLocaleString('id-ID')}
+                  </div>
+                  <div className="text-[10px] text-slate-400 font-bold mt-0.5">
+                    Tahun Lalu: Rp. {revenueAnalytics.last_year_sales.toLocaleString('id-ID')}
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Jumlah Transaksi */}
+              <div className="bg-white border border-slate-200 p-4 rounded shadow-sm flex flex-col justify-between">
+                <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider font-accent">Jumlah Transaksi</span>
+                <div className="mt-2">
+                  <div className="text-xl font-black font-mono text-[#007BFF]">
+                    {revenueAnalytics.total_transactions}
+                  </div>
+                  <div className="text-[10px] text-slate-400 font-bold mt-0.5">
+                    Total Transaksi Tercatat
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. Average Transaction Value (ATV) */}
+              <div className="bg-white border border-slate-200 p-4 rounded shadow-sm flex flex-col justify-between">
+                <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider font-accent">Avg Transaction Value (ATV)</span>
+                <div className="mt-2">
+                  <div className="text-lg font-black font-mono text-[#28A745]">
+                    Rp. {Math.round(revenueAnalytics.average_tx_value).toLocaleString('id-ID')}
+                  </div>
+                  <div className="text-[10px] text-slate-400 font-bold mt-0.5">
+                    Rata-rata Nilai Transaksi
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Monthly Omzet Bar Chart */}
+            <div className="bg-white border border-slate-200 p-5 rounded shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider font-heading">
+                  📈 Grafik Omzet Bulanan (12 Bulan Terakhir)
+                </h4>
+                <span className="text-[10px] text-slate-400 font-mono">Dalam Rupiah (Rp)</span>
+              </div>
+
+              <div className="h-44 flex items-end justify-between gap-1.5 pt-6 pb-2 px-2 border-b border-slate-200">
+                {revenueAnalytics.monthly_omzet.map((item, idx) => {
+                  const maxAmount = Math.max(...revenueAnalytics.monthly_omzet.map(m => m.amount), 1);
+                  const heightPercent = Math.max(Math.round((item.amount / maxAmount) * 100), 4);
+
+                  return (
+                    <div key={idx} className="flex-1 flex flex-col items-center gap-1 group relative h-full justify-end">
+                      {/* Tooltip */}
+                      <div className="absolute -top-9 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[9px] font-mono px-2 py-1 rounded whitespace-nowrap z-10 pointer-events-none shadow-lg">
+                        {item.month_name}: Rp. {item.amount.toLocaleString('id-ID')}
+                      </div>
+                      {/* Bar */}
+                      <div
+                        style={{ height: `${heightPercent}%` }}
+                        className="w-full bg-[#17A2B8] hover:bg-[#138496] rounded-t transition-all duration-300 group-hover:scale-y-105 origin-bottom shadow-xs"
+                      />
+                      {/* X-axis Label */}
+                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter truncate w-full text-center mt-1">
+                        {item.month_name}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Package Duration Breakdown Cards */}
+              <div className="pt-2">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-accent block mb-3">
+                  Omzet Berdasarkan Durasi Paket (1 / 3 / 6 / 12 Bulan)
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { label: 'Paket 1 Bulan', value: revenueAnalytics.sales_by_duration_1m, bg: 'border-l-4 border-blue-500' },
+                    { label: 'Paket 3 Bulan', value: revenueAnalytics.sales_by_duration_3m, bg: 'border-l-4 border-teal-500' },
+                    { label: 'Paket 6 Bulan', value: revenueAnalytics.sales_by_duration_6m, bg: 'border-l-4 border-amber-500' },
+                    { label: 'Paket 12 Bulan', value: revenueAnalytics.sales_by_duration_12m, bg: 'border-l-4 border-emerald-500' },
+                  ].map((p, i) => (
+                    <div key={i} className={`bg-slate-50 border border-slate-200 p-3 rounded ${p.bg}`}>
+                      <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">{p.label}</span>
+                      <span className="text-sm font-black font-mono text-slate-800 mt-1 block">
+                        Rp. {p.value.toLocaleString('id-ID')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Row 3 (Gender Stats) - Light panels */}

@@ -213,19 +213,28 @@ export const RC_DICTIONARY: Record<string, RCDetail> = {
 /**
  * Formats a clean Indonesian translation for Admin UI with Category Badges
  * Example:
- * [HUMAN ERROR | RC VAL01] Karakter Teks Melebihi Batas: Teks input yang dimasukkan terlalu panjang... (Saran: Persingkat karakter...)
+ * [HUMAN ERROR (FORMAT INPUT) | RC VAL04] Gagal membuat member: Format ID (UUID) tidak valid.
  */
 export function translateRC(rc?: string, backendMessage?: string): string {
-  if (!rc) {
-    return backendMessage || 'Terjadi kesalahan pada sistem.';
+  if (!rc && !backendMessage) {
+    return 'Terjadi kesalahan pada sistem.';
   }
 
-  const detail = RC_DICTIONARY[rc];
+  const detail = rc ? RC_DICTIONARY[rc] : null;
+  const categoryTag = detail 
+    ? `[${detail.categoryLabel} | RC ${rc}]` 
+    : (rc ? `[RC ${rc}]` : '⚠️');
+
+  // If backend provided a specific, to-the-point error message, display it directly!
+  if (backendMessage && backendMessage.trim() !== '') {
+    return `${categoryTag} ${backendMessage}`;
+  }
+
   if (detail) {
-    return `[${detail.categoryLabel} | RC ${rc}] ${detail.title}: ${detail.message} 👉 (Saran: ${detail.actionAdvice})`;
+    return `${categoryTag} ${detail.title}: ${detail.message} 👉 (Saran: ${detail.actionAdvice})`;
   }
 
-  return `[SYSTEM ERROR | RC ${rc}] ${backendMessage || 'Terjadi kesalahan pada sistem backend.'}`;
+  return `[SYSTEM ERROR | RC ${rc || 'SYS99'}] Terjadi kesalahan pada sistem backend.`;
 }
 
 export function getRCDetail(rc?: string): RCDetail | null {

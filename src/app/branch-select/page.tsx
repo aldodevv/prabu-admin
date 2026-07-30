@@ -33,16 +33,10 @@ export default function BranchSelectPage() {
         } else {
           // fallback
           setBranches([
-            { id: 'branch-grogol-uuid', name: 'PRABU GYM GROGOL', code: 'PRB-GRG' },
-            { id: 'branch-limo-uuid', name: 'PRABU GYM LIMO', code: 'PRB-LMO' },
-            { id: 'branch-pancoran-mas-uuid', name: 'PRABU GYM PANCORAN MAS', code: 'PRB-PAC' },
           ]);
         }
       } catch {
         setBranches([
-          { id: 'branch-grogol-uuid', name: 'PRABU GYM GROGOL', code: 'PRB-GRG' },
-          { id: 'branch-limo-uuid', name: 'PRABU GYM LIMO', code: 'PRB-LMO' },
-          { id: 'branch-pancoran-mas-uuid', name: 'PRABU GYM PANCORAN MAS', code: 'PRB-PAC' },
         ]);
       } finally {
         setLoading(false);
@@ -64,14 +58,14 @@ export default function BranchSelectPage() {
   return (
     <div className="min-h-screen bg-slate-100 flex items-stretch font-sans">
       {/* Left Pane - Gym Imagery (Visible on Large Screens) */}
-      <div 
+      <div
         className="hidden lg:flex lg:w-1/2 relative bg-cover bg-center items-center justify-center p-12 overflow-hidden"
-        style={{ 
-          backgroundImage: `url('https://images.unsplash.com/photo-1540497077202-7c8a3999166f?q=80&w=1200&auto=format&fit=crop')` 
+        style={{
+          backgroundImage: `url('https://images.unsplash.com/photo-1540497077202-7c8a3999166f?q=80&w=1200&auto=format&fit=crop')`
         }}
       >
         <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px]" />
-        
+
         {/* Glow decorative rings */}
         <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-red-primary/10 blur-3xl" />
         <div className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full bg-blue-500/10 blur-3xl" />
@@ -99,7 +93,7 @@ export default function BranchSelectPage() {
           <span className="text-xs uppercase tracking-widest text-slate-400 font-bold">
             Level Akses: {user.role}
           </span>
-          <button 
+          <button
             onClick={logout}
             className="flex items-center gap-1.5 text-xs font-bold text-red-500 hover:text-red-700 transition-colors uppercase tracking-wider cursor-pointer"
           >

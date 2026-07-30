@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
-import { FileText, Printer, ArrowLeft, Eye, Search, X, FileSpreadsheet, RotateCcw } from 'lucide-react';
+import { FileText, Printer, ArrowLeft, Eye, Search, X, FileSpreadsheet, RotateCcw, Trash2 } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { exportToExcel } from '@/lib/excelExport';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
+import { FetchErrorAlert } from '@/components/core/FetchErrorAlert';
+import { formatInvoiceNumber, formatDateLabel, formatIDR, BRANCH_ADDRESSES } from '@/utils';
 
 interface TransactionItem {
   id: string;
@@ -31,12 +33,6 @@ interface Transaction {
   notes?: string;
   items?: TransactionItem[];
 }
-
-const BRANCH_ADDRESSES: Record<string, string> = {
-  'LIMO': 'Jl. Naman Iskandar No.95\nLimo, Kec. Limo, Kota Depok, Jawa Barat 16515',
-  'GROGOL': 'Jl. Raya Grogol No.12\nGrogol, Jakarta Barat, DKI Jakarta 11440',
-  'PANCORAN_MAS': 'Jl. Raya Sawangan No.45\nPancoran Mas, Kota Depok, Jawa Barat 16436',
-};
 
 export default function TransactionHistoryPage() {
   const { activeBranchID, branches, user } = useAuth();
@@ -157,6 +153,23 @@ export default function TransactionHistoryPage() {
     { label: 'Petugas CS', value: 'admin_name' },
   ];
 
+  const handleDeleteTx = async (tx: Transaction) => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus transaksi ${tx.transaction_number}? Stok barang akan dikembalikan secara otomatis.`)) {
+      return;
+    }
+    try {
+      const res = await api.delete(`/admin/transactions/${tx.id}`);
+      if (res.success) {
+        alert('Transaksi berhasil dihapus.');
+        fetchTransactions();
+      } else {
+        alert(res.error || 'Gagal menghapus transaksi.');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Terjadi kesalahan saat menghapus transaksi.');
+    }
+  };
+
   const handleViewDetail = async (txID: string) => {
     setLoading(true);
     try {
@@ -187,39 +200,7 @@ export default function TransactionHistoryPage() {
   const activeBranchCode = activeBranch ? activeBranch.code : 'LIMO';
   const branchAddress = BRANCH_ADDRESSES[activeBranchCode.toUpperCase()] || 'Limo, Depok';
 
-  const formatInvoiceNumber = (txNumber: string, txDate?: string) => {
-    if (!txNumber) return '';
-    // Format: PRABU.LMO.220726.002
-    const parts = txNumber.split('-');
-    if (parts.length >= 4) {
-      const branchCode = parts[1];
-      const datePart = parts[2];
-      const seq = parts[3];
-      
-      const codeMap: Record<string, string> = {
-        'LIMO': 'LMO',
-        'GROGOL': 'GGL',
-        'PANCORAN_MAS': 'PMS'
-      };
-      const bCode = codeMap[branchCode.toUpperCase()] || 'LMO';
-      const yy = datePart.substring(2, 4);
-      const mm = datePart.substring(4, 6);
-      const dd = datePart.substring(6, 8);
-      const shortSeq = String(Number(seq)).padStart(3, '0');
-      
-      return `PRABU.${bCode}.${yy}${mm}${dd}.${shortSeq}`;
-    }
-    return txNumber;
-  };
 
-  const formatDateLabel = (dateStr: string) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    const d = String(date.getDate()).padStart(2, '0');
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const y = date.getFullYear();
-    return `${d}-${m}-${y}`;
-  };
 
   return (
     <div className="space-y-6 font-sans">
@@ -299,6 +280,8 @@ export default function TransactionHistoryPage() {
             </select>
           </SearchFilterBar>
 
+          <FetchErrorAlert error={error} featureName="Riwayat Transaksi Penjualan" onRetry={fetchTransactions} />
+
           {/* Card: Riwayat Transaksi */}
           <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
             <div className="bg-[#17A2B8] px-6 py-4 text-white font-bold">
@@ -355,14 +338,24 @@ export default function TransactionHistoryPage() {
                               {tx.admin_name}
                             </td>
                             <td className="py-2.5 px-4 text-center">
-                              {/* Icon-Only Action Button with Tooltip */}
-                              <button
-                                onClick={() => handleViewDetail(tx.id)}
-                                title="Lihat Detail Transaksi"
-                                className="p-2 bg-[#6C7A89] hover:bg-[#5a6673] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105 mx-auto"
-                              >
-                                <Eye className="w-3.5 h-3.5" />
-                              </button>
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  onClick={() => handleViewDetail(tx.id)}
+                                  title="Lihat Detail Transaksi"
+                                  className="p-2 bg-[#6C7A89] hover:bg-[#5a6673] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                                {(user?.role === 'owner' || user?.role === 'developer') && (
+                                  <button
+                                    onClick={() => handleDeleteTx(tx)}
+                                    title="Hapus Transaksi (Khusus Owner/Dev)"
+                                    className="p-2 bg-[#DC3545] hover:bg-[#C82333] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))
@@ -482,7 +475,7 @@ export default function TransactionHistoryPage() {
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-700">
                     {selectedTx.items && selectedTx.items.length > 0 ? (
-                      selectedTx.items.map((item, idx) => (
+                      selectedTx.items.map((item: TransactionItem, idx: number) => (
                         <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
                           <td className="py-2.5 px-4 text-center border-r border-slate-100 font-mono">{idx + 1}</td>
                           <td className="py-2.5 px-4 border-r border-slate-100 font-semibold">{item.product_name}</td>

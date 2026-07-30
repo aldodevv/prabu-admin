@@ -24,11 +24,7 @@ export default function CardReplacementReportsPage() {
     setLoading(true);
     try {
       setTimeout(() => {
-        setReports([
-          { month: 'Juli 2026', total_cards: 14, total_revenue: 350000 },
-          { month: 'Juni 2026', total_cards: 22, total_revenue: 550000 },
-          { month: 'Mei 2026', total_cards: 18, total_revenue: 450000 }
-        ]);
+        setReports([]);
         setLoading(false);
       }, 500);
     } catch (err) {

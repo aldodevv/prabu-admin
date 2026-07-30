@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import { User, Lock, Check, Loader2 } from 'lucide-react';
 
@@ -83,69 +84,16 @@ export default function AdminLoginPage() {
         <div />
 
         <div className="w-full max-w-md mx-auto my-auto space-y-8">
-          {/* PRABU GYM Stylized SVG Logo */}
+          {/* PRABU GYM Logo */}
           <div className="text-center flex flex-col items-center select-none">
-            <svg 
-              className="w-48 h-auto mb-2" 
-              viewBox="0 0 500 240" 
-              fill="none" 
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              {/* Crown */}
-              <path 
-                d="M170 55 L200 85 L250 45 L300 85 L330 55 L320 100 L180 100 Z" 
-                fill="#DC3545" 
-              />
-              {/* Barbell Left Disk */}
-              <rect x="70" y="110" width="15" height="50" rx="4" fill="#1E293B" />
-              <rect x="90" y="100" width="15" height="70" rx="4" fill="#1E293B" />
-              <rect x="110" y="90" width="18" height="90" rx="6" fill="#1E293B" />
-              
-              {/* Barbell Shaft */}
-              <rect x="128" y="130" width="244" height="10" fill="#1E293B" />
-
-              {/* Barbell Right Disk */}
-              <rect x="372" y="90" width="18" height="90" rx="6" fill="#1E293B" />
-              <rect x="395" y="100" width="15" height="70" rx="4" fill="#1E293B" />
-              <rect x="415" y="110" width="15" height="50" rx="4" fill="#1E293B" />
-
-              {/* Fist Grabbing Center */}
-              <path 
-                d="M210 145 C210 120, 290 120, 290 145 C290 160, 210 160, 210 145 Z" 
-                fill="#DC3545" 
-              />
-              <path 
-                d="M215 140 C215 130, 230 130, 230 140 M230 140 C230 130, 245 130, 245 140 M245 140 C245 130, 260 130, 260 140 M260 140 C260 130, 275 130, 275 140" 
-                stroke="#FFFFFF" 
-                strokeWidth="3" 
-                strokeLinecap="round" 
-              />
-
-              {/* Text */}
-              <text 
-                x="250" 
-                y="205" 
-                textAnchor="middle" 
-                fontFamily="Impact, sans-serif" 
-                fontSize="48" 
-                fill="#1E293B" 
-                letterSpacing="2"
-              >
-                PRABU
-              </text>
-              <text 
-                x="250" 
-                y="235" 
-                textAnchor="middle" 
-                fontFamily="sans-serif" 
-                fontWeight="900" 
-                fontSize="22" 
-                fill="#DC3545" 
-                letterSpacing="4"
-              >
-                GYM
-              </text>
-            </svg>
+            <Image 
+              src="/logo-transparent.png"
+              alt="PRABUGYM Logo"
+              width={200}
+              height={200}
+              className="w-48 h-auto mb-2 object-contain"
+              priority
+            />
             <p className="text-slate-400 text-xs uppercase tracking-widest font-semibold mt-1">
               Integrated Management System
             </p>

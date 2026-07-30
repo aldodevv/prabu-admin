@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { ShoppingBag, CreditCard, Trash2, Check, Plus, Printer, X } from 'lucide-react';
+import { formatInvoiceNumber, getBranchAddress } from '@/utils';
 
 interface Product {
   id: string;
@@ -45,7 +46,7 @@ export default function TransaksiTunaiPage() {
 
   // Payment states
   const [paymentMethod, setPaymentMethod] = useState('');
-  const [paymentAmount, setPaymentAmount] = useState<number | ''>('');
+  const [keterangan, setKeterangan] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Printable receipt state
@@ -65,16 +66,16 @@ export default function TransaksiTunaiPage() {
       const res = await api.get<any>(`/admin/products?branch_id=${activeBranchID}&per_page=100`);
       if (res.success && res.data) {
         setProducts(res.data.filter((p: any) => p.is_active));
-      } else {
-        setError(res.error || 'Gagal mengambil data barang');
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      setError(err.message || 'Gagal memuat produk dari server');
+      setError('Gagal memuat produk.');
     } finally {
       setLoading(false);
     }
   };
+
+  const grandTotal = cart.reduce((acc, item) => acc + item.subtotal, 0);
 
   const handleAddItem = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,62 +83,42 @@ export default function TransaksiTunaiPage() {
       alert('Silakan pilih barang terlebih dahulu.');
       return;
     }
-    if (!unit || unit <= 0) {
-      alert('Silakan masukkan jumlah unit yang valid.');
+    if (unit === '' || unit <= 0) {
+      alert('Jumlah unit harus lebih dari 0.');
       return;
     }
 
     const product = products.find((p) => p.id === selectedProductID);
     if (!product) return;
 
-    if (product.stock < unit) {
-      alert(`Stok tidak mencukupi. Sisa stok ${product.name}: ${product.stock} ${product.unit}`);
+    if (unit > product.stock) {
+      alert(`Stok tidak mencukupi. Sisa stok: ${product.stock}`);
       return;
     }
 
-    // Check if product already in cart
-    const existingIndex = cart.findIndex((item) => item.product.id === product.id && item.discountPercent === discountPercent);
+    const price = product.price;
+    const unitDiscount = price * (discountPercent / 100);
+    const subtotal = (price - unitDiscount) * unit;
 
-    if (existingIndex > -1) {
-      const updatedCart = [...cart];
-      const newQty = updatedCart[existingIndex].quantity + unit;
-      if (product.stock < newQty) {
-        alert(`Total unit di keranjang (${newQty}) melebihi stok yang ada (${product.stock}).`);
-        return;
-      }
-      updatedCart[existingIndex].quantity = newQty;
+    const newItem: CartItem = {
+      product,
+      quantity: unit,
+      discountPercent,
+      subtotal,
+    };
 
-      const price = product.price;
-      const unitDiscount = price * (discountPercent / 100);
-      updatedCart[existingIndex].subtotal = (price - unitDiscount) * newQty;
-      setCart(updatedCart);
-    } else {
-      const price = product.price;
-      const unitDiscount = price * (discountPercent / 100);
-      const subtotal = (price - unitDiscount) * unit;
-      setCart([...cart, { product, quantity: unit, discountPercent, subtotal }]);
-    }
-
-    // Reset inputs
+    setCart([...cart, newItem]);
+    // Reset selection inputs
     setSelectedProductID('');
     setUnit('');
     setDiscountPercent(0);
   };
 
   const handleRemoveItem = (index: number) => {
-    setCart(cart.filter((_, i) => i !== index));
+    const newCart = [...cart];
+    newCart.splice(index, 1);
+    setCart(newCart);
   };
-
-  const grandTotal = cart.reduce((sum, item) => sum + item.subtotal, 0);
-
-  // Set default payment amount when grand total changes or payment method changes
-  useEffect(() => {
-    if (paymentMethod && paymentMethod !== 'Tunai') {
-      setPaymentAmount(grandTotal);
-    } else if (paymentMethod === 'Tunai' && (paymentAmount === '' || paymentAmount < grandTotal)) {
-      setPaymentAmount(grandTotal);
-    }
-  }, [grandTotal, paymentMethod]);
 
   const handleFinishTransaction = async () => {
     if (cart.length === 0) {
@@ -148,21 +129,18 @@ export default function TransaksiTunaiPage() {
       alert('Silakan pilih jenis pembayaran.');
       return;
     }
-    if (paymentAmount === '' || paymentAmount < grandTotal) {
-      alert('Jumlah bayar tidak boleh kurang dari total belanja.');
-      return;
-    }
 
     setIsSubmitting(true);
     setError('');
 
+    const txNotes = keterangan ? `POS Retail (${paymentMethod}) - Keterangan: ${keterangan}` : `POS Retail - Pembayaran: ${paymentMethod}`;
     const body = {
       member_id: null,
-      notes: `POS Retail - Pembayaran: ${paymentMethod}`,
+      notes: txNotes,
       total_amount: grandTotal,
       payment_method: paymentMethod,
-      payment_amount: Number(paymentAmount),
-      change_amount: paymentMethod === 'Tunai' ? Number(paymentAmount) - grandTotal : 0,
+      payment_amount: grandTotal,
+      change_amount: 0,
       items: cart.map((item) => ({
         product_id: item.product.id,
         quantity: item.quantity,
@@ -178,7 +156,7 @@ export default function TransaksiTunaiPage() {
         // Clear cart and states
         setCart([]);
         setPaymentMethod('');
-        setPaymentAmount('');
+        setKeterangan('');
         // Refresh products stock
         fetchProducts();
       } else {
@@ -195,29 +173,11 @@ export default function TransaksiTunaiPage() {
   const activeBranch = branches.find((b) => b.id === activeBranchID);
   const activeBranchName = activeBranch ? activeBranch.name : 'Prabu Gym';
   const activeBranchCode = activeBranch ? activeBranch.code : 'LIMO';
-  const branchAddress = BRANCH_ADDRESSES[activeBranchCode.toUpperCase()] || 'Limo, Depok';
+  const branchAddress = getBranchAddress(activeBranchCode);
 
-  const formatInvoiceNumber = (tx: any) => {
+  const getFormattedInvoice = (tx: any) => {
     if (!tx) return '';
-    // Custom format: PRABU.LMO.YYMMDD.NNN or use real tx number
-    const codeMap: Record<string, string> = {
-      'LIMO': 'LMO',
-      'GROGOL': 'GGL',
-      'PANCORAN_MAS': 'PMS'
-    };
-    const bCode = codeMap[activeBranchCode.toUpperCase()] || 'LMO';
-
-    // Parse date for invoice
-    const date = new Date(tx.transaction_date || tx.created_at);
-    const yy = String(date.getFullYear()).slice(-2);
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const dd = String(date.getDate()).padStart(2, '0');
-
-    // Get sequence number from transaction number if format matches TRX-BRANCH-YYYYMMDD-SEQ
-    const txNum = tx.transaction_number || '';
-    const seq = txNum.split('-').pop() || '001';
-
-    return `PRABU.${bCode}.${yy}${mm}${dd}.${seq}`;
+    return formatInvoiceNumber(tx.transaction_number, tx.transaction_date || tx.created_at, activeBranchCode);
   };
 
   const handlePrint = () => {
@@ -445,26 +405,17 @@ export default function TransaksiTunaiPage() {
                 {paymentMethod && (
                   <div className="space-y-4 animate-fadeIn">
                     <div>
-                      <label className="block text-slate-500 text-[10px] uppercase tracking-widest font-accent mb-1.5">
-                        Jumlah Bayar
+                      <label className="block text-slate-500 text-[10px] uppercase tracking-widest font-accent mb-1.5 font-bold">
+                        Keterangan <span className="text-slate-400 font-normal">(Nomor Transaksi Debit / Catatan Opsional)</span>
                       </label>
                       <input
-                        type="number"
-                        placeholder="Masukkan Jumlah Bayar"
-                        value={paymentAmount}
-                        onChange={(e) => setPaymentAmount(e.target.value === '' ? '' : Number(e.target.value))}
-                        className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 text-xs focus:outline-none focus:border-[#17A2B8] rounded h-10 font-mono text-sm"
+                        type="text"
+                        placeholder="Masukkan nomor transaksi debit atau keterangan tambahan..."
+                        value={keterangan}
+                        onChange={(e) => setKeterangan(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#17A2B8] rounded font-body"
                       />
                     </div>
-
-                    {paymentMethod === 'Tunai' && paymentAmount !== '' && paymentAmount >= grandTotal && (
-                      <div className="flex justify-between items-center bg-slate-50 p-3.5 border border-slate-200 rounded font-mono text-xs">
-                        <span className="text-slate-500 font-bold uppercase tracking-wider">Kembalian:</span>
-                        <span className="text-emerald-600 font-extrabold text-sm">
-                          Rp {(paymentAmount - grandTotal).toLocaleString('id-ID')}
-                        </span>
-                      </div>
-                    )}
 
                     <button
                       onClick={handleFinishTransaction}

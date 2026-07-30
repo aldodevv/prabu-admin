@@ -71,7 +71,6 @@ export default function MemberPaymentPage() {
   const debouncedSearch = useDebounce(searchQuery, 400);
   const [isTyping, setIsTyping] = useState(false);
   const [selectedMemberFilter, setSelectedMemberFilter] = useState('Semua');
-  const [memberScope, setMemberScope] = useState<'one' | 'all'>('one');
 
   // Form Fields
   const [selectedPackageName, setSelectedPackageName] = useState('');
@@ -99,7 +98,7 @@ export default function MemberPaymentPage() {
     if (activeBranchID) {
       fetchMembers();
     }
-  }, [activeBranchID, memberScope]);
+  }, [activeBranchID]);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && members.length > 0) {
@@ -122,10 +121,7 @@ export default function MemberPaymentPage() {
   const fetchMembers = async () => {
     setLoading(true);
     try {
-      const url = memberScope === 'one'
-        ? `/admin/members?branch_id=${activeBranchID}&per_page=200`
-        : `/admin/members?per_page=200`;
-      const res = await api.get<any>(url);
+      const res = await api.get<any>(`/admin/members?branch_id=${activeBranchID}&per_page=200`);
       if (res.success && res.data) {
         setMembers(res.data);
       }
@@ -444,27 +440,6 @@ export default function MemberPaymentPage() {
                 </div>
 
                 <div className="p-6 space-y-4">
-                  {/* Scope filter buttons (checkmark) */}
-                  <div className="flex gap-2 select-none">
-                    <button
-                      onClick={() => setMemberScope('one')}
-                      className={`inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold uppercase tracking-wide rounded border cursor-pointer transition-all ${memberScope === 'one'
-                          ? 'bg-[#007BFF] border-[#007BFF] text-white'
-                          : 'bg-white border-slate-300 text-slate-650 hover:bg-slate-50'
-                        }`}
-                    >
-                      ✓ One Club
-                    </button>
-                    <button
-                      onClick={() => setMemberScope('all')}
-                      className={`inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold uppercase tracking-wide rounded border cursor-pointer transition-all ${memberScope === 'all'
-                          ? 'bg-[#007BFF] border-[#007BFF] text-white'
-                          : 'bg-white border-slate-300 text-slate-650 hover:bg-slate-50'
-                        }`}
-                    >
-                      ✓ All Club
-                    </button>
-                  </div>
 
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm text-slate-650 border border-slate-200">
@@ -748,49 +723,49 @@ export default function MemberPaymentPage() {
                   className="h-14 w-auto object-contain"
                 />
                 <div className="text-center leading-none mt-2">
-                  <h1 className="text-xl font-black tracking-widest">PRABU</h1>
-                  <span className="text-[8px] uppercase font-bold text-slate-500">Gym & Fitness Center</span>
+                  <h1 className="text-xl font-black tracking-widest font-heading">PRABU GYM</h1>
+                  <span className="text-[8px] uppercase font-bold text-slate-600 tracking-wider">Gym & Fitness Center</span>
                 </div>
               </div>
 
               {/* Title Box */}
               <div className="p-4 flex items-center justify-center text-center">
-                <h2 className="text-3xl font-black uppercase tracking-widest text-slate-800">
+                <h2 className="text-3xl font-black uppercase tracking-widest text-slate-900">
                   PRABU OFFICIAL RECEIPT
                 </h2>
               </div>
             </div>
 
-            {/* Metadata Summary Row */}
-            <div className="border border-black py-2.5 px-4 flex justify-between text-xs font-semibold">
+            {/* Metadata Summary Row - Bold & Prominent */}
+            <div className="border border-black py-2.5 px-4 flex justify-between text-xs font-extrabold text-black uppercase tracking-wide">
               <span>Tanggal : {formatDateLabel(new Date().toISOString())}</span>
               <span>Kategori : Perpanjang</span>
               <span>No Invoice : {successTx.txNumber}</span>
             </div>
 
-            {/* Details Table */}
+            {/* Details Table - Bold Header Row */}
             <div className="border border-black overflow-hidden rounded-xs">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-black font-extrabold uppercase text-[10px] text-slate-700">
-                    <th className="py-2.5 px-3 border-r border-black">Nomor Anggota</th>
-                    <th className="py-2.5 px-3 border-r border-black">Nama Anggota</th>
-                    <th className="py-2.5 px-3 border-r border-black">Paket Anggota</th>
-                    <th className="py-2.5 px-3 border-r border-black">Masa Aktif</th>
-                    <th className="py-2.5 px-3 border-r border-black">Jenis Pembayaran</th>
-                    <th className="py-2.5 px-3">Harga Paket</th>
+                  <tr className="bg-slate-100 border-b border-black font-black uppercase text-[11px] text-black">
+                    <th className="py-2.5 px-3 border-r border-black font-black">NOMOR ANGGOTA</th>
+                    <th className="py-2.5 px-3 border-r border-black font-black">NAMA ANGGOTA</th>
+                    <th className="py-2.5 px-3 border-r border-black font-black">PAKET ANGGOTA</th>
+                    <th className="py-2.5 px-3 border-r border-black font-black">MASA AKTIF</th>
+                    <th className="py-2.5 px-3 border-r border-black font-black">JENIS PEMBAYARAN</th>
+                    <th className="py-2.5 px-3 font-black">HARGA PAKET</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="font-semibold text-slate-800">
-                    <td className="py-3 px-3 border-r border-black font-mono">{selectedMember.username}</td>
-                    <td className="py-3 px-3 border-r border-black font-bold">{selectedMember.full_name}</td>
-                    <td className="py-3 px-3 border-r border-black uppercase text-[10px]">{successTx.packageName}</td>
-                    <td className="py-3 px-3 border-r border-black font-mono text-[10px]">
+                  <tr className="font-bold text-slate-900">
+                    <td className="py-3 px-3 border-r border-black font-mono font-bold">{selectedMember.username}</td>
+                    <td className="py-3 px-3 border-r border-black font-extrabold">{selectedMember.full_name}</td>
+                    <td className="py-3 px-3 border-r border-black uppercase text-[10px] font-bold">{successTx.packageName}</td>
+                    <td className="py-3 px-3 border-r border-black font-mono text-[10px] font-bold">
                       {formatDateLabel(successTx.newStart)} s/d {formatDateLabel(successTx.newEnd)}
                     </td>
-                    <td className="py-3 px-3 border-r border-black uppercase">{successTx.paymentMethod}</td>
-                    <td className="py-3 px-3 font-bold">Rp. {successTx.totalAmount.toLocaleString('id-ID')}</td>
+                    <td className="py-3 px-3 border-r border-black uppercase font-bold">{successTx.paymentMethod}</td>
+                    <td className="py-3 px-3 font-extrabold">Rp. {successTx.totalAmount.toLocaleString('id-ID')}</td>
                   </tr>
                 </tbody>
               </table>

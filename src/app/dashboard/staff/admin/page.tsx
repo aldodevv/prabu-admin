@@ -8,6 +8,8 @@ import { PageHeader } from '@/components/core/PageHeader';
 import { DataTable, Column } from '@/components/core/DataTable';
 import { ShieldCheck, UserPlus, Edit, Trash2, Save, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 
+import { FetchErrorAlert } from '@/components/core/FetchErrorAlert';
+
 export default function AdminStaffManagementPage() {
   const { user } = useAuth();
   const [adminList, setAdminList] = useState<any[]>([]);
@@ -28,15 +30,19 @@ export default function AdminStaffManagementPage() {
   const [password, setPassword] = useState('');
   const [showFormPassword, setShowFormPassword] = useState(false);
   const [branchID, setBranchID] = useState('');
+  const [role, setRole] = useState<'developer' | 'owner' | 'admin' | 'karyawan'>('karyawan');
 
   const fetchAdminList = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await employeesApi.list({ role: 'owner', per_page: 100 });
-      setAdminList(res.data || []);
+      const res = await employeesApi.list({ per_page: 200 });
+      const adminStaff = (res.data || []).filter(
+        (emp: any) => emp.role === 'admin' || emp.role === 'owner' || emp.role === 'developer'
+      );
+      setAdminList(adminStaff);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Gagal mengambil data Admin');
+      setError(err.response?.data?.message || 'Gagal mengambil data Staff Admin');
     } finally {
       setLoading(false);
     }
@@ -66,6 +72,7 @@ export default function AdminStaffManagementPage() {
     setEmail('');
     setPhone('');
     setPassword('');
+    setRole('owner');
     setShowFormPassword(false);
     if (branches.length > 0) setBranchID(branches[0].id);
     setError(null);
@@ -80,6 +87,7 @@ export default function AdminStaffManagementPage() {
     setEmail(adm.email || '');
     setPhone(adm.phone || '');
     setPassword(adm.password || '');
+    setRole(adm.role || 'karyawan');
     setShowFormPassword(false);
     setBranchID(adm.branch_id || (branches[0]?.id || ''));
     setError(null);
@@ -101,10 +109,10 @@ export default function AdminStaffManagementPage() {
           email,
           phone,
           password: password || undefined,
-          role: 'owner',
+          role: role,
           work_start_time: '08:00:00'
         });
-        setSuccess('Akun Admin berhasil dibuat!');
+        setSuccess('Akun Staff berhasil dibuat!');
       } else if (step === 'edit' && editingId) {
         await employeesApi.update(editingId, {
           username: username.trim() || undefined,
@@ -112,24 +120,24 @@ export default function AdminStaffManagementPage() {
           email,
           phone,
           password: password || undefined,
-          role: 'owner'
+          role: role
         });
-        setSuccess('Data Admin berhasil diperbarui!');
+        setSuccess('Data Staff berhasil diperbarui!');
       }
       fetchAdminList();
       setTimeout(() => setStep('list'), 1200);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Gagal menyimpan data Admin');
+      setError(err.response?.data?.message || 'Gagal menyimpan data Staff');
     }
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Apakah Anda yakin ingin menonaktifkan Admin ${name}?`)) return;
+    if (!confirm(`Apakah Anda yakin ingin menonaktifkan Staff ${name}?`)) return;
     try {
       await employeesApi.delete(id);
       fetchAdminList();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Gagal menghapus Admin');
+      alert(err.response?.data?.message || 'Gagal menghapus Staff');
     }
   };
 
@@ -147,6 +155,9 @@ export default function AdminStaffManagementPage() {
       key: 'password',
       header: 'Password Admin',
       render: (row) => {
+        if (row.role === 'developer') {
+          return <span className="text-slate-400 font-bold font-mono text-xs select-none">••••••••</span>;
+        }
         const isVisible = !!showPasswordMap[row.id];
         const displayPass = row.password || 'admin123';
         return (
@@ -173,34 +184,40 @@ export default function AdminStaffManagementPage() {
     {
       key: 'role',
       header: 'Role / Hak Akses',
-      render: () => (
-        <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-800">
-          Super Admin / Owner
-        </span>
-      )
+      render: (row) => {
+        if (row.role === 'developer') return <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-800">Developer</span>;
+        if (row.role === 'owner') return <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800">Owner</span>;
+        if (row.role === 'admin') return <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-800">Admin (Read-Only)</span>;
+        return <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-800">Karyawan</span>;
+      }
     },
     {
       key: 'actions',
       header: 'Aksi',
-      render: (row) => (
-        <div className="flex gap-1.5 justify-center">
-          <button
-            onClick={() => handleOpenEdit(row)}
-            className="px-2.5 py-1 bg-[#17A2B8] hover:bg-[#138496] text-white text-[10px] font-bold uppercase rounded flex items-center gap-1 cursor-pointer"
-          >
-            <Edit className="w-3 h-3" />
-            Ubah
-          </button>
+      render: (row) => {
+        if (user?.role !== 'developer' && row.role === 'developer') {
+          return <span className="text-[10px] text-slate-400 font-semibold italic">Protected</span>;
+        }
+        return (
+          <div className="flex gap-1.5 justify-center">
+            <button
+              onClick={() => handleOpenEdit(row)}
+              className="px-2.5 py-1 bg-[#17A2B8] hover:bg-[#138496] text-white text-[10px] font-bold uppercase rounded flex items-center gap-1 cursor-pointer"
+            >
+              <Edit className="w-3 h-3" />
+              Ubah
+            </button>
 
-          <button
-            onClick={() => handleDelete(row.id, row.full_name)}
-            className="px-2.5 py-1 bg-[#DC3545] hover:bg-[#c82333] text-white text-[10px] font-bold uppercase rounded flex items-center gap-1 cursor-pointer"
-          >
-            <Trash2 className="w-3 h-3" />
-            Hapus
-          </button>
-        </div>
-      ),
+            <button
+              onClick={() => handleDelete(row.id, row.full_name)}
+              className="px-2.5 py-1 bg-[#DC3545] hover:bg-[#c82333] text-white text-[10px] font-bold uppercase rounded flex items-center gap-1 cursor-pointer"
+            >
+              <Trash2 className="w-3 h-3" />
+              Hapus
+            </button>
+          </div>
+        );
+      },
       className: 'text-center'
     }
   ];
@@ -214,7 +231,7 @@ export default function AdminStaffManagementPage() {
           step === 'list' ? (
             <button
               onClick={handleOpenCreate}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#DC3545] hover:bg-[#c82333] text-white text-xs font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
             >
               <UserPlus className="w-4 h-4" />
               <span>+ Tambah Admin</span>
@@ -230,6 +247,8 @@ export default function AdminStaffManagementPage() {
           )
         }
       />
+
+      <FetchErrorAlert error={error} featureName="Data Staff Admin" onRetry={fetchAdminList} />
 
       {error && (
         <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-bold uppercase tracking-wider">
@@ -271,6 +290,20 @@ export default function AdminStaffManagementPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-5 text-xs text-slate-700">
+            <div className="space-y-1.5">
+              <label className="font-bold text-slate-800 block">Role / Hak Akses *</label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value as any)}
+                className="w-full bg-slate-50 border border-slate-300 p-2.5 rounded font-bold text-slate-800"
+                required
+              >
+                {user?.role === 'developer' && <option value="developer">Developer (Akses Penuh + Kelola Cabang)</option>}
+                <option value="owner">Owner (Full Features)</option>
+                <option value="admin">Admin (Read-Only Semua Cabang)</option>
+              </select>
+            </div>
+
             <div className="space-y-1.5">
               <label className="font-bold text-slate-800 block">Cabang Tugas *</label>
               <select

@@ -13,6 +13,10 @@ const PrintContainer: React.FC<PrintContainerProps> = ({ onClose, title, childre
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:p-0 print:bg-white print:fixed print:inset-0 overflow-y-auto">
       <style jsx global>{`
         @media print {
+          @page {
+            size: A5 landscape;
+            margin: 5mm;
+          }
           header, aside, button, .no-print {
             display: none !important;
           }
@@ -21,6 +25,7 @@ const PrintContainer: React.FC<PrintContainerProps> = ({ onClose, title, childre
             color: black !important;
             padding: 0 !important;
             margin: 0 !important;
+            width: 100% !important;
           }
           .fixed {
             position: absolute !important;
@@ -40,6 +45,7 @@ const PrintContainer: React.FC<PrintContainerProps> = ({ onClose, title, childre
           thead th {
             background-color: #f2f2f2 !important;
             color: black !important;
+            font-weight: 900 !important;
           }
         }
       `}</style>
@@ -108,45 +114,45 @@ export const OfficialReceiptTemplate: React.FC<OfficialReceiptProps> = ({ onClos
           <div className="flex items-center gap-3">
             <LogoIcon />
             <div className="text-left leading-none">
-              <h1 className="text-2xl font-black tracking-widest">PRABU</h1>
-              <span className="text-[9px] uppercase font-bold text-slate-400">Gym & Fitness Center</span>
+              <h1 className="text-2xl font-black tracking-widest font-heading">PRABU GYM</h1>
+              <span className="text-[9px] uppercase font-bold text-slate-600 tracking-wider">Gym & Fitness Center</span>
             </div>
           </div>
           <div className="text-right border-l border-black pl-8 pr-4">
-            <h2 className="text-2xl font-black uppercase tracking-widest text-slate-800">OFFICIAL RECEIPT</h2>
+            <h2 className="text-2xl font-black uppercase tracking-widest text-slate-900">OFFICIAL RECEIPT</h2>
           </div>
         </div>
 
-        {/* Metadata Summary Row */}
-        <div className="border-t border-b border-black py-2.5 px-4 flex justify-between text-xs font-semibold">
+        {/* Metadata Summary Row - Bold & Prominent */}
+        <div className="border-t border-b border-black py-2.5 px-4 flex justify-between text-xs font-extrabold text-black uppercase tracking-wide">
           <span>Tanggal : {formatDateLabel(data.transactionDate)}</span>
           <span>Kategori : Pendaftaran</span>
           <span>No Invoice : {data.transactionNumber}</span>
         </div>
 
-        {/* Details Table */}
+        {/* Details Table - Bold Header Row */}
         <div className="border border-black overflow-hidden rounded-xs">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-black font-extrabold uppercase text-[10px] text-slate-700">
-                <th className="py-2.5 px-3 border-r border-black">Nomor Anggota</th>
-                <th className="py-2.5 px-3 border-r border-black">Nama Anggota</th>
-                <th className="py-2.5 px-3 border-r border-black">Paket Anggota</th>
-                <th className="py-2.5 px-3 border-r border-black">Masa Aktif</th>
-                <th className="py-2.5 px-3 border-r border-black">Jenis Pembayaran</th>
-                <th className="py-2.5 px-3">Harga Paket</th>
+              <tr className="bg-slate-100 border-b border-black font-black uppercase text-[11px] text-black">
+                <th className="py-2.5 px-3 border-r border-black font-black">NOMOR ANGGOTA</th>
+                <th className="py-2.5 px-3 border-r border-black font-black">NAMA ANGGOTA</th>
+                <th className="py-2.5 px-3 border-r border-black font-black">PAKET ANGGOTA</th>
+                <th className="py-2.5 px-3 border-r border-black font-black">MASA AKTIF</th>
+                <th className="py-2.5 px-3 border-r border-black font-black">JENIS PEMBAYARAN</th>
+                <th className="py-2.5 px-3 font-black">HARGA PAKET</th>
               </tr>
             </thead>
             <tbody>
-              <tr className="font-semibold text-slate-800">
-                <td className="py-3 px-3 border-r border-black font-mono">{data.memberUsername}</td>
-                <td className="py-3 px-3 border-r border-black font-bold">{data.memberName}</td>
-                <td className="py-3 px-3 border-r border-black uppercase text-[10px]">{data.packageName}</td>
-                <td className="py-3 px-3 border-r border-black font-mono text-[10px]">
+              <tr className="font-bold text-slate-900">
+                <td className="py-3 px-3 border-r border-black font-mono font-bold">{data.memberUsername}</td>
+                <td className="py-3 px-3 border-r border-black font-extrabold">{data.memberName}</td>
+                <td className="py-3 px-3 border-r border-black uppercase text-[10px] font-bold">{data.packageName}</td>
+                <td className="py-3 px-3 border-r border-black font-mono text-[10px] font-bold">
                   {formatDateLabel(data.membershipStart)} s/d {formatDateLabel(data.membershipEnd)}
                 </td>
-                <td className="py-3 px-3 border-r border-black uppercase">{data.paymentMethod}</td>
-                <td className="py-3 px-3 font-bold">{formatIDR(data.price)}</td>
+                <td className="py-3 px-3 border-r border-black uppercase font-bold">{data.paymentMethod}</td>
+                <td className="py-3 px-3 font-extrabold">{formatIDR(data.price)}</td>
               </tr>
             </tbody>
           </table>
@@ -155,14 +161,14 @@ export const OfficialReceiptTemplate: React.FC<OfficialReceiptProps> = ({ onClos
         {/* Signature Box */}
         <div className="grid grid-cols-2 border border-black text-center text-xs font-bold divide-x divide-black">
           <div>
-            <div className="py-2 border-b border-black uppercase tracking-wider bg-slate-50 text-[10px]">Member</div>
+            <div className="py-2 border-b border-black uppercase tracking-wider bg-slate-100 text-[10px] font-black text-black">Member</div>
             <div className="h-28" />
-            <div className="py-2 border-t border-black uppercase font-extrabold">{data.memberName}</div>
+            <div className="py-2 border-t border-black uppercase font-black text-black">{data.memberName}</div>
           </div>
           <div>
-            <div className="py-2 border-b border-black uppercase tracking-wider bg-slate-50 text-[10px]">Customer Service</div>
+            <div className="py-2 border-b border-black uppercase tracking-wider bg-slate-100 text-[10px] font-black text-black">Customer Service</div>
             <div className="h-28" />
-            <div className="py-2 border-t border-black uppercase font-extrabold">{data.cashierName}</div>
+            <div className="py-2 border-t border-black uppercase font-black text-black">{data.cashierName}</div>
           </div>
         </div>
       </div>
@@ -204,13 +210,13 @@ export const SessionReceiptTemplate: React.FC<SessionReceiptProps> = ({ onClose,
               className="h-14 w-auto object-contain"
             />
             <div className="text-center leading-none mt-2">
-              <h1 className="text-xl font-black tracking-widest">PRABU</h1>
-              <span className="text-[8px] uppercase font-bold text-slate-500">Gym & Fitness Center</span>
+              <h1 className="text-xl font-black tracking-widest font-heading">PRABU GYM</h1>
+              <span className="text-[8px] uppercase font-bold text-slate-600 tracking-wider">Gym & Fitness Center</span>
             </div>
           </div>
           
           <div className="p-4 flex items-center justify-center text-center">
-            <h2 className="text-3xl font-black uppercase tracking-widest text-slate-800">
+            <h2 className="text-3xl font-black uppercase tracking-widest text-slate-900">
               PRABU SESSION MEMBER
             </h2>
           </div>
@@ -221,28 +227,28 @@ export const SessionReceiptTemplate: React.FC<SessionReceiptProps> = ({ onClose,
           <table className="w-full text-left border-collapse">
             <tbody>
               <tr className="border-b border-black">
-                <td className="py-2.5 px-4 font-bold bg-slate-50 border-r border-black w-[30%]">Nama Anggota</td>
-                <td className="py-2.5 px-4 font-bold text-slate-800">{data.memberName}</td>
+                <td className="py-2.5 px-4 font-black bg-slate-100 border-r border-black w-[30%] text-black uppercase">Nama Anggota</td>
+                <td className="py-2.5 px-4 font-extrabold text-slate-900">{data.memberName}</td>
               </tr>
               <tr className="border-b border-black">
-                <td className="py-2.5 px-4 font-bold bg-slate-50 border-r border-black">Paket Latihan</td>
-                <td className="py-2.5 px-4 uppercase text-slate-800">{data.packageName}</td>
+                <td className="py-2.5 px-4 font-black bg-slate-100 border-r border-black text-black uppercase">Paket Latihan</td>
+                <td className="py-2.5 px-4 uppercase text-slate-900 font-bold">{data.packageName}</td>
               </tr>
               <tr className="border-b border-black">
-                <td className="py-2.5 px-4 font-bold bg-slate-50 border-r border-black">Masa Aktif</td>
-                <td className="py-2.5 px-4 font-mono text-slate-700">{formatDateLabel(data.expiryDate)}</td>
+                <td className="py-2.5 px-4 font-black bg-slate-100 border-r border-black text-black uppercase">Masa Aktif</td>
+                <td className="py-2.5 px-4 font-mono font-bold text-slate-900">{formatDateLabel(data.expiryDate)}</td>
               </tr>
               <tr className="border-b border-black">
-                <td className="py-2.5 px-4 font-bold bg-slate-50 border-r border-black">Jumlah Sesi</td>
-                <td className="py-2.5 px-4 text-slate-800">{data.totalSessions}</td>
+                <td className="py-2.5 px-4 font-black bg-slate-100 border-r border-black text-black uppercase">Jumlah Sesi</td>
+                <td className="py-2.5 px-4 font-extrabold text-slate-900">{data.totalSessions}</td>
               </tr>
               <tr className="border-b border-black">
-                <td className="py-2.5 px-4 font-bold bg-slate-50 border-r border-black">Sisa Sesi</td>
-                <td className="py-2.5 px-4 font-bold text-slate-850">{data.remainingSessions}</td>
+                <td className="py-2.5 px-4 font-black bg-slate-100 border-r border-black text-black uppercase">Sisa Sesi</td>
+                <td className="py-2.5 px-4 font-black text-slate-900">{data.remainingSessions}</td>
               </tr>
               <tr>
-                <td className="py-2.5 px-4 font-bold bg-slate-50 border-r border-black">Pelatih</td>
-                <td className="py-2.5 px-4 text-slate-700">{data.trainerName}</td>
+                <td className="py-2.5 px-4 font-black bg-slate-100 border-r border-black text-black uppercase">Pelatih</td>
+                <td className="py-2.5 px-4 font-bold text-slate-900">{data.trainerName}</td>
               </tr>
             </tbody>
           </table>
@@ -250,31 +256,31 @@ export const SessionReceiptTemplate: React.FC<SessionReceiptProps> = ({ onClose,
 
         {/* Log History */}
         <div className="space-y-2">
-          <div className="text-[10px] font-extrabold uppercase tracking-wide text-slate-700">Riwayat Penggunaan Sesi:</div>
+          <div className="text-[10px] font-black uppercase tracking-wide text-black">Riwayat Penggunaan Sesi:</div>
           <div className="border border-black overflow-hidden rounded-xs">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-50 border-b border-black font-extrabold uppercase text-[9px] text-slate-700">
-                  <th className="py-2 px-3 border-r border-black w-8 text-center">No</th>
-                  <th className="py-2 px-3 border-r border-black">Tanggal</th>
-                  <th className="py-2 px-3 border-r border-black">Waktu</th>
-                  <th className="py-2 px-3 border-r border-black">Pelatih</th>
-                  <th className="py-2 px-3 border-r border-black text-center">Sesi Terpakai</th>
-                  <th className="py-2 px-3 border-r border-black">Staff / CS</th>
-                  <th className="py-2 px-3">Keterangan</th>
+                <tr className="bg-slate-100 border-b border-black font-black uppercase text-[10px] text-black">
+                  <th className="py-2 px-3 border-r border-black w-8 text-center font-black">NO</th>
+                  <th className="py-2 px-3 border-r border-black font-black">TANGGAL</th>
+                  <th className="py-2 px-3 border-r border-black font-black">WAKTU</th>
+                  <th className="py-2 px-3 border-r border-black font-black">PELATIH</th>
+                  <th className="py-2 px-3 border-r border-black text-center font-black">SESI TERPAKAI</th>
+                  <th className="py-2 px-3 border-r border-black font-black">STAFF / CS</th>
+                  <th className="py-2 px-3 font-black">KETERANGAN</th>
                 </tr>
               </thead>
               <tbody>
                 {data.logs.length > 0 ? (
                   data.logs.map((log, index) => (
-                    <tr key={index} className="border-b border-black last:border-0 font-semibold text-slate-850">
-                      <td className="py-2 px-3 border-r border-black text-center">{index + 1}</td>
-                      <td className="py-2 px-3 border-r border-black font-mono">{formatDateLabel(log.date)}</td>
-                      <td className="py-2 px-3 border-r border-black font-mono">{log.time}</td>
-                      <td className="py-2 px-3 border-r border-black">{log.trainer_name}</td>
-                      <td className="py-2 px-3 border-r border-black text-center">{log.used_sessions} Sesi</td>
-                      <td className="py-2 px-3 border-r border-black text-slate-700">{log.admin_name}</td>
-                      <td className="py-2 px-3 text-slate-700 text-[10px] normal-case">{log.notes || '-'}</td>
+                    <tr key={index} className="border-b border-black last:border-0 font-bold text-slate-900">
+                      <td className="py-2 px-3 border-r border-black text-center font-bold">{index + 1}</td>
+                      <td className="py-2 px-3 border-r border-black font-mono font-bold">{formatDateLabel(log.date)}</td>
+                      <td className="py-2 px-3 border-r border-black font-mono font-bold">{log.time}</td>
+                      <td className="py-2 px-3 border-r border-black font-bold">{log.trainer_name}</td>
+                      <td className="py-2 px-3 border-r border-black text-center font-extrabold">{log.used_sessions} Sesi</td>
+                      <td className="py-2 px-3 border-r border-black text-slate-900 font-bold">{log.admin_name}</td>
+                      <td className="py-2 px-3 text-slate-900 text-[10px] normal-case font-bold">{log.notes || '-'}</td>
                     </tr>
                   ))
                 ) : (
@@ -330,12 +336,12 @@ export const ReportTemplate: React.FC<ReportProps> = ({ onClose, title, data }) 
           <div className="flex items-center gap-3">
             <LogoIcon />
             <div className="text-left leading-none">
-              <h1 className="text-2xl font-black tracking-widest">PRABU</h1>
-              <span className="text-[9px] uppercase font-bold text-slate-400">Gym & Fitness Center</span>
+              <h1 className="text-2xl font-black tracking-widest font-heading">PRABU GYM</h1>
+              <span className="text-[9px] uppercase font-bold text-slate-600 tracking-wider">Gym & Fitness Center</span>
             </div>
           </div>
           <div className="text-right border-l border-black pl-8 pr-4">
-            <h2 className="text-xl font-extrabold uppercase tracking-widest text-slate-800">{title}</h2>
+            <h2 className="text-xl font-black uppercase tracking-widest text-slate-900">{title}</h2>
           </div>
         </div>
 
