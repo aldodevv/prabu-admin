@@ -38,6 +38,7 @@ export const ROUTES = {
   SALES_HISTORY: '/dashboard/sales/history',
   MEMBERS_ONE_CLUB: '/dashboard/members/one-club',
   MEMBERS_ALL_CLUB: '/dashboard/members/all-club',
+  MEMBERS_LEAVES: '/dashboard/members/leaves',
   MEMBERS_VISITS: '/dashboard/members/visits',
   REPORT_MEMBERS: '/dashboard/reports/members',
   REPORT_WORKOUTS: '/dashboard/reports/workouts',
@@ -117,6 +118,7 @@ export const NAVIGATION_MENU: NavigationGroup[] = [
     iconName: 'Folder',
     items: [
       { label: 'Data Anggota', href: ROUTES.MEMBERS_ONE_CLUB, iconName: 'Users' },
+      { label: 'Cuti Anggota', href: ROUTES.MEMBERS_LEAVES, iconName: 'PauseCircle' },
       { label: 'Kunjungan Anggota', href: ROUTES.MEMBERS_VISITS, iconName: 'ClipboardCheck' },
     ]
   },

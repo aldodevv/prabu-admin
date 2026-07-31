@@ -221,6 +221,20 @@ export default function ScanBarcodePage() {
               {result.type === 'member' && (() => {
                 const member = result.data as MemberData;
                 const daysLeft = getDaysRemaining(member.membership_end);
+                const isOnLeave = (result as any).on_leave;
+                const leaveInfo = (result as any).leave_info;
+
+                if (isOnLeave) {
+                  return (
+                    <div className="w-full bg-amber-50 border border-amber-300 text-amber-900 px-4 py-5 rounded text-center relative font-sans text-lg font-bold uppercase tracking-wider select-none shadow-sm">
+                      ⚠️ ANGGOTA SEDANG DALAM MASA CUTI ({leaveInfo?.start_date || '-'} s/d {leaveInfo?.end_date || '-'})
+                      <div className="text-xs font-semibold text-amber-700 mt-1 lowercase">
+                        * presensi check-in & check-out dibekukan selama periode cuti
+                      </div>
+                    </div>
+                  );
+                }
+
                 if (daysLeft >= 0 && daysLeft <= 7) {
                   return (
                     <div className="w-full bg-[#d9edf7] border border-[#bce8f1] text-[#31708f] px-4 py-6 rounded text-center relative font-sans text-2xl font-bold uppercase tracking-wider select-none">

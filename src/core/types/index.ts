@@ -18,6 +18,25 @@ export interface Member {
   updated_at?: string;
 }
 
+export interface MemberLeave {
+  id: string;
+  member_id: string;
+  member_name?: string;
+  member_code?: string;
+  branch_id: string;
+  branch_name?: string;
+  start_date: string;
+  end_date: string;
+  status: 'active' | 'completed' | 'cancelled';
+  fee_amount: number;
+  payment_method: string;
+  notes?: string;
+  created_by_id?: string;
+  created_by_name?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Trainer {
   id: string;
   branch_id: string;

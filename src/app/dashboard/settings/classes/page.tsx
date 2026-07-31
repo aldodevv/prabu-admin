@@ -25,8 +25,6 @@ export default function GymClassesPage() {
   // Form field
   const [name, setName] = useState('');
 
-  const fetchClasses = async () => {
-    setLoading(true);
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(50);
   const [total, setTotal] = useState(0);

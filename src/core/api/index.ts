@@ -1,6 +1,7 @@
 import api from '@/lib/api';
 import { 
   Member, 
+  MemberLeave,
   Trainer, 
   PTRegistration, 
   Transaction, 
@@ -189,6 +190,27 @@ export const contentsApi = {
   create: (data: any) => api.post<any>('/admin/contents', data),
   update: (id: string, data: any) => api.put<any>(`/admin/contents/${id}`, data),
   delete: (id: string) => api.delete<void>(`/admin/contents/${id}`),
+};
+
+export const memberLeavesApi = {
+  list: (params: { branch_id?: string; page?: number; search?: string; per_page?: number }) => {
+    const q = new URLSearchParams();
+    if (params.branch_id) q.append('branch_id', params.branch_id);
+    if (params.page) q.append('page', String(params.page));
+    if (params.search) q.append('search', params.search);
+    if (params.per_page) q.append('per_page', String(params.per_page));
+    return api.get<MemberLeave[]>(`/admin/members/leaves?${q.toString()}`);
+  },
+  create: (data: {
+    member_id: string;
+    branch_id?: string;
+    start_date: string;
+    end_date: string;
+    fee_amount: number;
+    payment_method: string;
+    notes: string;
+  }) => api.post<MemberLeave>('/admin/members/leaves', data),
+  cancel: (id: string) => api.post<void>(`/admin/members/leaves/${id}/cancel`, {}),
 };
 
 
