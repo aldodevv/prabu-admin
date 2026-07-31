@@ -20,7 +20,7 @@ export default function BranchSelectPage() {
 
   useEffect(() => {
     // If karyawan, they are auto-routed in AuthContext
-    if (user && user.role === 'karyawan') {
+    if (user && user.role === 'cs') {
       router.push('/dashboard');
       return;
     }

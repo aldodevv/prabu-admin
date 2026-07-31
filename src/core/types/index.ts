@@ -172,7 +172,7 @@ export interface Admin {
   full_name: string;
   email?: string;
   phone?: string;
-  role: 'developer' | 'owner' | 'admin' | 'karyawan';
+  role: 'developer' | 'owner' | 'admin' | 'cs';
   is_active: boolean;
   work_start_time?: string;
   created_at?: string;

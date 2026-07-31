@@ -25,7 +25,7 @@ export const ROLE_CAPABILITIES: Record<Role, RoleCapability> = {
     canManageBranches: false,
     description: 'Read-only semua cabang, bisa lihat data & detail, tidak ada data staff & pengaturan.',
   },
-  [ROLES.KARYAWAN]: {
+  [ROLES.CS]: {
     canSwitchBranch: false,
     isReadOnly: false,
     canAccessMenuStaff: false,

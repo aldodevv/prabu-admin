@@ -30,7 +30,7 @@ export default function AdminStaffManagementPage() {
   const [password, setPassword] = useState('');
   const [showFormPassword, setShowFormPassword] = useState(false);
   const [branchID, setBranchID] = useState('');
-  const [role, setRole] = useState<'developer' | 'owner' | 'admin' | 'karyawan'>('karyawan');
+  const [role, setRole] = useState<'developer' | 'owner' | 'admin' | 'cs'>('cs');
 
   const fetchAdminList = async () => {
     setLoading(true);
@@ -87,7 +87,7 @@ export default function AdminStaffManagementPage() {
     setEmail(adm.email || '');
     setPhone(adm.phone || '');
     setPassword(adm.password || '');
-    setRole(adm.role || 'karyawan');
+    setRole(adm.role || 'cs');
     setShowFormPassword(false);
     setBranchID(adm.branch_id || (branches[0]?.id || ''));
     setError(null);

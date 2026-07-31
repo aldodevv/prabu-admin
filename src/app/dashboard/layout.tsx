@@ -56,7 +56,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   const filteredNavigation = NAVIGATION_MENU.filter((group) => {
-    if (user?.role === 'karyawan') {
+    if (user?.role === 'cs') {
       if (group.id === 'data-staff' || group.id === 'pengaturan') {
         return false;
       }

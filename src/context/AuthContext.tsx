@@ -80,8 +80,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
         
-        // If karyawan, force their assigned branch ID
-        if (parsedUser.role === 'karyawan') {
+        // If cs, force their assigned branch ID
+        if (parsedUser.role === 'cs') {
           handleSelectBranch(parsedUser.branch_id);
         }
       }
@@ -113,7 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setBranches(branchRes.data);
         }
 
-        if (loggedUser.role === 'karyawan') {
+        if (loggedUser.role === 'cs') {
           handleSelectBranch(loggedUser.branch_id);
           router.push('/dashboard');
         } else {

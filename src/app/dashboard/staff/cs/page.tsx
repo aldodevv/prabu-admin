@@ -34,7 +34,7 @@ export default function CSStaffManagementPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await employeesApi.list({ role: 'karyawan', per_page: 100 });
+      const res = await employeesApi.list({ role: 'cs', per_page: 100 });
       setCSList(res.data || []);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Gagal mengambil data Customer Service');
@@ -102,7 +102,7 @@ export default function CSStaffManagementPage() {
           email,
           phone,
           password: password || undefined,
-          role: 'karyawan',
+          role: 'cs',
           work_start_time: '08:00:00'
         });
         setSuccess('Akun Customer Service berhasil dibuat!');
@@ -113,7 +113,7 @@ export default function CSStaffManagementPage() {
           email,
           phone,
           password: password || undefined,
-          role: 'karyawan'
+          role: 'cs'
         });
         setSuccess('Data Customer Service berhasil diperbarui!');
       }
