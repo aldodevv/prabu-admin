@@ -118,12 +118,7 @@ export default function MemberLeavesPage() {
     setSelectedMember(null);
     setMemberSearch('');
     setStartDate(new Date().toISOString().split('T')[0]);
-    
-    // Default 10 days leave
-    const defaultEnd = new Date();
-    defaultEnd.setDate(defaultEnd.getDate() + 9);
-    setEndDate(defaultEnd.toISOString().split('T')[0]);
-    
+    setEndDate('');
     setFeeAmount(100000);
     setPaymentMethod('cash');
     setNotes('Cuti Anggota');
@@ -514,14 +509,32 @@ export default function MemberLeavesPage() {
               </div>
 
               {/* Duration & Freeze Impact Preview */}
-              {durationDays > 0 && (
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded text-amber-800 space-y-1">
-                  <div className="font-bold flex items-center gap-1.5">
+              {startDate && endDate && durationDays > 0 && (
+                <div className="p-3 bg-[#eef9fb] border border-[#bce8f1] rounded text-slate-800 space-y-1.5 font-sans">
+                  <div className="font-bold flex items-center gap-1.5 text-[#138496]">
                     <Calendar className="w-4 h-4" />
-                    <span>Durasi Cuti: {durationDays} Hari</span>
+                    <span>Durasi Cuti Ditetapkan: {durationDays} Hari ({startDate} s/d {endDate})</span>
                   </div>
-                  <div className="text-[11px] text-amber-700">
-                    * Masa aktif membership anggota akan otomatis di-freeze & diperpanjang sebanyak <strong>{durationDays} Hari</strong> setelah tanggal akhir cuti.
+                  <div className="text-[11px] text-slate-600 space-y-1">
+                    <div>
+                      • Status Membership: <span className="font-bold text-[#17A2B8]">BEKU / CUTI</span> mulai <strong>{startDate}</strong> s/d <strong>{endDate}</strong>.
+                    </div>
+                    <div>
+                      • Kelanjutan Membership: Setelah tanggal cuti berakhir (mulai <strong>{(() => {
+                        const d = new Date(endDate);
+                        d.setDate(d.getDate() + 1);
+                        return d.toISOString().split('T')[0];
+                      })()}</strong>), sisa hari membership kembali berjalan normal.
+                    </div>
+                    {selectedMember?.membership_end && (
+                      <div>
+                        • Perkiraan Tanggal Kadaluarsa Baru: <span className="font-bold text-emerald-700">{(() => {
+                          const d = new Date(selectedMember.membership_end);
+                          d.setDate(d.getDate() + durationDays);
+                          return d.toISOString().split('T')[0];
+                        })()}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
