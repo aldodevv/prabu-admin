@@ -27,6 +27,13 @@ export const membersApi = {
   update: (id: string, data: Partial<Member>) => api.put<void>(`/admin/members/${id}`, data),
   delete: (id: string) => api.delete<void>(`/admin/members/${id}`),
   getNextCode: (branchId: string) => api.get<{ next_code: string }>(`/admin/members/next-code?branch_id=${branchId}`),
+  expiring: (params: { branch_id?: string; page?: number; per_page?: number }) => {
+    const q = new URLSearchParams();
+    if (params.branch_id) q.append('branch_id', params.branch_id);
+    if (params.page) q.append('page', String(params.page));
+    if (params.per_page) q.append('per_page', String(params.per_page));
+    return api.get<Member[]>(`/admin/members/expiring?${q.toString()}`);
+  },
 };
 
 export const trainersApi = {

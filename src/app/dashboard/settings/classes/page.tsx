@@ -27,10 +27,18 @@ export default function GymClassesPage() {
 
   const fetchClasses = async () => {
     setLoading(true);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(50);
+  const [total, setTotal] = useState(0);
+
+  const fetchClasses = async () => {
+    setLoading(true);
     setError(null);
     try {
       const res = await packagesApi.listGymClasses();
-      setClassList(res.data || []);
+      const list = res.data || [];
+      setClassList(list);
+      setTotal(res.meta?.total || list.length);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Gagal mengambil Daftar Nama Kelas');
     } finally {
@@ -40,7 +48,7 @@ export default function GymClassesPage() {
 
   useEffect(() => {
     fetchClasses();
-  }, []);
+  }, [page, perPage]);
 
   const handleOpenCreate = () => {
     setEditingId(null);
@@ -156,6 +164,14 @@ export default function GymClassesPage() {
               data={classList}
               columns={columns}
               loading={loading}
+              currentPage={page}
+              totalItems={total || classList.length}
+              itemsPerPage={perPage}
+              onPageChange={setPage}
+              onItemsPerPageChange={(val) => {
+                setPerPage(val);
+                setPage(1);
+              }}
               emptyMessage="Belum ada data Nama Kelas."
             />
           </div>

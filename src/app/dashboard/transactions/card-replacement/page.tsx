@@ -40,18 +40,22 @@ export default function CardReplacementPage() {
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
 
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(50);
+  const [total, setTotal] = useState(0);
+
   useEffect(() => {
     if (activeBranchID) {
       fetchMembers();
       fetchLogs();
     }
-  }, [activeBranchID]);
+  }, [activeBranchID, page, perPage]);
 
   const fetchMembers = async () => {
     try {
       // Fetch members from ALL clubs
       const res = await membersApi.list({
-        per_page: 200
+        per_page: perPage
       });
       if (res.success && res.data) {
         setMembers(res.data);
@@ -66,7 +70,8 @@ export default function CardReplacementPage() {
     try {
       const res = await transactionsApi.list({
         branch_id: activeBranchID || undefined,
-        per_page: 200
+        page,
+        per_page: perPage
       });
       if (res.success && res.data) {
         const list: CardReplacementLog[] = [];
@@ -390,6 +395,14 @@ export default function CardReplacementPage() {
               columns={columns}
               data={filteredLogs}
               loading={loading}
+              currentPage={page}
+              totalItems={total || filteredLogs.length}
+              itemsPerPage={perPage}
+              onPageChange={setPage}
+              onItemsPerPageChange={(val) => {
+                setPerPage(val);
+                setPage(1);
+              }}
               loadingMessage="Loading logs..."
               emptyMessage="Belum ada riwayat pergantian cabang."
             />

@@ -32,15 +32,20 @@ export default function AdminStaffManagementPage() {
   const [branchID, setBranchID] = useState('');
   const [role, setRole] = useState<'developer' | 'owner' | 'admin' | 'cs'>('cs');
 
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(50);
+  const [total, setTotal] = useState(0);
+
   const fetchAdminList = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await employeesApi.list({ per_page: 200 });
+      const res = await employeesApi.list({ page, per_page: perPage });
       const adminStaff = (res.data || []).filter(
         (emp: any) => emp.role === 'admin' || emp.role === 'owner' || emp.role === 'developer'
       );
       setAdminList(adminStaff);
+      setTotal(res.meta?.total || adminStaff.length);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Gagal mengambil data Staff Admin');
     } finally {
@@ -63,7 +68,7 @@ export default function AdminStaffManagementPage() {
   useEffect(() => {
     fetchAdminList();
     fetchBranches();
-  }, []);
+  }, [page, perPage]);
 
   const handleOpenCreate = () => {
     setEditingId(null);
@@ -275,6 +280,14 @@ export default function AdminStaffManagementPage() {
             data={adminList}
             columns={columns}
             loading={loading}
+            currentPage={page}
+            totalItems={total}
+            itemsPerPage={perPage}
+            onPageChange={setPage}
+            onItemsPerPageChange={(val) => {
+              setPerPage(val);
+              setPage(1);
+            }}
             emptyMessage="Belum ada data Admin."
           />
         </div>

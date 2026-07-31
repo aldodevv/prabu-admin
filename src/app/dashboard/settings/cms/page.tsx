@@ -63,13 +63,19 @@ export default function CMSManagementPage() {
   // Delete confirm modal state
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(50);
+  const [total, setTotal] = useState(0);
+
   const fetchContents = async () => {
     setLoading(true);
     setError(null);
     try {
       const typeFilter = activeType === 'all' ? '' : activeType;
       const res = await contentsApi.listAdmin(typeFilter);
-      setContents(res.data || []);
+      const list = res.data || [];
+      setContents(list);
+      setTotal(res.meta?.total || list.length);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Gagal mengambil data konten CMS');
     } finally {
@@ -79,7 +85,7 @@ export default function CMSManagementPage() {
 
   useEffect(() => {
     fetchContents();
-  }, [activeType]);
+  }, [activeType, page, perPage]);
 
   const handleOpenCreate = () => {
     setEditingId(null);
@@ -376,6 +382,14 @@ export default function CMSManagementPage() {
             data={filteredContents}
             columns={columns}
             loading={loading}
+            currentPage={page}
+            totalItems={total || filteredContents.length}
+            itemsPerPage={perPage}
+            onPageChange={setPage}
+            onItemsPerPageChange={(val) => {
+              setPerPage(val);
+              setPage(1);
+            }}
             emptyMessage="Belum ada konten CMS yang ditambahkan"
           />
         </div>

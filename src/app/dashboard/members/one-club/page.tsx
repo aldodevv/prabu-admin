@@ -30,6 +30,7 @@ export default function OneClubMembersPanel() {
   const [members, setMembers] = useState<Member[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(50);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -72,7 +73,7 @@ export default function OneClubMembersPanel() {
       }
       fetchMembers();
     }
-  }, [activeBranchID, page]);
+  }, [activeBranchID, page, perPage]);
 
   const fetchMembers = async (searchQuery = debouncedSearch) => {
     setLoading(true);
@@ -82,7 +83,7 @@ export default function OneClubMembersPanel() {
         branch_id: activeBranchID || undefined,
         search: searchQuery || undefined,
         page,
-        per_page: 20
+        per_page: perPage
       });
       if (res.success && res.data) {
         let list = res.data;
@@ -376,8 +377,12 @@ export default function OneClubMembersPanel() {
               emptyMessage="Tidak ada data anggota ditemukan."
               currentPage={page}
               totalItems={total}
-              itemsPerPage={20}
+              itemsPerPage={perPage}
               onPageChange={setPage}
+              onItemsPerPageChange={(val) => {
+                setPerPage(val);
+                setPage(1);
+              }}
             />
           </div>
         )}

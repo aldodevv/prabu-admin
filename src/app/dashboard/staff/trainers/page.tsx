@@ -30,12 +30,18 @@ export default function TrainerStaffManagementPage() {
   const [gender, setGender] = useState('Laki-laki');
   const [branchID, setBranchID] = useState('');
 
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(50);
+  const [total, setTotal] = useState(0);
+
   const fetchTrainerList = async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await trainersApi.list();
-      setTrainerList(res.data || []);
+      const data = res.data || [];
+      setTrainerList(data);
+      setTotal(res.meta?.total || data.length);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Gagal mengambil Data Pelatih');
     } finally {
@@ -58,7 +64,7 @@ export default function TrainerStaffManagementPage() {
   useEffect(() => {
     fetchTrainerList();
     fetchBranches();
-  }, []);
+  }, [page, perPage]);
 
   const handleOpenCreate = () => {
     setEditingId(null);
@@ -216,6 +222,14 @@ export default function TrainerStaffManagementPage() {
             data={trainerList}
             columns={columns}
             loading={loading}
+            currentPage={page}
+            totalItems={total}
+            itemsPerPage={perPage}
+            onPageChange={setPage}
+            onItemsPerPageChange={(val) => {
+              setPerPage(val);
+              setPage(1);
+            }}
             emptyMessage="Belum ada data Pelatih/Trainer."
           />
         </div>

@@ -24,11 +24,13 @@ export default function CheckinsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 300);
 
+  const [perPage, setPerPage] = useState(50);
+
   useEffect(() => {
     if (activeBranchID) {
       fetchCheckins();
     }
-  }, [activeBranchID, page, dateFrom, dateTo]);
+  }, [activeBranchID, page, perPage, dateFrom, dateTo]);
 
   const fetchCheckins = async () => {
     setLoading(true);
@@ -38,7 +40,7 @@ export default function CheckinsPage() {
         page,
         date_from: dateFrom,
         date_to: dateTo,
-        per_page: 200
+        per_page: perPage
       });
       if (res.success && res.data) {
         setCheckins(res.data);
@@ -236,12 +238,16 @@ export default function CheckinsPage() {
         columns={columns}
         data={filteredCheckins}
         loading={loading}
+        currentPage={page}
+        totalItems={total}
+        itemsPerPage={perPage}
+        onPageChange={setPage}
+        onItemsPerPageChange={(val) => {
+          setPerPage(val);
+          setPage(1);
+        }}
         loadingMessage="Loading log presensi..."
         emptyMessage="Tidak ada data presensi untuk kata kunci / filter terpilih."
-        currentPage={page}
-        totalItems={filteredCheckins.length}
-        itemsPerPage={20}
-        onPageChange={setPage}
       />
     </div>
   );

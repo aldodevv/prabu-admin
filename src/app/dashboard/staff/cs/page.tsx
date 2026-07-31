@@ -30,12 +30,17 @@ export default function CSStaffManagementPage() {
   const [showFormPassword, setShowFormPassword] = useState(false);
   const [branchID, setBranchID] = useState('');
 
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(50);
+  const [total, setTotal] = useState(0);
+
   const fetchCSList = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await employeesApi.list({ role: 'cs', per_page: 100 });
+      const res = await employeesApi.list({ role: 'cs', page, per_page: perPage });
       setCSList(res.data || []);
+      setTotal(res.meta?.total || (res.data ? res.data.length : 0));
     } catch (err: any) {
       setError(err.response?.data?.message || 'Gagal mengambil data Customer Service');
     } finally {
@@ -58,7 +63,7 @@ export default function CSStaffManagementPage() {
   useEffect(() => {
     fetchCSList();
     fetchBranches();
-  }, []);
+  }, [page, perPage]);
 
   const handleOpenCreate = () => {
     setEditingId(null);
@@ -259,6 +264,14 @@ export default function CSStaffManagementPage() {
             data={csList}
             columns={columns}
             loading={loading}
+            currentPage={page}
+            totalItems={total}
+            itemsPerPage={perPage}
+            onPageChange={setPage}
+            onItemsPerPageChange={(val) => {
+              setPerPage(val);
+              setPage(1);
+            }}
             emptyMessage="Belum ada data Customer Service."
           />
         </div>

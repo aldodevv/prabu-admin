@@ -29,12 +29,18 @@ export default function MembershipPackagesPage() {
   const [price, setPrice] = useState<number>(0);
   const [description, setDescription] = useState('');
 
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(50);
+  const [total, setTotal] = useState(0);
+
   const fetchPackages = async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await packagesApi.listMembershipPackages();
-      setPackages(res.data || []);
+      const list = res.data || [];
+      setPackages(list);
+      setTotal(res.meta?.total || list.length);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Gagal mengambil data Paket Anggota');
     } finally {
@@ -44,7 +50,7 @@ export default function MembershipPackagesPage() {
 
   useEffect(() => {
     fetchPackages();
-  }, []);
+  }, [page, perPage]);
 
   const handleOpenCreate = () => {
     setEditingId(null);
@@ -215,6 +221,14 @@ export default function MembershipPackagesPage() {
                 data={filteredPackages}
                 columns={columns}
                 loading={loading}
+                currentPage={page}
+                totalItems={total || filteredPackages.length}
+                itemsPerPage={perPage}
+                onPageChange={setPage}
+                onItemsPerPageChange={(val) => {
+                  setPerPage(val);
+                  setPage(1);
+                }}
                 emptyMessage="Belum ada data Paket Anggota."
               />
             </div>

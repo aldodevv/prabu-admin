@@ -39,10 +39,23 @@ export default function TrainerSessionsPage() {
   const [step, setStep] = useState<'list' | 'rekap' | 'lihat'>('list');
   const [selectedReg, setSelectedReg] = useState<PTRegistration | null>(null);
 
-  // Data states
-  const [registrations, setRegistrations] = useState<PTRegistration[]>([]);
-  const [trainers, setTrainers] = useState<Trainer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(50);
+  const [total, setTotal] = useState(0);
+
+  const fetchRegistrations = async () => {
+    setLoading(true);
+    try {
+      const res = await ptRegistrationsApi.list(activeBranchID || '');
+      const list = res.data || [];
+      setRegistrations(list);
+      setTotal(res.meta?.total || list.length);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Search filter
   const [selectedMemberFilter, setSelectedMemberFilter] = useState('Semua');
@@ -320,6 +333,14 @@ export default function TrainerSessionsPage() {
               columns={columns}
               data={filteredData}
               loading={loading}
+              currentPage={page}
+              totalItems={total || filteredData.length}
+              itemsPerPage={perPage}
+              onPageChange={setPage}
+              onItemsPerPageChange={(val) => {
+                setPerPage(val);
+                setPage(1);
+              }}
               loadingMessage="Loading data sesi..."
               emptyMessage="Tidak ada data pendaftaran PT ditemukan."
             />

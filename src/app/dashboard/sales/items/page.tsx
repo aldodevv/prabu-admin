@@ -7,10 +7,10 @@ import { Product, Distributor } from '@/core/types';
 import { Search, Plus, Eye, ArrowLeft, Save, Trash2, Edit2, FileSpreadsheet, RotateCcw } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { exportToExcel } from '@/lib/excelExport';
-import { SearchFilterBar } from '@/components/core/SearchFilterBar';
-import { permissions } from '@/lib/permissions';
-
+import { DataTable, Column } from '@/components/core/DataTable';
 import { FetchErrorAlert } from '@/components/core/FetchErrorAlert';
+import { permissions } from '@/lib/permissions';
+import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 
 export default function ProductsPage() {
   const { activeBranchID, user } = useAuth();
@@ -22,6 +22,10 @@ export default function ProductsPage() {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [distributors, setDistributors] = useState<Distributor[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(50);
+  const [total, setTotal] = useState(0);
 
   // Search, Debounce & Column Filter
   const [searchQuery, setSearchQuery] = useState('');
@@ -49,7 +53,7 @@ export default function ProductsPage() {
       fetchProducts();
       fetchDistributors();
     }
-  }, [activeBranchID]);
+  }, [activeBranchID, page, perPage]);
 
   // Handle typing state
   useEffect(() => {
@@ -74,6 +78,7 @@ export default function ProductsPage() {
       if (res.success && res.data) {
         setProducts(res.data);
         setFilteredProducts(res.data);
+        setTotal(res.meta?.total || res.data.length);
       } else {
         if (res.error) setFetchError(res.error);
         setProducts([]);
@@ -275,6 +280,82 @@ export default function ProductsPage() {
     return `Rp ${val.toLocaleString('id-ID')}`;
   };
 
+  const columns: Column<Product>[] = [
+    {
+      key: 'distributor_name',
+      header: 'Distributor',
+      render: (p) => p.distributor_name || '-'
+    },
+    {
+      key: 'code',
+      header: 'Kode Barang',
+      className: 'font-mono text-xs font-semibold text-slate-800',
+      render: (p) => p.code || '-'
+    },
+    {
+      key: 'name',
+      header: 'Nama Barang',
+      className: 'font-bold text-slate-800'
+    },
+    {
+      key: 'jenis_barang',
+      header: 'Jenis Barang',
+      className: 'text-xs text-slate-600 capitalize',
+      render: (p) => p.jenis_barang || p.category
+    },
+    {
+      key: 'price',
+      header: 'Harga Jual',
+      align: 'right',
+      className: 'font-mono font-bold text-slate-800',
+      render: (p) => formatIDR(p.price)
+    },
+    {
+      key: 'stock',
+      header: 'Unit',
+      align: 'center',
+      className: 'font-mono font-extrabold text-slate-800 w-24',
+      render: (p) => (
+        <span className={p.stock <= 5 ? 'text-red-600' : 'text-slate-800'}>{p.stock}</span>
+      )
+    },
+    {
+      key: 'action',
+      header: 'Aksi',
+      align: 'center',
+      className: 'w-28',
+      render: (p) => (
+        <div className="flex items-center justify-center gap-1.5">
+          <button
+            onClick={() => handleOpenDetail(p.id)}
+            title="Lihat Detail Barang"
+            className="p-2 bg-[#6C7A89] hover:bg-[#5a6673] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
+          >
+            <Eye className="w-3.5 h-3.5" />
+          </button>
+          {canWrite && (
+            <>
+              <button
+                onClick={() => handleOpenEdit(p)}
+                title="Ubah Data Barang"
+                className="p-2 bg-[#17A2B8] hover:bg-[#138496] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
+              >
+                <Edit2 className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => handleDelete(p.id, p.name)}
+                title="Hapus Barang"
+                className="p-2 bg-[#DC3545] hover:bg-[#C82333] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </>
+          )}
+        </div>
+      )
+    }
+  ];
+
   const columnOptions = [
     { label: 'Nama Barang', value: 'name' },
     { label: 'Kode Barang', value: 'code' },
@@ -313,10 +394,10 @@ export default function ProductsPage() {
           {view === 'list'
             ? 'Product Cafe'
             : view === 'add'
-            ? 'Tambah Data Barang'
-            : view === 'edit'
-            ? 'Ubah Data Barang'
-            : 'Lihat Detail Barang'}
+              ? 'Tambah Data Barang'
+              : view === 'edit'
+                ? 'Ubah Data Barang'
+                : 'Lihat Detail Barang'}
         </h2>
       </div>
 
@@ -352,79 +433,21 @@ export default function ProductsPage() {
                 </button>
               )}
 
-              {loading ? (
-                <div className="text-center py-10 text-slate-500 font-accent uppercase tracking-widest text-xs">
-                  Loading data product...
-                </div>
-              ) : (
-                <div className="overflow-x-auto border border-slate-200 rounded">
-                  <table className="w-full text-left text-sm text-slate-650 border-collapse">
-                    <thead className="bg-[#6C7A89] text-white text-[11px] uppercase tracking-wider font-bold select-none border-b border-slate-350">
-                      <tr>
-                        <th className="py-3 px-4 border-r border-slate-300 w-12 text-center">No</th>
-                        <th className="py-3 px-4 border-r border-slate-300">Distributor</th>
-                        <th className="py-3 px-4 border-r border-slate-300">Kode Barang</th>
-                        <th className="py-3 px-4 border-r border-slate-300">Nama Barang</th>
-                        <th className="py-3 px-4 border-r border-slate-300">Jenis Barang</th>
-                        <th className="py-3 px-4 border-r border-slate-300 text-right">Harga Jual</th>
-                        <th className="py-3 px-4 border-r border-slate-300 text-center w-24">Unit</th>
-                        <th className="py-3 px-4 text-center w-28">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 text-slate-700 font-medium">
-                      {filteredProducts.length === 0 ? (
-                        <tr>
-                          <td colSpan={8} className="py-8 text-center text-slate-400 font-accent uppercase tracking-wider text-xs">
-                            Tidak ada data product
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredProducts.map((p, index) => (
-                          <tr key={p.id} className="hover:bg-slate-50 transition-colors">
-                            <td className="py-3 px-4 border-r border-slate-100 text-center font-semibold text-slate-500">{index + 1}</td>
-                            <td className="py-3 px-4 border-r border-slate-100 font-medium text-slate-700">{p.distributor_name || '-'}</td>
-                            <td className="py-3 px-4 border-r border-slate-100 font-mono text-xs font-semibold text-slate-800">{p.code || '-'}</td>
-                            <td className="py-3 px-4 border-r border-slate-100 font-bold text-slate-800">{p.name}</td>
-                            <td className="py-3 px-4 border-r border-slate-100 text-xs text-slate-600 capitalize">{p.jenis_barang || p.category}</td>
-                            <td className="py-3 px-4 border-r border-slate-100 text-right font-mono font-bold text-slate-800">{formatIDR(p.price)}</td>
-                            <td className="py-3 px-4 border-r border-slate-100 text-center font-mono font-extrabold text-slate-800">
-                              <span className={p.stock <= 5 ? 'text-red-600' : 'text-slate-800'}>{p.stock}</span>
-                            </td>
-                            <td className="py-3 px-4 text-center flex items-center justify-center gap-1.5">
-                              {/* Icon-Only Action Buttons with Hover Tooltip */}
-                              <button
-                                onClick={() => handleOpenDetail(p.id)}
-                                title="Lihat Detail Barang"
-                                className="p-2 bg-[#6C7A89] hover:bg-[#5a6673] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
-                              >
-                                <Eye className="w-3.5 h-3.5" />
-                              </button>
-                              {canWrite && (
-                                <>
-                                  <button
-                                    onClick={() => handleOpenEdit(p)}
-                                    title="Ubah Data Barang"
-                                    className="p-2 bg-[#17A2B8] hover:bg-[#138496] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
-                                  >
-                                    <Edit2 className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDelete(p.id, p.name)}
-                                    title="Hapus Barang"
-                                    className="p-2 bg-[#DC3545] hover:bg-[#C82333] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                </>
-                              )}
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+              <DataTable
+                data={filteredProducts}
+                columns={columns}
+                loading={loading}
+                currentPage={page}
+                totalItems={total || filteredProducts.length}
+                itemsPerPage={perPage}
+                onPageChange={setPage}
+                onItemsPerPageChange={(val) => {
+                  setPerPage(val);
+                  setPage(1);
+                }}
+                loadingMessage="Loading data product..."
+                emptyMessage="Tidak ada data product"
+              />
             </div>
           </div>
         </div>

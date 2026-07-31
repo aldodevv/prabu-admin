@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { dashboardApi } from '@/core/api';
+import { dashboardApi, membersApi } from '@/core/api';
 import { formatDateLabel } from '@/core/constants';
 import { Member } from '@/core/types';
 import { PageHeader } from '@/components/core/PageHeader';
@@ -69,6 +69,11 @@ export default function SummaryPage() {
   const router = useRouter();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [revenueAnalytics, setRevenueAnalytics] = useState<RevenueAnalytics | null>(null);
+  const [expiringMembers, setExpiringMembers] = useState<Member[]>([]);
+  const [expiringPage, setExpiringPage] = useState(1);
+  const [expiringPerPage, setExpiringPerPage] = useState(50);
+  const [totalExpiring, setTotalExpiring] = useState(0);
+  const [loadingExpiring, setLoadingExpiring] = useState(false);
   const [loadingSummary, setLoadingSummary] = useState(true);
   const [loadingRevenue, setLoadingRevenue] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,14 +83,39 @@ export default function SummaryPage() {
     if (activeBranchID) {
       fetchSummary();
       fetchRevenue(selectedTxType);
+      fetchExpiring(1, expiringPerPage);
     }
   }, [activeBranchID]);
+
+  useEffect(() => {
+    if (activeBranchID) {
+      fetchExpiring(expiringPage, expiringPerPage);
+    }
+  }, [expiringPage, expiringPerPage]);
 
   useEffect(() => {
     if (activeBranchID && summary) {
       fetchRevenue(selectedTxType);
     }
   }, [selectedTxType]);
+
+  const fetchExpiring = async (page: number, perPage: number) => {
+    if (!activeBranchID) return;
+    setLoadingExpiring(true);
+    try {
+      const res = await membersApi.expiring({ branch_id: activeBranchID, page, per_page: perPage });
+      if (res.success && res.data) {
+        setExpiringMembers(res.data);
+        if (res.meta) {
+          setTotalExpiring(res.meta.total);
+        }
+      }
+    } catch {
+      setExpiringMembers([]);
+    } finally {
+      setLoadingExpiring(false);
+    }
+  };
 
   const fetchSummary = async () => {
     setLoadingSummary(true);
@@ -532,7 +562,16 @@ export default function SummaryPage() {
         title="Data Masa Aktif Anggota Bulan Ini"
         headerAction={<Calendar className="w-4 h-4 text-white/80" />}
         columns={columns}
-        data={summary.expiring_members}
+        data={expiringMembers}
+        loading={loadingExpiring}
+        currentPage={expiringPage}
+        totalItems={totalExpiring}
+        itemsPerPage={expiringPerPage}
+        onPageChange={setExpiringPage}
+        onItemsPerPageChange={(val) => {
+          setExpiringPerPage(val);
+          setExpiringPage(1);
+        }}
         emptyMessage="Tidak ada member yang masa aktifnya habis bulan ini."
       />
     </div>
