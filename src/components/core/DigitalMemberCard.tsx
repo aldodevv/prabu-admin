@@ -82,6 +82,11 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
     if (!cardRef.current) return;
     setDownloading(true);
     try {
+      // Ensure web fonts are fully loaded before rendering to canvas
+      if (typeof document !== 'undefined' && document.fonts) {
+        await document.fonts.ready;
+      }
+
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
       const logoUrl = `${origin}/logo-transparent.png`;
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${member.username}`;
@@ -94,14 +99,18 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
       if (b64Logo && b64Logo.startsWith('data:')) setLogoDataUrl(b64Logo);
       if (b64Qr && b64Qr.startsWith('data:')) setQrDataUrl(b64Qr);
 
-      await new Promise((r) => setTimeout(r, 120));
+      await new Promise((r) => setTimeout(r, 150));
 
       const dataUrl = await toPng(cardRef.current, {
-        cacheBust: false,
+        cacheBust: true,
         pixelRatio: 3,
         backgroundColor: '#EBEBEB',
-        fontEmbedCSS: '',
-        skipFonts: true,
+        width: 360,
+        height: 700,
+        style: {
+          margin: '0',
+          transform: 'none',
+        },
       });
       const link = document.createElement('a');
       link.href = dataUrl;
@@ -140,78 +149,79 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
 
   return (
     <div className="flex flex-col items-center gap-6 w-full max-w-sm mx-auto">
-      {/* Visual Digital Membership Card DOM Container (Instagram Ratio 9:16) */}
+      {/* Visual Digital Membership Card DOM Container (Instagram Ratio 9:16 - 360px x 700px) */}
       <div
         ref={cardRef}
         style={{
           backgroundColor: '#EBEBEB',
         }}
-        className="w-90 h-175 p-5 flex flex-col justify-between items-center relative overflow-hidden select-none font-sans"
+        className="w-[360px] h-[700px] p-5 flex flex-col justify-between items-center relative overflow-hidden select-none font-sans"
       >
-        {/* Main Inner Card (White Container with Geometric Faceted Header) */}
-        <div className="w-full bg-white rounded-3xl shadow-xl border border-slate-200/60 relative flex flex-col items-center justify-between pt-6 overflow-hidden flex-1 mb-2">
-          {/* Low-Poly Geometric Facet Header Background */}
-          <div className="absolute top-0 inset-x-0 h-50 pointer-events-none z-0 overflow-hidden rounded-t-3xl">
-            <svg className="w-full h-full" viewBox="0 0 360 220" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <polygon points="0,0 90,0 45,45" fill="#F1F5F9" />
-              <polygon points="90,0 180,0 135,50" fill="#E2E8F0" opacity="0.9" />
-              <polygon points="180,0 270,0 225,45" fill="#F8FAFC" />
-              <polygon points="270,0 360,0 315,55" fill="#EDF2F7" />
+        {/* Outer Shadow Wrapper without overflow-hidden to ensure soft even drop-shadow in canvas export */}
+        <div className="w-full bg-white rounded-3xl border border-slate-200/60 shadow-[0_10px_30px_rgba(0,0,0,0.1)] flex-1 mb-2 relative">
+          {/* Inner Clipping Container with overflow-hidden for low-poly facet SVG header */}
+          <div className="w-full h-full rounded-3xl relative flex flex-col items-center justify-between pt-6 overflow-hidden">
+            {/* Low-Poly Geometric Facet Header Background */}
+            <div className="absolute top-0 inset-x-0 h-50 pointer-events-none z-0 overflow-hidden rounded-t-3xl">
+              <svg className="w-full h-full" viewBox="0 0 360 220" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="0,0 90,0 45,45" fill="#F1F5F9" />
+                <polygon points="90,0 180,0 135,50" fill="#E2E8F0" opacity="0.9" />
+                <polygon points="0,0 45,45 0,90" fill="#E2E8F0" opacity="0.8" />
+                <polygon points="45,45 135,50 90,95" fill="#CBD5E1" opacity="0.45" />
+                <polygon points="135,50 225,45 180,100" fill="#F1F5F9" opacity="0.9" />
+                <polygon points="180,0 270,0 225,45" fill="#F8FAFC" />
+                <polygon points="270,0 360,0 315,55" fill="#EDF2F7" />
+                <polygon points="225,45 315,55 270,105" fill="#E2E8F0" opacity="0.7" />
+                <polygon points="315,55 360,0 360,85" fill="#F8FAFC" />
+                <polygon points="0,90 90,95 45,145" fill="#F8FAFC" opacity="0.8" />
+                <polygon points="90,95 180,100 135,150" fill="#E2E8F0" opacity="0.6" />
+                <polygon points="180,100 270,105 225,150" fill="#CBD5E1" opacity="0.4" />
+                <polygon points="270,105 360,85 315,155" fill="#F1F5F9" opacity="0.9" />
+                <polygon points="360,85 360,165 315,155" fill="#E2E8F0" opacity="0.7" />
+              </svg>
+            </div>
 
-              <polygon points="0,0 45,45 0,90" fill="#E2E8F0" opacity="0.8" />
-              <polygon points="45,45 135,50 90,95" fill="#CBD5E1" opacity="0.45" />
-              <polygon points="135,50 225,45 180,100" fill="#F1F5F9" opacity="0.9" />
-              <polygon points="225,45 315,55 270,105" fill="#E2E8F0" opacity="0.7" />
-              <polygon points="315,55 360,0 360,85" fill="#F8FAFC" />
+            {/* Logo Header */}
+            <div className="relative z-10 pt-2 flex flex-col items-center justify-center w-full min-h-[105px] shrink-0">
+              <img
+                src={logoDataUrl || '/logo-transparent.png'}
+                alt="PrabuGym Logo"
+                className="h-28 w-auto max-w-[180px] object-contain relative z-10 shrink-0"
+                loading="eager"
+              />
+            </div>
 
-              <polygon points="0,90 90,95 45,145" fill="#F8FAFC" opacity="0.8" />
-              <polygon points="90,95 180,100 135,150" fill="#E2E8F0" opacity="0.6" />
-              <polygon points="180,100 270,105 225,150" fill="#CBD5E1" opacity="0.4" />
-              <polygon points="270,105 360,85 315,155" fill="#F1F5F9" opacity="0.9" />
-              <polygon points="360,85 360,165 315,155" fill="#E2E8F0" opacity="0.7" />
-            </svg>
-          </div>
+            {/* Card Title (Condensed Athletic Font - 35px for 100% reliable canvas export without clipping) */}
+            <h2
+              style={{
+                fontFamily: "'Bebas Neue', 'Oswald', Impact, 'Arial Narrow', sans-serif",
+                letterSpacing: '0.02em',
+              }}
+              className="relative z-10 text-[35px] font-normal uppercase text-slate-950 leading-none my-1 text-center whitespace-nowrap tracking-tight shrink-0 px-2 max-w-full"
+            >
+              MEMBERSHIP CARD
+            </h2>
 
-          {/* Logo Header - CrossOrigin omitted for local URLs to prevent iOS Chrome/Safari WebKit CORS blocking */}
-          <div className="relative z-10 pt-2 flex flex-col items-center justify-center w-full min-h-[110px]">
-            <img
-              src={logoDataUrl || '/logo-transparent.png'}
-              alt="PrabuGym Logo"
-              className="h-32 w-auto max-w-[200px] object-contain relative z-10 drop-shadow-xs"
-              loading="eager"
-            />
-          </div>
+            {/* QR Code Box */}
+            <div className="w-52 h-52 bg-white rounded-2xl p-3.5 border border-slate-200/90 shadow-md flex items-center justify-center my-1 shrink-0 relative z-10">
+              <img
+                src={qrDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${member.username}`}
+                alt={`QR Code ${member.username}`}
+                className="w-full h-full object-contain"
+                loading="eager"
+              />
+            </div>
 
-          {/* Card Title (Aggressive Athletic Condensed Font) */}
-          <h2
-            style={{
-              fontFamily: "'Bebas Neue', 'Oswald', Impact, 'Arial Narrow', sans-serif",
-              letterSpacing: '0.04em',
-            }}
-            className="relative z-10 text-[42px] font-normal uppercase text-slate-950 leading-none my-1 text-center"
-          >
-            MEMBERSHIP CARD
-          </h2>
-
-          {/* QR Code Box */}
-          <div className="w-56 h-56 bg-white rounded-3xl p-4 shadow-[0_10px_30px_rgba(0,0,0,0.12)] border border-slate-100 flex items-center justify-center my-1">
-            <img
-              src={qrDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${member.username}`}
-              alt={`QR Code ${member.username}`}
-              className="w-full h-full object-contain"
-              loading="eager"
-            />
-          </div>
-
-          {/* Member Code Bar (Bold Athletic Font) */}
-          <div
-            style={{
-              fontFamily: "'Oswald', 'Bebas Neue', Impact, 'Arial Narrow', monospace, sans-serif",
-              letterSpacing: '0.2em',
-            }}
-            className="w-full bg-slate-950 text-white py-3 px-4 rounded-b-3xl text-center font-extrabold text-2xl shadow-sm mt-3"
-          >
-            {formattedCode}
+            {/* Member Code Bar (Bold Athletic Font) */}
+            <div
+              style={{
+                fontFamily: "'Oswald', 'Bebas Neue', Impact, 'Arial Narrow', monospace, sans-serif",
+                letterSpacing: '0.2em',
+              }}
+              className="w-full bg-slate-950 text-white py-2.5 px-4 rounded-b-3xl text-center font-extrabold text-2xl shadow-sm mt-2.5 whitespace-nowrap shrink-0"
+            >
+              {formattedCode}
+            </div>
           </div>
         </div>
 
@@ -221,42 +231,42 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
           <h3
             style={{
               fontFamily: "'Bebas Neue', 'Oswald', Impact, sans-serif",
-              letterSpacing: '0.22em',
+              letterSpacing: '0.2em',
             }}
-            className="text-2xl font-normal uppercase text-slate-950 leading-none"
+            className="text-[22px] font-normal uppercase text-slate-950 leading-none whitespace-nowrap"
           >
             PRABU GYM
           </h3>
 
-          {/* Social Media & WhatsApp Contact Row */}
+          {/* Social Media & WhatsApp Contact Row (Explicit mr-5 right margin to guarantee generous spacing in canvas export) */}
           <div
             style={{
               fontFamily: "'Oswald', 'Inter', sans-serif",
             }}
-            className="flex items-center justify-center gap-3 text-[11px] font-bold text-slate-900 tracking-wide whitespace-nowrap"
+            className="flex items-center justify-center text-[11px] font-bold text-slate-900 tracking-wide whitespace-nowrap px-1"
           >
-            <span className="flex items-center gap-1">
-              <InstagramIcon className="w-3 h-3 text-slate-950" />
+            <span className="flex items-center gap-1.5 shrink-0 mr-5">
+              <InstagramIcon className="w-3.5 h-3.5 text-slate-950" />
               <span>@prabugym.official</span>
             </span>
-            <span className="flex items-center gap-1">
-              <WhatsAppIcon className="w-3 h-3 text-slate-950" />
+            <span className="flex items-center gap-1.5 shrink-0">
+              <WhatsAppIcon className="w-3.5 h-3.5 text-slate-950" />
               <span>+62 851-5888-9050</span>
             </span>
           </div>
 
-          {/* Branch Address Line with Side Accents */}
-          <div className="w-full flex items-center gap-2 pt-1 px-1">
-            <div className="h-px bg-slate-400 flex-1" />
+          {/* Branch Address Line with Side Accents (Masked background to guarantee line NEVER strikes through text in exported PNG) */}
+          <div className="w-full relative flex items-center justify-center pt-1 px-3">
+            <div className="absolute inset-x-3 top-[60%] -translate-y-1/2 h-px bg-slate-400 pointer-events-none" />
             <span
               style={{
                 fontFamily: "'Oswald', 'Inter', sans-serif",
+                backgroundColor: '#EBEBEB',
               }}
-              className="text-[10px] font-bold uppercase tracking-wider text-slate-950 text-center leading-tight whitespace-nowrap"
+              className="relative z-10 text-[9px] font-bold uppercase tracking-wider text-slate-950 text-center leading-none whitespace-nowrap shrink-0 px-2"
             >
               {address}
             </span>
-            <div className="h-px bg-slate-400 flex-1" />
           </div>
         </div>
       </div>

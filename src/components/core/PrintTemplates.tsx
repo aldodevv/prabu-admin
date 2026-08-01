@@ -15,25 +15,33 @@ const PrintContainer: React.FC<PrintContainerProps> = ({ onClose, title, childre
       <style jsx global>{`
         @media print {
           @page {
-            size: A4 landscape;
-            margin: 4mm;
+            size: auto;
+            margin: 5mm;
           }
-          header, aside, button, nav, .no-print {
+          header, aside, nav, .no-print, button {
             display: none !important;
           }
-          html, body, main {
+          html, body {
             background: white !important;
             color: black !important;
             padding: 0 !important;
             margin: 0 !important;
             width: 100% !important;
-            max-width: 100% !important;
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          /* Hide outer dashboard layout containers during print to prevent blank extra pages in Safari */
+          body > *:not(.fixed) {
+            display: none !important;
           }
           #print-area, #print-receipt-overlay, #print-session-receipt, #print-leave-receipt, #print-modal-root {
             background: white !important;
             color: black !important;
             padding: 0 !important;
-            margin: 0 !important;
+            margin: 0 auto !important;
             width: 100% !important;
             max-width: 100% !important;
             page-break-inside: avoid !important;
@@ -42,7 +50,11 @@ const PrintContainer: React.FC<PrintContainerProps> = ({ onClose, title, childre
             print-color-adjust: exact !important;
           }
           .fixed {
-            position: static !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: auto !important;
             background: white !important;
             inset: auto !important;
             padding: 0 !important;
@@ -51,19 +63,23 @@ const PrintContainer: React.FC<PrintContainerProps> = ({ onClose, title, childre
             max-width: 100% !important;
             box-shadow: none !important;
             border: none !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            overflow: visible !important;
           }
           table {
             border-collapse: collapse !important;
             width: 100% !important;
             max-width: 100% !important;
           }
-          tr {
+          tr, td, th {
             page-break-inside: avoid !important;
             break-inside: avoid !important;
           }
           * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+            color-adjust: exact !important;
           }
         }
       `}</style>
