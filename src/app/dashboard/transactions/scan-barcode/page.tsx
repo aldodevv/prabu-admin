@@ -110,6 +110,42 @@ export default function ScanBarcodePage() {
     }
   };
 
+  const [leaveModal, setLeaveModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    memberName: string;
+    memberCode: string;
+    startDate?: string;
+    endDate?: string;
+    message: string;
+    type: 'leave' | 'error';
+  } | null>(null);
+
+  const triggerCheckinModal = (errorText: string, member?: MemberData) => {
+    const dateMatch = errorText.match(/(\d{4}-\d{2}-\d{2})\s+s\/d\s+(\d{4}-\d{2}-\d{2})/);
+    let startDate = '';
+    let endDate = '';
+
+    if (dateMatch) {
+      startDate = dateMatch[1];
+      endDate = dateMatch[2];
+    }
+
+    const isLeave = errorText.toLowerCase().includes('cuti') || !!dateMatch;
+    const cleanMsg = errorText.replace(/\[HUMAN ERROR.*?\]\s*/g, '');
+
+    setLeaveModal({
+      isOpen: true,
+      title: isLeave ? 'MEMBERSHIP CUTI / DIBEKUKAN' : 'PERINGATAN PRESENSI',
+      memberName: member?.full_name || result?.data?.full_name || 'Anggota Prabu Gym',
+      memberCode: member?.username || (result?.data as MemberData)?.username || '-',
+      startDate,
+      endDate,
+      message: cleanMsg,
+      type: isLeave ? 'leave' : 'error',
+    });
+  };
+
   const handleCheckin = async (memberId: string) => {
     if (!result || result.type !== 'member') return;
     const member = result.data as MemberData;
@@ -120,10 +156,10 @@ export default function ScanBarcodePage() {
       if (res.success) {
         await reloadMemberData(member.username);
       } else {
-        alert(res.error || 'Gagal melakukan check-in');
+        triggerCheckinModal(res.error || 'Gagal melakukan check-in', member);
       }
     } catch (err: any) {
-      alert(err.message || 'Terjadi kesalahan saat check-in');
+      triggerCheckinModal(err.message || 'Terjadi kesalahan saat check-in', member);
     } finally {
       setLoading(false);
     }
@@ -139,10 +175,10 @@ export default function ScanBarcodePage() {
       if (res.success) {
         await reloadMemberData(member.username);
       } else {
-        alert(res.error || 'Gagal melakukan check-out');
+        triggerCheckinModal(res.error || 'Gagal melakukan check-out', member);
       }
     } catch (err: any) {
-      alert(err.message || 'Terjadi kesalahan saat check-out');
+      triggerCheckinModal(err.message || 'Terjadi kesalahan saat check-out', member);
     } finally {
       setLoading(false);
     }
@@ -454,6 +490,106 @@ export default function ScanBarcodePage() {
           )}
         </div>
       </div>
+
+      {/* Custom Prabu Check-in Status / Leave Warning Modal */}
+      {leaveModal && leaveModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fadeIn">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden font-sans relative">
+            {/* Header with Prabu Logo & Theme */}
+            <div className={`px-6 py-4 flex items-center justify-between ${
+              leaveModal.type === 'leave'
+                ? 'bg-gradient-to-r from-[#17A2B8] to-[#117a8b]'
+                : 'bg-gradient-to-r from-red-600 to-rose-700'
+            } text-white shadow-md select-none`}>
+              <div className="flex items-center gap-3">
+                <img
+                  src="/logo-transparent.png"
+                  alt="Prabu Logo"
+                  className="h-9 w-auto object-contain drop-shadow-sm"
+                />
+                <div>
+                  <div className="font-heading font-black text-lg tracking-widest leading-none">PRABU GYM</div>
+                  <div className="text-[9px] uppercase tracking-wider text-cyan-100 font-bold mt-0.5">
+                    System Presensi Anggota
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setLeaveModal(null)}
+                className="text-white/80 hover:text-white transition-colors cursor-pointer p-1 rounded-full hover:bg-white/10"
+              >
+                <Icons.X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4 text-center">
+              {/* Status Badge Icon */}
+              <div className="flex justify-center">
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg ${
+                  leaveModal.type === 'leave'
+                    ? 'bg-amber-100 border-2 border-amber-300 text-amber-600'
+                    : 'bg-red-100 border-2 border-red-300 text-red-600'
+                }`}>
+                  {leaveModal.type === 'leave' ? (
+                    <Icons.Calendar className="w-8 h-8" />
+                  ) : (
+                    <Icons.AlertTriangle className="w-8 h-8" />
+                  )}
+                </div>
+              </div>
+
+              {/* Title & Member Info */}
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  {leaveModal.title}
+                </h3>
+                <h2 className="text-xl font-black text-slate-900 font-heading mt-1">
+                  {leaveModal.memberName}
+                </h2>
+                <div className="inline-block mt-1 px-2.5 py-0.5 bg-slate-100 text-slate-700 font-mono font-bold text-xs rounded border border-slate-200">
+                  No. Anggota: {leaveModal.memberCode}
+                </div>
+              </div>
+
+              {/* Notice Message */}
+              <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-xl text-xs text-amber-900 leading-relaxed font-semibold">
+                {leaveModal.message}
+              </div>
+
+              {/* Date Chips (if leave period dates exist) */}
+              {leaveModal.startDate && leaveModal.endDate && (
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                    PERIODE TANGGAL CUTI (FREEZE)
+                  </span>
+                  <div className="flex items-center justify-center gap-2 py-3 px-3 bg-slate-50 border border-slate-200 rounded-xl">
+                    <div className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#17A2B8] text-white rounded-full font-mono font-bold text-xs shadow-sm">
+                      <Icons.Calendar className="w-3.5 h-3.5 text-cyan-100" />
+                      <span>{leaveModal.startDate}</span>
+                    </div>
+                    <span className="text-xs font-black text-slate-400 uppercase tracking-widest">S/D</span>
+                    <div className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#17A2B8] text-white rounded-full font-mono font-bold text-xs shadow-sm">
+                      <Icons.Calendar className="w-3.5 h-3.5 text-cyan-100" />
+                      <span>{leaveModal.endDate}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Footer Action Button */}
+              <div className="pt-2">
+                <button
+                  onClick={() => setLeaveModal(null)}
+                  className="w-full py-3 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded-xl shadow-md transition-all cursor-pointer"
+                >
+                  Saya Mengerti
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

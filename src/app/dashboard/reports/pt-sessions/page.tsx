@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 import { FetchErrorAlert } from '@/components/core/FetchErrorAlert';
+import { getSessionCountFromPackage } from '@/core/constants';
 import { Printer, UserCheck, Calendar } from 'lucide-react';
 import { exportToExcel } from '@/lib/excelExport';
 
@@ -62,16 +63,26 @@ export default function PTSessionReportsPage() {
           }
 
           let logsCount = 0;
-          let totalSess = 10;
-          let remainingSess = 10;
+          let totalSess = getSessionCountFromPackage(reg.package_name || '');
+          let remainingSess = totalSess;
 
           if (reg.notes) {
             try {
               const parsed = JSON.parse(reg.notes);
-              if (parsed.logs) logsCount = parsed.logs.length;
-              if (parsed.total_sessions) totalSess = parsed.total_sessions;
-              if (parsed.remaining_sessions !== undefined) remainingSess = parsed.remaining_sessions;
-            } catch {}
+              if (parsed.logs && Array.isArray(parsed.logs)) {
+                logsCount = parsed.logs.reduce((acc: number, item: any) => acc + (item.used_sessions || 1), 0);
+              }
+              if (parsed.total_sessions !== undefined && parsed.total_sessions > 0) {
+                totalSess = parsed.total_sessions;
+              }
+              if (parsed.remaining_sessions !== undefined) {
+                remainingSess = parsed.remaining_sessions;
+              } else {
+                remainingSess = Math.max(0, totalSess - logsCount);
+              }
+            } catch {
+              remainingSess = Math.max(0, totalSess - logsCount);
+            }
           }
 
           trainerMap[tName].total_clients += 1;

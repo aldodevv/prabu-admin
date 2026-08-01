@@ -8,6 +8,7 @@ import { Save, Printer, ArrowLeft, UserCheck } from 'lucide-react';
 import { packagesApi } from '@/core/api';
 import { DatePicker } from '@/components/core/DatePicker';
 import FieldInfo from '@/components/core/FieldInfo';
+import { OfficialPTReceiptTemplate } from '@/components/core/PrintTemplates';
 
 interface Member {
   id: string;
@@ -30,6 +31,8 @@ interface PTRegistration {
   trainer_id: string;
   trainer_name: string;
   package_name: string;
+  session_count?: number;
+  membership_end?: string;
   payment_method: string;
   total_amount: number;
   notes?: string;
@@ -202,13 +205,15 @@ export default function PTRegistrationPage() {
       if (res.success && res.data) {
         setSuccessTx({
           id: res.data.id,
-          transaction_number: res.data.id ? `PRABU-PT-GRG-${res.data.id.substring(0, 7).toUpperCase()}` : 'PRABU-PT-GRG-0000001',
+          transaction_number: res.data.transaction_number || `RGS-TRA-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-0001`,
           member_id: selectedMemberID,
           member_name: memberObj?.full_name || 'Member',
           member_username: memberObj?.username || 'Member',
           trainer_id: selectedTrainerID,
           trainer_name: trainerObj?.full_name || 'Trainer',
           package_name: selectedPackage,
+          session_count: sessionCount,
+          membership_end: endDate,
           payment_method: paymentMethod,
           total_amount: totalAmount,
           notes: notes,
@@ -507,107 +512,24 @@ export default function PTRegistrationPage() {
         </div>
       </div>
 
-      {/* Success Receipt View overlay (Renders after transaction creation) */}
+      {/* Official PT Receipt Modal Overlay */}
       {successTx && (
-        <div className="space-y-6 animate-fadeIn max-w-4xl mx-auto">
-          {/* Action buttons (hidden on print) */}
-          <div className="flex gap-4 no-print">
-            <button
-              onClick={handlePrint}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#007BFF] hover:bg-[#0069D9] text-white text-xs font-bold uppercase tracking-wider rounded transition-colors cursor-pointer shadow-sm"
-            >
-              <Printer className="w-4 h-4" />
-              Cetak Receipt
-            </button>
-            <button
-              onClick={() => setSuccessTx(null)}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#DC3545] hover:bg-[#C82333] text-white text-xs font-bold uppercase tracking-wider rounded transition-colors cursor-pointer shadow-sm"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Kembali Ke Form
-            </button>
-          </div>
-
-          {/* Prabu Official Receipt Container (Visible on print & screen preview) */}
-          <div id="pt-receipt-print-area" className="bg-white border border-black p-8 rounded text-black space-y-6 max-w-4xl mx-auto print:border-0 print:p-0">
-
-            {/* Header Box */}
-            <div className="grid grid-cols-[1.2fr_2fr] border border-black divide-x divide-black">
-              {/* Logo Box */}
-              <div className="p-4 flex flex-col items-center justify-center text-center">
-                <img
-                  src="/logo-transparent.png"
-                  alt="Prabu Gym Logo"
-                  className="h-14 w-auto object-contain"
-                />
-                <div className="text-center leading-none mt-2">
-                  <h1 className="text-xl font-black tracking-widest font-heading">PRABU GYM</h1>
-                  <span className="text-[8px] uppercase font-bold text-slate-600 tracking-wider">Gym & Fitness Center</span>
-                </div>
-              </div>
-
-              {/* Title Box */}
-              <div className="p-4 flex items-center justify-center text-center">
-                <h2 className="text-3xl font-black uppercase tracking-widest text-slate-900">
-                  PRABU OFFICIAL RECEIPT
-                </h2>
-              </div>
-            </div>
-
-            {/* Metadata Summary Row - Bold & Prominent */}
-            <div className="border border-black py-2.5 px-4 flex justify-between text-xs font-extrabold text-black uppercase tracking-wide">
-              <span>Tanggal : {formatDateLabel(new Date().toISOString())}</span>
-              <span>Kategori : Personal Trainer</span>
-              <span>No Invoice : {successTx.transaction_number}</span>
-            </div>
-
-            {/* Details Table - Bold Header Row */}
-            <div className="border border-black overflow-hidden rounded-xs">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-slate-100 border-b border-black font-black uppercase text-[11px] text-black">
-                    <th className="py-2.5 px-3 border-r border-black font-black">NOMOR ANGGOTA</th>
-                    <th className="py-2.5 px-3 border-r border-black font-black">NAMA ANGGOTA</th>
-                    <th className="py-2.5 px-3 border-r border-black font-black">PAKET ANGGOTA</th>
-                    <th className="py-2.5 px-3 border-r border-black font-black text-center">JUMLAH SESI</th>
-                    <th className="py-2.5 px-3 border-r border-black font-black">MASA AKTIF</th>
-                    <th className="py-2.5 px-3 font-black">HARGA PAKET</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="font-bold text-slate-900">
-                    <td className="py-3 px-3 border-r border-black font-mono font-bold">{successTx.member_username}</td>
-                    <td className="py-3 px-3 border-r border-black font-extrabold">{successTx.member_name}</td>
-                    <td className="py-3 px-3 border-r border-black uppercase text-[10px] font-bold">{successTx.package_name}</td>
-                    <td className="py-3 px-3 border-r border-black text-center font-extrabold">{sessionCount}</td>
-                    <td className="py-3 px-3 border-r border-black font-mono text-[10px] font-bold">{formatDateLabel(endDate)}</td>
-                    <td className="py-3 px-3 font-extrabold">Rp. {successTx.total_amount.toLocaleString('id-ID')}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* Signature Box (Three signature columns: Member, PT, CS) */}
-            <div className="grid grid-cols-3 border border-black text-center text-xs font-bold divide-x divide-black">
-              <div>
-                <div className="py-2 border-b border-black uppercase tracking-wider bg-slate-50 text-[10px]">Member</div>
-                <div className="h-28" />
-                <div className="py-2 border-t border-black uppercase font-extrabold">{successTx.member_name}</div>
-              </div>
-              <div>
-                <div className="py-2 border-b border-black uppercase tracking-wider bg-slate-50 text-[10px]">Personal Trainner</div>
-                <div className="h-28" />
-                <div className="py-2 border-t border-black uppercase font-extrabold">{successTx.trainer_name}</div>
-              </div>
-              <div>
-                <div className="py-2 border-b border-black uppercase tracking-wider bg-slate-50 text-[10px]">Customer Service</div>
-                <div className="h-28" />
-                <div className="py-2 border-t border-black uppercase font-extrabold">{user?.full_name || 'Kasir Prabu GYM'}</div>
-              </div>
-            </div>
-
-          </div>
-        </div>
+        <OfficialPTReceiptTemplate
+          onClose={() => setSuccessTx(null)}
+          data={{
+            transactionNumber: successTx.transaction_number || `RGS-TRA-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-0001`,
+            transactionDate: new Date().toISOString(),
+            memberUsername: successTx.member_username || '-',
+            memberName: successTx.member_name,
+            packageName: successTx.package_name,
+            sessionCount: successTx.session_count ?? 1,
+            membershipEnd: successTx.membership_end || endDate,
+            paymentMethod: successTx.payment_method,
+            price: successTx.total_amount,
+            trainerName: successTx.trainer_name,
+            cashierName: user?.full_name || 'Kasir Prabu GYM',
+          }}
+        />
       )}
 
     </div>

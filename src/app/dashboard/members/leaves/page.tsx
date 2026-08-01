@@ -22,6 +22,7 @@ import {
 import { exportToExcel } from '@/lib/excelExport';
 import { formatIDR } from '@/utils';
 import { permissions } from '@/lib/permissions';
+import { MemberLeaveReceiptTemplate } from '@/components/core/PrintTemplates';
 
 export default function MemberLeavesPage() {
   const { activeBranchID, user } = useAuth();
@@ -632,88 +633,22 @@ export default function MemberLeavesPage() {
 
       {/* Printable Receipt Modal */}
       {printLeave && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fadeIn">
-          <div className="bg-white border border-slate-200 rounded-lg shadow-xl w-full max-w-md overflow-hidden font-mono text-xs">
-            <div className="bg-[#007BFF] px-5 py-3 text-white font-bold flex justify-between items-center select-none no-print">
-              <span className="text-sm uppercase tracking-wider">Kwitansi Cuti Anggota</span>
-              <button onClick={() => setPrintLeave(null)} className="text-white hover:opacity-80">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4 text-slate-800 bg-white" id="printable-receipt">
-              <div className="text-center space-y-1 pb-3 border-b border-dashed border-slate-300">
-                <div className="font-extrabold text-base tracking-widest text-slate-900">PRABU GYM</div>
-                <div className="text-[11px] text-slate-500 font-sans">{printLeave.branch_name || 'Fitness & Health Center'}</div>
-                <div className="text-[10px] text-slate-400 font-sans">BUKTI PEMBAYARAN CUTI ANGGOTA</div>
-              </div>
-
-              <div className="space-y-1 text-[11px]">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Tanggal:</span>
-                  <span>{new Date(printLeave.created_at).toLocaleDateString('id-ID')}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">No. Anggota:</span>
-                  <span className="font-bold">{printLeave.member_code || '-'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Nama Anggota:</span>
-                  <span className="font-bold">{printLeave.member_name || '-'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Periode Cuti:</span>
-                  <span className="font-bold text-cyan-700">{printLeave.start_date} s/d {printLeave.end_date}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Status:</span>
-                  <span className="uppercase font-bold">{printLeave.status}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Metode Bayar:</span>
-                  <span className="uppercase font-bold">{printLeave.payment_method}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Petugas:</span>
-                  <span>{printLeave.created_by_name || 'Admin'}</span>
-                </div>
-              </div>
-
-              <div className="py-2 border-y border-dashed border-slate-300 space-y-1">
-                <div className="flex justify-between text-sm font-extrabold text-slate-900">
-                  <span>TOTAL BIAYA CUTI</span>
-                  <span>{formatIDR(printLeave.fee_amount)}</span>
-                </div>
-              </div>
-
-              {printLeave.notes && (
-                <div className="text-[10px] text-slate-500 italic">
-                  * Keterangan: {printLeave.notes}
-                </div>
-              )}
-
-              <div className="text-center text-[10px] text-slate-400 pt-2 border-t border-slate-100">
-                Terima kasih atas kepercayaannya.<br />Selamat beristirahat dan sampai jumpa kembali!
-              </div>
-            </div>
-
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2 no-print">
-              <button
-                onClick={() => setPrintLeave(null)}
-                className="px-4 py-2 border border-slate-300 text-slate-700 font-bold rounded text-xs"
-              >
-                Tutup
-              </button>
-              <button
-                onClick={() => window.print()}
-                className="px-4 py-2 bg-[#007BFF] hover:bg-[#0069D9] text-white font-bold rounded text-xs flex items-center gap-1.5"
-              >
-                <Printer className="w-4 h-4" />
-                Cetak Struk
-              </button>
-            </div>
-          </div>
-        </div>
+        <MemberLeaveReceiptTemplate
+          onClose={() => setPrintLeave(null)}
+          data={{
+            transactionDate: printLeave.created_at,
+            memberCode: printLeave.member_code || '-',
+            memberName: printLeave.member_name || '-',
+            branchName: printLeave.branch_name,
+            startDate: printLeave.start_date,
+            endDate: printLeave.end_date,
+            status: printLeave.status,
+            paymentMethod: printLeave.payment_method,
+            feeAmount: printLeave.fee_amount,
+            notes: printLeave.notes,
+            cashierName: printLeave.created_by_name || user?.full_name || 'Admin',
+          }}
+        />
       )}
     </div>
   );

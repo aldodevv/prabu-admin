@@ -473,7 +473,7 @@ export default function TransaksiTunaiPage() {
               <div className="text-[10px] space-y-0.5 border-t border-dashed border-black pt-2 mb-2">
                 <div className="flex justify-between">
                   <span>No Struk :</span>
-                  <span className="font-bold">{formatInvoiceNumber(completedTx)}</span>
+                  <span className="font-bold">{getFormattedInvoice(completedTx)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Tanggal  :</span>

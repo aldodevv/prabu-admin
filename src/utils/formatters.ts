@@ -94,24 +94,41 @@ export function calculateExpiryDate(startDateStr: string, packageName?: string):
  * Derive session count from package name.
  */
 export function getSessionCountFromPackage(packageName: string = ''): number {
-  const pkg = PT_PACKAGES.find(p => packageName.includes(p.name));
+  if (!packageName) return 1;
+  const lower = packageName.toLowerCase();
+
+  const pkg = PT_PACKAGES.find(p => lower.includes(p.name.toLowerCase()));
   if (pkg) return pkg.sessions;
 
-  if (packageName.includes('12 Sesi')) return 12;
-  if (packageName.includes('6 Sesi')) return 6;
-  if (packageName.includes('3 Sesi')) return 3;
-  if (packageName.includes('2 Sesi')) return 2;
-  if (packageName.includes('1 Sesi')) return 1;
+  const match = lower.match(/(\d+)\s*sesi/);
+  if (match && match[1]) {
+    return parseInt(match[1], 10);
+  }
+
+  if (lower.includes('12 sesi')) return 12;
+  if (lower.includes('6 sesi')) return 6;
+  if (lower.includes('3 sesi')) return 3;
+  if (lower.includes('2 sesi')) return 2;
+  if (lower.includes('1 sesi')) return 1;
   return 1;
 }
 
 /**
  * Format invoice transaction number to PRABU.[BRANCH].[YYMMDD].[SEQ] style
  */
-export function formatInvoiceNumber(txNumber: string, dateStr?: string, branchNameOrCode: string = 'LIMO'): string {
+export function formatInvoiceNumber(txNumber: any, dateStr?: string, branchNameOrCode: string = 'LIMO'): string {
   if (!txNumber) return '-';
-  if (txNumber.includes('-')) {
-    const parts = txNumber.split('-');
+
+  if (typeof txNumber === 'object' && txNumber !== null) {
+    dateStr = dateStr || txNumber.transaction_date || txNumber.created_at;
+    txNumber = txNumber.transaction_number || txNumber.invoice_number || txNumber.id || '-';
+  }
+
+  const strTx = String(txNumber);
+  if (!strTx || strTx === 'undefined' || strTx === 'null') return '-';
+
+  if (strTx.includes('-')) {
+    const parts = strTx.split('-');
     const seq = parts[parts.length - 1];
     const dateObj = dateStr ? new Date(dateStr) : new Date();
     const yy = String(dateObj.getFullYear()).substring(2);
@@ -121,7 +138,7 @@ export function formatInvoiceNumber(txNumber: string, dateStr?: string, branchNa
     const shortSeq = String(Number(seq) || 1).padStart(3, '0');
     return `PRABU.${bCode}.${yy}${mm}${dd}.${shortSeq}`;
   }
-  return txNumber;
+  return strTx;
 }
 
 /**

@@ -184,7 +184,7 @@ export default function MemberRegistrationPage() {
       };
 
       const txRes = await api.post<any>('/admin/transactions', txBody);
-      let txNumber = 'PRABU-GRG-0000392';
+      let txNumber = `RGS-MEM-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-0001`;
       if (txRes.success && txRes.data) {
         txNumber = txRes.data.transaction_number;
       }

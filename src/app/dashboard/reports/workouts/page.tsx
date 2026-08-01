@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 import { FetchErrorAlert } from '@/components/core/FetchErrorAlert';
+import { WorkoutReportTemplate } from '@/components/core/PrintTemplates';
 import { formatDateLabel, formatIDR } from '@/core/constants';
 import { Printer, Dumbbell } from 'lucide-react';
 import { exportToExcel } from '@/lib/excelExport';
@@ -26,10 +27,11 @@ interface PTRegistrationReportItem {
 }
 
 export default function WorkoutReportsPage() {
-  const { activeBranchID } = useAuth();
+  const { activeBranchID, user } = useAuth();
   const [registrations, setRegistrations] = useState<PTRegistrationReportItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isPrintOpen, setIsPrintOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -77,10 +79,6 @@ export default function WorkoutReportsPage() {
   const filteredList = getFilteredRegistrations();
   const grandTotal = filteredList.reduce((acc, curr) => acc + curr.total_amount, 0);
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   const handleExportExcel = () => {
     const headers = [
       'No',
@@ -115,20 +113,6 @@ export default function WorkoutReportsPage() {
 
   return (
     <div className="space-y-6 font-sans">
-      <style jsx global>{`
-        @media print {
-          header, aside, button, .no-print {
-            display: none !important;
-          }
-          body, .min-h-screen, main, #print-report-area {
-            background: white !important;
-            color: black !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-        }
-      `}</style>
-
       <div className="no-print space-y-6">
         <div className="flex justify-between items-start">
           <div>
@@ -138,7 +122,7 @@ export default function WorkoutReportsPage() {
             </p>
           </div>
           <button
-            onClick={handlePrint}
+            onClick={() => setIsPrintOpen(true)}
             className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer"
           >
             <Printer className="w-4 h-4" />
@@ -171,7 +155,7 @@ export default function WorkoutReportsPage() {
 
         <FetchErrorAlert error={error} featureName="Laporan Pendaftaran Latihan" onRetry={fetchRegistrations} />
 
-        <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden" id="print-report-area">
+        <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
           <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex items-center justify-between select-none">
             <span className="text-sm uppercase tracking-wider font-heading flex items-center gap-2">
               <Dumbbell className="w-4 h-4" />
@@ -236,6 +220,21 @@ export default function WorkoutReportsPage() {
           </div>
         </div>
       </div>
+
+      {isPrintOpen && (
+        <WorkoutReportTemplate
+          onClose={() => setIsPrintOpen(false)}
+          title="LAPORAN TRANSAKSI PENDAFTARAN LATIHAN (PT)"
+          data={{
+            startDate: dateFrom,
+            endDate: dateTo,
+            totalTransactions: filteredList.length,
+            grandTotal,
+            cashierName: user?.full_name || 'Staff Prabu Gym',
+            registrations: filteredList,
+          }}
+        />
+      )}
     </div>
   );
 }
