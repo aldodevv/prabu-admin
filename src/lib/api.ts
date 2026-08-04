@@ -1,19 +1,20 @@
 import { translateRC } from './rcMapper';
 
-const getBaseUrl = () => {
+export const getBaseUrl = (): string => {
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
   }
+  if (process.env.NODE_ENV === 'development') {
+    return process.env.NEXT_PUBLIC_DEV_API_URL || 'http://localhost:8080/api';
+  }
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      return 'https://prabu-service.vercel.app/api';
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return process.env.NEXT_PUBLIC_DEV_API_URL || 'http://localhost:8080/api';
     }
   }
-  return 'http://localhost:8080/api';
+  return process.env.NEXT_PUBLIC_PROD_API_URL || 'https://prabu-service.vercel.app/api';
 };
-
-const BASE_URL = getBaseUrl();
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -91,7 +92,7 @@ class ApiClient {
 
   async get<T>(path: string): Promise<ApiResponse<T>> {
     try {
-      const res = await fetch(`${BASE_URL}${path}`, {
+      const res = await fetch(`${getBaseUrl()}${path}`, {
         method: 'GET',
         headers: this.getHeaders(),
       });
@@ -103,7 +104,7 @@ class ApiClient {
 
   async post<T>(path: string, body: any): Promise<ApiResponse<T>> {
     try {
-      const res = await fetch(`${BASE_URL}${path}`, {
+      const res = await fetch(`${getBaseUrl()}${path}`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify(body),
@@ -116,7 +117,7 @@ class ApiClient {
 
   async put<T>(path: string, body: any): Promise<ApiResponse<T>> {
     try {
-      const res = await fetch(`${BASE_URL}${path}`, {
+      const res = await fetch(`${getBaseUrl()}${path}`, {
         method: 'PUT',
         headers: this.getHeaders(),
         body: JSON.stringify(body),
@@ -129,7 +130,7 @@ class ApiClient {
 
   async delete<T>(path: string): Promise<ApiResponse<T>> {
     try {
-      const res = await fetch(`${BASE_URL}${path}`, {
+      const res = await fetch(`${getBaseUrl()}${path}`, {
         method: 'DELETE',
         headers: this.getHeaders(),
       });
@@ -141,7 +142,7 @@ class ApiClient {
 
   async uploadImage(formData: FormData): Promise<ApiResponse<{ url: string }>> {
     try {
-      const res = await fetch(`${BASE_URL}/admin/upload`, {
+      const res = await fetch(`${getBaseUrl()}/admin/upload`, {
         method: 'POST',
         headers: this.getHeaders(true),
         body: formData,

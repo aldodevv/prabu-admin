@@ -52,6 +52,7 @@ export const ROUTES = {
   SETTINGS_PT_PACKAGES: '/dashboard/settings/pt-packages',
   SETTINGS_CLASSES: '/dashboard/settings/classes',
   SETTINGS_CMS: '/dashboard/settings/cms',
+  SETTINGS_HUB_ITEMS: '/dashboard/settings/hub-items',
 };
 
 /**
@@ -152,6 +153,7 @@ export const NAVIGATION_MENU: NavigationGroup[] = [
       { label: 'Paket Anggota', href: ROUTES.SETTINGS_MEMBERSHIP_PACKAGES, iconName: 'List' },
       { label: 'Paket Personal Trainer', href: ROUTES.SETTINGS_PT_PACKAGES, iconName: 'List' },
       { label: 'Daftar Nama Kelas', href: ROUTES.SETTINGS_CLASSES, iconName: 'List' },
+      { label: 'Prabu Hub (Digital & Store)', href: ROUTES.SETTINGS_HUB_ITEMS, iconName: 'ShoppingBag' },
       { label: 'Manajemen CMS (News & Promo)', href: ROUTES.SETTINGS_CMS, iconName: 'FileText' },
     ]
   }
