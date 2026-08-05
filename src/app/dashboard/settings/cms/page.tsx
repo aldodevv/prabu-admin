@@ -212,7 +212,7 @@ export default function CMSManagementPage() {
 
   const filteredContents = contents.filter(item => {
     const matchSearch = item.title.toLowerCase().includes(search.toLowerCase()) ||
-                        (item.description && item.description.toLowerCase().includes(search.toLowerCase()));
+      (item.description && item.description.toLowerCase().includes(search.toLowerCase()));
     return matchSearch;
   });
 
@@ -254,9 +254,8 @@ export default function CMSManagementPage() {
       key: 'status',
       header: 'Status Terbit',
       render: (item) => (
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-          item.is_published ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500 border border-slate-200'
-        }`}>
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${item.is_published ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500 border border-slate-200'
+          }`}>
           {item.is_published ? <Eye size={12} /> : <EyeOff size={12} />}
           {item.is_published ? 'Terbit' : 'Draft'}
         </span>
@@ -304,7 +303,7 @@ export default function CMSManagementPage() {
     <div className="space-y-6">
       <PageHeader
         title="Manajemen Content (CMS)"
-        description="Kelola berita, promo, tips fitness, dan informasi membership untuk tampilan client PrabuGym"
+        description="Kelola berita, promo, tips fitness, dan informasi membership untuk tampilan client Prabu Gym"
         action={
           step === 'list' ? (
             <button
@@ -347,9 +346,8 @@ export default function CMSManagementPage() {
             <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => setActiveType('all')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                  activeType === 'all' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${activeType === 'all' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
               >
                 Semua Konten
               </button>
@@ -357,9 +355,8 @@ export default function CMSManagementPage() {
                 <button
                   key={opt.value}
                   onClick={() => setActiveType(opt.value)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                    activeType === opt.value ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${activeType === opt.value ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
                 >
                   {opt.label}
                 </button>

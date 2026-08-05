@@ -37,14 +37,14 @@ export default function AdminLoginPage() {
   return (
     <div className="min-h-screen bg-slate-100 flex items-stretch font-sans">
       {/* Left Pane - Gym Imagery (Visible on Large Screens) */}
-      <div 
+      <div
         className="hidden lg:flex lg:w-1/2 relative bg-cover bg-center items-center justify-center p-12 overflow-hidden"
-        style={{ 
-          backgroundImage: `url('https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=1200&auto=format&fit=crop')` 
+        style={{
+          backgroundImage: `url('https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=1200&auto=format&fit=crop')`
         }}
       >
         <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px]" />
-        
+
         {/* Glow decorative rings */}
         <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-red-primary/10 blur-3xl" />
         <div className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full bg-blue-500/10 blur-3xl" />
@@ -54,7 +54,7 @@ export default function AdminLoginPage() {
             ⚡ Integrated Management System
           </div>
           <h1 className="text-5xl font-heading tracking-wide leading-tight text-white drop-shadow-md">
-            PRABUGYM <br />
+            PRABU GYM <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-primary to-orange-400">
               INTEGRATED PANEL
             </span>
@@ -86,9 +86,9 @@ export default function AdminLoginPage() {
         <div className="w-full max-w-md mx-auto my-auto space-y-8">
           {/* PRABU GYM Logo */}
           <div className="text-center flex flex-col items-center select-none">
-            <Image 
+            <Image
               src="/logo-transparent.png"
-              alt="PRABUGYM Logo"
+              alt="PRABU GYM Logo"
               width={200}
               height={200}
               className="w-48 h-auto mb-2 object-contain"

@@ -3,8 +3,8 @@ import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 
 export const metadata: Metadata = {
-  title: 'PrabuGym — Admin Dashboard',
-  description: 'Sistem Terintegrasi Pengelolaan Cabang PrabuGym',
+  title: 'PRABU GYM — Admin Dashboard',
+  description: 'Sistem Terintegrasi Pengelolaan Cabang PRABU GYM',
   icons: {
     icon: '/logo-transparent.png',
     shortcut: '/logo-transparent.png',

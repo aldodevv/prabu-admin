@@ -77,7 +77,7 @@ export default function BranchSelectPage() {
           <h1 className="text-5xl font-heading tracking-wide leading-tight text-white drop-shadow-md">
             HAVE A GREAT DAY <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-500">
-              PRABUGYM PARTNER
+              PRABU GYM PARTNER
             </span>
           </h1>
           <p className="text-slate-200 text-lg font-light leading-relaxed">

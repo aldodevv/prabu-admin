@@ -124,20 +124,20 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
   };
 
   // Pre-filled Email Template
-  const emailSubject = encodeURIComponent(`Kartu Keanggotaan Digital PrabuGym - ${member.full_name}`);
+  const emailSubject = encodeURIComponent(`Kartu Keanggotaan Digital Prabu Gym - ${member.full_name}`);
   const emailBodyRaw =
     `Halo ${member.full_name},\r\n\r\n` +
-    `Selamat bergabung di PrabuGym! Berikut adalah rincian keanggotaan digital Anda:\r\n\r\n` +
+    `Selamat bergabung di Prabu Gym! Berikut adalah rincian keanggotaan digital Anda:\r\n\r\n` +
     `• Nama Lengkap: ${member.full_name}\r\n` +
     `• Nomor Anggota: ${member.username}\r\n` +
-    `• Cabang Gym: ${branchName || 'PrabuGym'}\r\n` +
+    `• Cabang Gym: ${branchName || 'Prabu Gym'}\r\n` +
     `• Paket Membership: ${member.membership_type || 'Membership'}\r\n` +
     `• Masa Aktif: ${member.membership_start || '-'} s/d ${member.membership_end || '-'}\r\n\r\n` +
     `Alamat Cabang:\r\n` +
     `${address}\r\n\r\n` +
     `*Catatan: Silakan lampirkan foto Kartu Member Digital (PNG) yang telah di-download pada email ini untuk kemudahan absensi.*\r\n\r\n` +
     `Salam Sehat,\r\n` +
-    `PrabuGym Official`;
+    `Prabu Gym Official`;
 
   const mailtoUrl = `mailto:${member.email || ''}?subject=${emailSubject}&body=${encodeURIComponent(emailBodyRaw)}`;
 
@@ -185,7 +185,7 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
             <div className="relative z-10 pt-2 flex flex-col items-center justify-center w-full min-h-[105px] shrink-0">
               <img
                 src={logoDataUrl || '/logo-transparent.png'}
-                alt="PrabuGym Logo"
+                alt="Prabu Gym Logo"
                 className="h-28 w-auto max-w-[180px] object-contain relative z-10 shrink-0"
                 loading="eager"
               />

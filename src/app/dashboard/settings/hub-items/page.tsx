@@ -317,7 +317,7 @@ export default function HubItemsManagementPage() {
     <div className="p-6 space-y-6">
       <PageHeader
         title="Manajemen Prabu Hub (Digital & Store)"
-        description="Kelola file e-book, video tutorial, materi member VIP, dan merchandise resmi PrabuGym."
+        description="Kelola file e-book, video tutorial, materi member VIP, dan merchandise resmi PRABU GYM."
         action={
           step === 'list' ? (
             <button
