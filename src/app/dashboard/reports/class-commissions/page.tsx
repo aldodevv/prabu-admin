@@ -166,7 +166,7 @@ export default function ClassCommissionReportsPage() {
         <div>
           <h2 className="text-3xl font-heading text-slate-800 uppercase tracking-tight">LAPORAN KOMISI KELAS</h2>
           <p className="text-slate-500 text-xs mt-1 uppercase tracking-widest font-accent">
-            Rangkuman Honorarium & Komisi Mengajar Instruktur Kelas Aerobik / Zumba / Yoga / Kungfu
+            Rangkuman Honorarium & Komisi Mengajar Instruktur Kelas Aerobik / Zumba / Yoga
           </p>
         </div>
         <button

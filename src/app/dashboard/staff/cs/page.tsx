@@ -361,7 +361,7 @@ export default function CSStaffManagementPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-300 p-2.5 rounded"
-                placeholder="cs@prabugym.com"
+                placeholder="cs@prabugym.id"
               />
             </div>
 
