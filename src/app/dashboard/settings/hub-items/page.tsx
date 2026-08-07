@@ -281,9 +281,8 @@ export default function HubItemsManagementPage() {
       header: 'Status',
       render: (item) => (
         <span
-          className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase ${
-            item.isActive ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
-          }`}
+          className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase ${item.isActive ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
+            }`}
         >
           {item.isActive ? 'Aktif' : 'Nonaktif'}
         </span>
@@ -351,9 +350,8 @@ export default function HubItemsManagementPage() {
                 <button
                   key={cat.value}
                   onClick={() => setActiveCategory(cat.value)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase transition-all ${
-                    activeCategory === cat.value ? 'bg-red-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:text-white'
-                  }`}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase transition-all ${activeCategory === cat.value ? 'bg-red-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:text-white'
+                    }`}
                 >
                   {cat.label}
                 </button>
@@ -405,19 +403,15 @@ export default function HubItemsManagementPage() {
                   if (val === 'downloads') {
                     setCategoryLabel('Downloads');
                     setActionType('download');
-                    setIconSymbol('📚');
                   } else if (val === 'videos') {
                     setCategoryLabel('Videos');
                     setActionType('video');
-                    setIconSymbol('🎥');
                   } else if (val === 'exclusive') {
                     setCategoryLabel('Member Exclusive');
                     setActionType('claim');
-                    setIconSymbol('⭐');
                   } else {
                     setCategoryLabel('Merchandise');
                     setActionType('whatsapp');
-                    setIconSymbol('🛍️');
                   }
                 }}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-red-500"
@@ -475,27 +469,16 @@ export default function HubItemsManagementPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Icon Symbol</label>
-              <input
-                type="text"
-                value={iconSymbol}
-                onChange={(e) => setIconSymbol(e.target.value)}
-                placeholder="mis. 📚 / 🎥 / ⭐ / 👕"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-red-500"
-              />
-            </div>
-
-            <div>
               <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Tipe Aksi Tombol</label>
               <select
                 value={actionType}
                 onChange={(e) => setActionType(e.target.value as any)}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-red-500"
               >
-                <option value="download">📥 Download PDF</option>
-                <option value="video">▶ Tonton Tutorial</option>
-                <option value="claim">⭐ Akses Member VIP</option>
-                <option value="whatsapp">💬 Pesan via WhatsApp</option>
+                <option value="download">Download PDF</option>
+                <option value="video">Tonton Tutorial</option>
+                <option value="claim">Akses Member VIP</option>
+                <option value="whatsapp">Pesan via WhatsApp</option>
               </select>
             </div>
           </div>
