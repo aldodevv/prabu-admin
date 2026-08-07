@@ -1,131 +1,191 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/context/AuthContext';
-import { contentsApi } from '@/core/api';
 import api from '@/lib/api';
 import { PageHeader } from '@/components/core/PageHeader';
 import { DataTable, Column } from '@/components/core/DataTable';
-import { Plus, Edit, Trash2, Save, ArrowLeft, Search, Upload, Eye, EyeOff } from 'lucide-react';
+import {
+  Image as ImageIcon,
+  CreditCard,
+  Dumbbell,
+  ShoppingBag,
+  Edit,
+  Trash2,
+  Plus,
+  Save,
+  Upload,
+  Search,
+  CheckCircle,
+  AlertCircle,
+  Sparkles,
+} from 'lucide-react';
 
-interface CMSContent {
+type CMSTab = 'promo' | 'membership' | 'pt' | 'hub';
+
+// Types
+interface MembershipPlanItem {
   id: string;
-  type: string;
-  title: string;
+  name: string;
+  duration_days: number;
+  price: number;
+  original_price?: number;
+  badge?: string;
+  popular?: boolean;
+  monthly_breakdown?: string;
+  bonus_text?: string;
+  discount_badge?: string;
   description?: string;
-  image_url?: string;
-  metadata?: any;
-  is_published: boolean;
-  created_at: string;
-  updated_at: string;
 }
 
-const CATEGORY_OPTIONS = [
-  { value: 'news', label: 'News / Berita' },
-  { value: 'promo', label: 'Promo / Event' },
-  { value: 'membership', label: 'Membership Info' },
-  { value: 'tips', label: 'Tips & Tutorial' },
-  { value: 'facilities', label: 'Fasilitas & Alat' },
-  { value: 'gallery', label: 'Galeri Foto' },
-];
+interface PTPlanItem {
+  id: string;
+  name: string;
+  duration_days: number;
+  session_count: number;
+  price: number;
+  original_price?: number;
+  badge?: string;
+  popular?: boolean;
+  monthly_breakdown?: string;
+  bonus_text?: string;
+  discount_badge?: string;
+  description?: string;
+}
+
+interface HubCardItem {
+  id: string;
+  title: string;
+  category: 'downloads' | 'videos' | 'exclusive' | 'merchandise';
+  categoryLabel: string;
+  badge: string;
+  price: string;
+  originalPrice?: string;
+  isFree: boolean;
+  isMemberOnly: boolean;
+  description: string;
+  image: string;
+  actionType: 'download' | 'video' | 'whatsapp' | 'claim';
+  format?: string;
+  rating: string;
+  stats: string;
+  highlights: string[];
+  sortOrder: number;
+  isActive: boolean;
+}
 
 export default function CMSManagementPage() {
-  const { user } = useAuth();
-  const [contents, setContents] = useState<CMSContent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<CMSTab>('promo');
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
-  // Search & Filter state
-  const [search, setSearch] = useState('');
-  const [activeType, setActiveType] = useState<string>('all');
-
-  // Form modal/step state: 'list' | 'create' | 'edit'
-  const [step, setStep] = useState<'list' | 'create' | 'edit'>('list');
-  const [editingId, setEditingId] = useState<string | null>(null);
-
-  // Form fields
-  const [title, setTitle] = useState('');
-  const [type, setType] = useState('news');
-  const [description, setDescription] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [isPublished, setIsPublished] = useState(true);
   const [uploading, setUploading] = useState(false);
 
-  // Extra Metadata fields
-  const [price, setPrice] = useState<number>(250000);
-  const [period, setPeriod] = useState('/bulan');
-  const [schedule, setSchedule] = useState('Setiap Hari, 06:00 – 22:00');
-  const [featuresStr, setFeaturesStr] = useState('Free Weights & Machines\nCardio Zone\nLocker Room\nShower & Towel\nFree WiFi\nParking');
-  const [popular, setPopular] = useState(false);
-  const [categoryTag, setCategoryTag] = useState('Event');
+  // 1. PROMO BANNER STATE
+  const [promoImageUrl, setPromoImageUrl] = useState('/images/promox.png');
 
-  // Delete confirm modal state
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  // 2. MEMBERSHIP PLANS STATE
+  const [membershipPlans, setMembershipPlans] = useState<MembershipPlanItem[]>([]);
+  const [editingMemPlan, setEditingMemPlan] = useState<MembershipPlanItem | null>(null);
 
-  const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(50);
-  const [total, setTotal] = useState(0);
+  // 3. PT PLANS STATE
+  const [ptPlans, setPtPlans] = useState<PTPlanItem[]>([]);
+  const [editingPtPlan, setEditingPtPlan] = useState<PTPlanItem | null>(null);
 
-  const fetchContents = async () => {
+  // 4. HUB CARDS STATE (FULL CRUD)
+  const [hubItems, setHubItems] = useState<HubCardItem[]>([]);
+  const [hubStep, setHubStep] = useState<'list' | 'create' | 'edit'>('list');
+  const [editingHubId, setEditingHubId] = useState<string | null>(null);
+  const [deletingHubId, setDeletingHubId] = useState<string | null>(null);
+  const [hubSearch, setHubSearch] = useState('');
+
+  // Hub Form Fields
+  const [hubTitle, setHubTitle] = useState('');
+  const [hubCategory, setHubCategory] = useState<'downloads' | 'videos' | 'exclusive' | 'merchandise'>('downloads');
+  const [hubBadge, setHubBadge] = useState('E-Book PDF');
+  const [hubPrice, setHubPrice] = useState('GRATIS');
+  const [hubOriginalPrice, setHubOriginalPrice] = useState('');
+  const [hubIsFree, setHubIsFree] = useState(true);
+  const [hubIsMemberOnly, setHubIsMemberOnly] = useState(false);
+  const [hubDescription, setHubDescription] = useState('');
+  const [hubImage, setHubImage] = useState('/images/background1.jpeg');
+  const [hubActionType, setHubActionType] = useState<'download' | 'video' | 'whatsapp' | 'claim'>('download');
+  const [hubFormat, setHubFormat] = useState('PDF • 4.2 MB');
+  const [hubRating, setHubRating] = useState('⭐ 5.0');
+  const [hubStats, setHubStats] = useState('100+ Diunduh');
+  const [hubHighlightsStr, setHubHighlightsStr] = useState('Panduan Full\nLengkap Set & Reps\nSiap Cetak');
+  const [hubIsActive, setHubIsActive] = useState(true);
+
+  // FETCH DATA ACCORDING TO ACTIVE TAB
+  useEffect(() => {
+    fetchTabData();
+  }, [activeTab]);
+
+  const fetchTabData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const typeFilter = activeType === 'all' ? '' : activeType;
-      const res = await contentsApi.listAdmin(typeFilter);
-      const list = res.data || [];
-      setContents(list);
-      setTotal(res.meta?.total || list.length);
+      if (activeTab === 'promo') {
+        const res = await api.get<{ imageUrl: string }>('/public/promo-image');
+        if (res.success && res.data?.imageUrl) {
+          setPromoImageUrl(res.data.imageUrl);
+        }
+      } else if (activeTab === 'membership' || activeTab === 'pt') {
+        const res = await api.get<any>('/public/pricing');
+        if (res.success && res.data) {
+          if (res.data.membershipPlans) {
+            setMembershipPlans(
+              res.data.membershipPlans.map((p: any) => ({
+                id: p.id,
+                name: p.name,
+                duration_days: p.durationDays || 30,
+                price: p.priceTotal || p.price || 0,
+                original_price: p.originalPriceTotal || p.originalPrice || undefined,
+                badge: p.badge || 'Reguler',
+                popular: !!p.popular,
+                monthly_breakdown: p.monthlyBreakdown || '',
+                bonus_text: p.bonusText || '',
+                discount_badge: p.discountBadge || '',
+                description: p.tagline || p.description || '',
+              }))
+            );
+          }
+          if (res.data.ptPlans) {
+            setPtPlans(
+              res.data.ptPlans.map((p: any) => ({
+                id: p.id,
+                name: p.name,
+                duration_days: p.durationDays || 30,
+                session_count: p.sessionCount || 1,
+                price: p.priceTotal || p.price || 0,
+                original_price: p.originalPriceTotal || p.originalPrice || undefined,
+                badge: p.badge || 'Coaching',
+                popular: !!p.popular,
+                monthly_breakdown: p.monthlyBreakdown || '',
+                bonus_text: p.bonusText || '',
+                discount_badge: p.discountBadge || '',
+                description: p.tagline || p.description || '',
+              }))
+            );
+          }
+        }
+      } else if (activeTab === 'hub') {
+        const res = await api.get<HubCardItem[]>('/admin/hub-items');
+        if (res.success && res.data) {
+          setHubItems(res.data);
+        }
+      }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Gagal mengambil data konten CMS');
+      setError(err.message || 'Gagal memuat data CMS');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchContents();
-  }, [activeType, page, perPage]);
-
-  const handleOpenCreate = () => {
-    setEditingId(null);
-    setTitle('');
-    setType('news');
-    setDescription('');
-    setImageUrl('');
-    setIsPublished(true);
-    setPrice(250000);
-    setPeriod('/bulan');
-    setSchedule('Setiap Hari, 06:00 – 22:00');
-    setFeaturesStr('Free Weights & Machines\nCardio Zone\nLocker Room\nShower & Towel\nFree WiFi\nParking');
-    setPopular(false);
-    setCategoryTag('Event');
-    setError(null);
-    setSuccess(null);
-    setStep('create');
-  };
-
-  const handleOpenEdit = (item: CMSContent) => {
-    setEditingId(item.id);
-    setTitle(item.title);
-    setType(item.type || 'news');
-    setDescription(item.description || '');
-    setImageUrl(item.image_url || '');
-    setIsPublished(item.is_published);
-    if (item.metadata) {
-      setPrice(item.metadata.price ? Number(item.metadata.price) : 250000);
-      setPeriod(item.metadata.period || '/bulan');
-      setSchedule(item.metadata.schedule || 'Setiap Hari, 06:00 – 22:00');
-      setPopular(!!item.metadata.popular);
-      setFeaturesStr(Array.isArray(item.metadata.features) ? item.metadata.features.join('\n') : 'Free Weights & Machines\nCardio Zone');
-      setCategoryTag(item.metadata.category || 'Event');
-    }
-    setError(null);
-    setSuccess(null);
-    setStep('edit');
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // UPLOAD IMAGE HELPER
+  const handleImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    targetSetter: (url: string) => void
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -136,7 +196,8 @@ export default function CMSManagementPage() {
     try {
       const res = await api.uploadImage(formData);
       if (res.success && res.data?.url) {
-        setImageUrl(res.data.url);
+        targetSetter(res.data.url);
+        setSuccess('Gambar berhasil diunggah!');
       } else {
         setError('Gagal mengunggah gambar');
       }
@@ -147,10 +208,11 @@ export default function CMSManagementPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // 1. SAVE PROMO IMAGE URL
+  const handleSavePromoImage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) {
-      setError('Judul konten wajib diisi');
+    if (!promoImageUrl.trim()) {
+      setError('URL Gambar Promo tidak boleh kosong');
       return;
     }
 
@@ -158,121 +220,255 @@ export default function CMSManagementPage() {
     setError(null);
     setSuccess(null);
 
-    const metadata: Record<string, any> = {};
-    if (type === 'membership') {
-      metadata.price = price ? Number(price) : 250000;
-      metadata.period = period || '/bulan';
-      metadata.schedule = schedule || 'Setiap Hari, 06:00 – 22:00';
-      metadata.popular = popular;
-      metadata.features = featuresStr.split('\n').map(f => f.trim()).filter(Boolean);
-    } else {
-      metadata.category = categoryTag || (type === 'promo' ? 'Promo' : type === 'tips' ? 'Tips' : 'Event');
+    try {
+      const res = await api.put('/admin/promo-image', { imageUrl: promoImageUrl });
+      if (res.success) {
+        setSuccess('URL Gambar Promo berhasil diperbarui!');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Gagal memperbarui gambar promo');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 2. SAVE MEMBERSHIP PLAN CARD UPDATE
+  const handleSaveMemPlan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMemPlan) return;
+
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const payload = {
+        name: editingMemPlan.name,
+        price: Number(editingMemPlan.price),
+        original_price: editingMemPlan.original_price ? Number(editingMemPlan.original_price) : null,
+        badge: editingMemPlan.badge || '',
+        popular: editingMemPlan.popular,
+        monthly_breakdown: editingMemPlan.monthly_breakdown || '',
+        bonus_text: editingMemPlan.bonus_text || '',
+        discount_badge: editingMemPlan.discount_badge || '',
+        description: editingMemPlan.description || '',
+      };
+
+      const res = await api.put(`/admin/membership-packages/${editingMemPlan.id}`, payload);
+      if (res.success) {
+        setSuccess(`Paket Membership "${editingMemPlan.name}" berhasil diperbarui!`);
+        setEditingMemPlan(null);
+        fetchTabData();
+      }
+    } catch (err: any) {
+      setError(err.message || 'Gagal memperbarui paket membership');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 3. SAVE PT PLAN CARD UPDATE
+  const handleSavePtPlan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPtPlan) return;
+
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const payload = {
+        name: editingPtPlan.name,
+        price: Number(editingPtPlan.price),
+        original_price: editingPtPlan.original_price ? Number(editingPtPlan.original_price) : null,
+        badge: editingPtPlan.badge || '',
+        popular: editingPtPlan.popular,
+        monthly_breakdown: editingPtPlan.monthly_breakdown || '',
+        bonus_text: editingPtPlan.bonus_text || '',
+        discount_badge: editingPtPlan.discount_badge || '',
+        description: editingPtPlan.description || '',
+      };
+
+      const res = await api.put(`/admin/pt-packages/${editingPtPlan.id}`, payload);
+      if (res.success) {
+        setSuccess(`Paket Personal Trainer "${editingPtPlan.name}" berhasil diperbarui!`);
+        setEditingPtPlan(null);
+        fetchTabData();
+      }
+    } catch (err: any) {
+      setError(err.message || 'Gagal memperbarui paket Personal Trainer');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 4. HUB CARDS CRUD HANDLERS
+  const handleOpenCreateHub = () => {
+    setEditingHubId(null);
+    setHubTitle('');
+    setHubCategory('downloads');
+    setHubBadge('E-Book PDF');
+    setHubPrice('GRATIS');
+    setHubOriginalPrice('');
+    setHubIsFree(true);
+    setHubIsMemberOnly(false);
+    setHubDescription('');
+    setHubImage('/images/background1.jpeg');
+    setHubActionType('download');
+    setHubFormat('PDF • 4.2 MB');
+    setHubRating('⭐ 5.0');
+    setHubStats('100+ Diunduh');
+    setHubHighlightsStr('Panduan Full\nLengkap Set & Reps\nSiap Cetak');
+    setHubIsActive(true);
+    setHubStep('create');
+  };
+
+  const handleOpenEditHub = (item: HubCardItem) => {
+    setEditingHubId(item.id);
+    setHubTitle(item.title);
+    setHubCategory(item.category);
+    setHubBadge(item.badge);
+    setHubPrice(item.price);
+    setHubOriginalPrice(item.originalPrice || '');
+    setHubIsFree(item.isFree);
+    setHubIsMemberOnly(item.isMemberOnly);
+    setHubDescription(item.description);
+    setHubImage(item.image);
+    setHubActionType(item.actionType);
+    setHubFormat(item.format || '');
+    setHubRating(item.rating || '⭐ 5.0');
+    setHubStats(item.stats || '100+ Diunduh');
+    setHubHighlightsStr(Array.isArray(item.highlights) ? item.highlights.join('\n') : '');
+    setHubIsActive(item.isActive);
+    setHubStep('edit');
+  };
+
+  const handleSaveHubItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!hubTitle.trim()) {
+      setError('Judul Hub Card wajib diisi');
+      return;
     }
 
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    const highlights = hubHighlightsStr
+      .split('\n')
+      .map((h) => h.trim())
+      .filter(Boolean);
+
+    let categoryLabel = 'Downloads';
+    if (hubCategory === 'videos') categoryLabel = 'Videos';
+    if (hubCategory === 'exclusive') categoryLabel = 'Member Exclusive';
+    if (hubCategory === 'merchandise') categoryLabel = 'Merchandise';
+
     const payload = {
-      title,
-      type,
-      description,
-      image_url: imageUrl,
-      is_published: isPublished,
-      metadata,
+      title: hubTitle,
+      category: hubCategory,
+      categoryLabel,
+      badge: hubBadge,
+      price: hubPrice,
+      originalPrice: hubOriginalPrice || null,
+      isFree: hubIsFree,
+      isMemberOnly: hubIsMemberOnly,
+      description: hubDescription,
+      image: hubImage,
+      actionType: hubActionType,
+      format: hubFormat,
+      rating: hubRating,
+      stats: hubStats,
+      highlights,
+      isActive: hubIsActive,
     };
 
     try {
-      if (step === 'create') {
-        await contentsApi.create(payload);
-        setSuccess('Konten berhasil ditambahkan');
+      if (hubStep === 'create') {
+        await api.post('/admin/hub-items', payload);
+        setSuccess('Hub Card baru berhasil ditambahkan!');
       } else {
-        await contentsApi.update(editingId!, payload);
-        setSuccess('Konten berhasil diperbarui');
+        await api.put(`/admin/hub-items/${editingHubId}`, payload);
+        setSuccess('Hub Card berhasil diperbarui!');
       }
-      setStep('list');
-      fetchContents();
+      setHubStep('list');
+      fetchTabData();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Gagal menyimpan konten CMS');
+      setError(err.message || 'Gagal menyimpan item Hub Card');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDeleteHubItem = async (id: string) => {
     setLoading(true);
     setError(null);
     try {
-      await contentsApi.delete(id);
-      setSuccess('Konten berhasil dihapus');
-      setDeletingId(null);
-      fetchContents();
+      await api.delete(`/admin/hub-items/${id}`);
+      setSuccess('Hub Card berhasil dihapus!');
+      setDeletingHubId(null);
+      fetchTabData();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Gagal menghapus konten');
+      setError(err.message || 'Gagal menghapus item Hub Card');
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredContents = contents.filter(item => {
-    const matchSearch = item.title.toLowerCase().includes(search.toLowerCase()) ||
-      (item.description && item.description.toLowerCase().includes(search.toLowerCase()));
-    return matchSearch;
-  });
+  const filteredHubItems = hubItems.filter(
+    (item) =>
+      item.title.toLowerCase().includes(hubSearch.toLowerCase()) ||
+      item.description.toLowerCase().includes(hubSearch.toLowerCase())
+  );
 
-  const columns: Column<CMSContent>[] = [
+  // Hub DataTable Columns
+  const hubColumns: Column<HubCardItem>[] = [
     {
       key: 'title',
-      header: 'Konten / Judul',
+      header: 'Item / Judul',
       render: (item) => (
         <div className="flex items-center gap-3">
-          {item.image_url ? (
-            <img src={item.image_url} alt="" className="w-12 h-12 object-cover rounded-lg border border-slate-200" />
-          ) : (
-            <div className="w-12 h-12 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 font-bold text-xs">
-              NO IMG
-            </div>
-          )}
+          <img src={item.image} alt="" className="w-12 h-12 object-cover rounded-lg border border-slate-800" />
           <div>
-            <span className="font-semibold text-slate-800 text-sm block">{item.title}</span>
-            <span className="text-slate-500 text-xs line-clamp-1 max-w-[280px]">
-              {item.description || 'Tanpa deskripsi'}
-            </span>
+            <span className="font-bold text-white text-sm block">{item.title}</span>
+            <span className="text-slate-400 text-xs line-clamp-1">{item.description}</span>
           </div>
         </div>
-      )
+      ),
     },
     {
-      key: 'type',
-      header: 'Kategori / Tipe',
-      render: (item) => {
-        const cat = CATEGORY_OPTIONS.find(c => c.value === item.type);
-        return (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200">
-            {cat ? cat.label : item.type}
-          </span>
-        );
-      }
+      key: 'category',
+      header: 'Kategori',
+      render: (item) => (
+        <span className="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-red-600/10 text-red-400 border border-red-500/20">
+          {item.categoryLabel}
+        </span>
+      ),
+    },
+    {
+      key: 'price',
+      header: 'Harga Tampilan',
+      render: (item) => (
+        <div>
+          <span className="font-mono font-bold text-emerald-400 text-xs">{item.price}</span>
+          {item.originalPrice && (
+            <span className="block text-[10px] text-slate-500 line-through">{item.originalPrice}</span>
+          )}
+        </div>
+      ),
     },
     {
       key: 'status',
-      header: 'Status Terbit',
+      header: 'Status',
       render: (item) => (
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${item.is_published ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500 border border-slate-200'
-          }`}>
-          {item.is_published ? <Eye size={12} /> : <EyeOff size={12} />}
-          {item.is_published ? 'Terbit' : 'Draft'}
+        <span
+          className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase ${
+            item.isActive ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
+          }`}
+        >
+          {item.isActive ? 'Aktif' : 'Nonaktif'}
         </span>
-      )
-    },
-    {
-      key: 'created_at',
-      header: 'Tanggal Dibuat',
-      render: (item) => (
-        <span className="text-xs text-slate-500 font-mono">
-          {new Date(item.created_at).toLocaleDateString('id-ID', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric'
-          })}
-        </span>
-      )
+      ),
     },
     {
       key: 'actions',
@@ -281,327 +477,721 @@ export default function CMSManagementPage() {
       render: (item) => (
         <div className="flex items-center justify-end gap-2">
           <button
-            onClick={() => handleOpenEdit(item)}
-            className="p-1.5 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            title="Edit Konten"
+            onClick={() => handleOpenEditHub(item)}
+            className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded-lg transition-colors"
+            title="Edit Hub Card"
           >
             <Edit size={16} />
           </button>
           <button
-            onClick={() => setDeletingId(item.id)}
-            className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            title="Hapus Konten"
+            onClick={() => setDeletingHubId(item.id)}
+            className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition-colors"
+            title="Hapus Hub Card"
           >
             <Trash2 size={16} />
           </button>
         </div>
-      )
-    }
+      ),
+    },
   ];
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Manajemen Content (CMS)"
-        description="Kelola berita, promo, tips fitness, dan informasi membership untuk tampilan client Prabu Gym"
+        title="Content Management System (CMS)"
+        description="Kelola Banner Promo, Konten Paket Membership & PT, serta Produk Hub Store Prabu GYM"
         action={
-          step === 'list' ? (
+          activeTab === 'hub' && hubStep === 'list' ? (
             <button
-              onClick={handleOpenCreate}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition-colors shadow-sm"
+              onClick={handleOpenCreateHub}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-xl font-bold text-xs uppercase hover:bg-red-700 transition-colors shadow-lg shadow-red-600/30"
             >
               <Plus size={16} />
-              <span>Tambah Konten Baru</span>
+              <span>Tambah Hub Card Baru</span>
             </button>
-          ) : (
-            <button
-              onClick={() => setStep('list')}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-200 text-slate-700 rounded-lg font-medium text-sm hover:bg-slate-300 transition-colors"
-            >
-              <ArrowLeft size={16} />
-              <span>Kembali ke Daftar</span>
-            </button>
-          )
+          ) : null
         }
       />
 
+      {/* ALERT NOTIFICATIONS */}
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-medium flex justify-between items-center">
-          <span>{error}</span>
-          <button onClick={() => setError(null)} className="text-red-500 font-bold">✕</button>
+        <div className="p-4 bg-red-950/80 border border-red-800 rounded-2xl text-red-200 text-sm font-medium flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={18} className="text-red-400 shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button onClick={() => setError(null)} className="text-red-400 font-bold text-xs">
+            ✕
+          </button>
         </div>
       )}
 
       {success && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 text-sm font-medium flex justify-between items-center">
-          <span>{success}</span>
-          <button onClick={() => setSuccess(null)} className="text-emerald-500 font-bold">✕</button>
+        <div className="p-4 bg-emerald-950/80 border border-emerald-800 rounded-2xl text-emerald-200 text-sm font-medium flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <CheckCircle size={18} className="text-emerald-400 shrink-0" />
+            <span>{success}</span>
+          </div>
+          <button onClick={() => setSuccess(null)} className="text-emerald-400 font-bold text-xs">
+            ✕
+          </button>
         </div>
       )}
 
-      {step === 'list' ? (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
-          {/* Filter Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => setActiveType('all')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${activeType === 'all' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-              >
-                Semua Konten
-              </button>
-              {CATEGORY_OPTIONS.map(opt => (
-                <button
-                  key={opt.value}
-                  onClick={() => setActiveType(opt.value)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${activeType === opt.value ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+      {/* TOP NAVIGATION TABS */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3">
+        {[
+          { id: 'promo', label: 'Image Promo (Landing)', icon: <ImageIcon size={16} /> },
+          { id: 'membership', label: 'Paket Membership Cards', icon: <CreditCard size={16} /> },
+          { id: 'pt', label: 'Paket Personal Trainer Cards', icon: <Dumbbell size={16} /> },
+          { id: 'hub', label: 'Prabu Hub Cards (Store)', icon: <ShoppingBag size={16} /> },
+        ].map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setActiveTab(tab.id as CMSTab);
+                setEditingMemPlan(null);
+                setEditingPtPlan(null);
+                setHubStep('list');
+              }}
+              className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all ${
+                isActive
+                  ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
+                  : 'bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-800'
+              }`}
+            >
+              {tab.icon}
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
 
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
-              <input
-                type="text"
-                placeholder="Cari judul..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-
-          <DataTable
-            data={filteredContents}
-            columns={columns}
-            loading={loading}
-            currentPage={page}
-            totalItems={total || filteredContents.length}
-            itemsPerPage={perPage}
-            onPageChange={setPage}
-            onItemsPerPageChange={(val) => {
-              setPerPage(val);
-              setPage(1);
-            }}
-            emptyMessage="Belum ada konten CMS yang ditambahkan"
-          />
-        </div>
-      ) : (
-        /* Create / Edit Form */
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 max-w-3xl mx-auto space-y-6">
-          <div className="border-b border-slate-100 pb-4">
-            <h3 className="text-lg font-bold text-slate-900">
-              {step === 'create' ? 'Tambah Konten CMS Baru' : 'Edit Konten CMS'}
+      {/* ============================================================ */}
+      {/* TAB 1: IMAGE PROMO MANAGEMENT */}
+      {/* ============================================================ */}
+      {activeTab === 'promo' && (
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-3xl space-y-6">
+          <div>
+            <h3 className="text-lg font-extrabold uppercase italic text-white flex items-center gap-2">
+              <ImageIcon className="text-red-500" size={20} />
+              <span>Update Banner Image Promo</span>
             </h3>
-            <p className="text-xs text-slate-500">Lengkapi formulir di bawah ini untuk memperbarui konten publik</p>
+            <p className="text-xs text-slate-400 mt-1 font-body">
+              Pembaruan URL gambar banner promo yang tampil pada section Promo Spesiap Landing Page (`PromoSection.tsx`).
+            </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSavePromoImage} className="space-y-6">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                Judul Konten <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Contoh: GYM, Aerobik, Promo Akhir Tahun..."
-                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                  Kategori / Tipe <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={type}
-                  onChange={(e) => setType(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {CATEGORY_OPTIONS.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                  Status Publikasi
-                </label>
-                <select
-                  value={isPublished ? 'true' : 'false'}
-                  onChange={(e) => setIsPublished(e.target.value === 'true')}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="true">Terbitkan (Public)</option>
-                  <option value="false">Simpan Draf (Hidden)</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Dynamic Metadata Fields based on Type */}
-            {type === 'membership' ? (
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
-                <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Detil Membership</h4>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Harga (Rp)</label>
-                    <input
-                      type="number"
-                      value={price}
-                      onChange={(e) => setPrice(Number(e.target.value))}
-                      placeholder="250000"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Periode</label>
-                    <input
-                      type="text"
-                      value={period}
-                      onChange={(e) => setPeriod(e.target.value)}
-                      placeholder="/bulan"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Jadwal</label>
-                    <input
-                      type="text"
-                      value={schedule}
-                      onChange={(e) => setSchedule(e.target.value)}
-                      placeholder="Setiap Hari, 06:00 – 22:00"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Fasilitas Termasuk (1 per baris)</label>
-                  <textarea
-                    rows={4}
-                    value={featuresStr}
-                    onChange={(e) => setFeaturesStr(e.target.value)}
-                    placeholder="Free Weights & Machines&#10;Cardio Zone&#10;Locker Room&#10;Shower & Towel"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white font-mono"
-                  />
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="popular-check"
-                    checked={popular}
-                    onChange={(e) => setPopular(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded"
-                  />
-                  <label htmlFor="popular-check" className="text-xs font-semibold text-slate-800">
-                    Tandai sebagai Paket Rekomendasi Utama (Highlighted Card)
-                  </label>
-                </div>
-              </div>
-            ) : (
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Tag / Kategori Tampilan</label>
-                <input
-                  type="text"
-                  value={categoryTag}
-                  onChange={(e) => setCategoryTag(e.target.value)}
-                  placeholder="Contoh: Promo, Event, Tips, Alat Baru"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white"
-                />
-              </div>
-            )}
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                Gambar Utama / Banner
+              <label className="block text-xs font-bold text-slate-300 uppercase mb-2">
+                URL Gambar Promo <span className="text-red-500">*</span>
               </label>
               <div className="flex gap-3 items-center">
                 <input
                   type="text"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="/images/background1.jpeg atau https://..."
-                  className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                  value={promoImageUrl}
+                  onChange={(e) => setPromoImageUrl(e.target.value)}
+                  placeholder="mis. /images/promox.png atau https://..."
+                  className="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-sm text-white focus:outline-none focus:border-red-500"
                 />
-                <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium text-xs cursor-pointer border border-slate-200">
-                  <Upload size={14} />
-                  <span>{uploading ? 'Mengunggah...' : 'Upload File'}</span>
-                  <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
+                <label className="cursor-pointer bg-slate-800 hover:bg-slate-700 text-white px-4 py-3.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 border border-slate-700">
+                  <Upload size={16} />
+                  <span>{uploading ? 'Mengunggah...' : 'Unggah File'}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleImageUpload(e, setPromoImageUrl)}
+                    disabled={uploading}
+                  />
                 </label>
               </div>
-              {imageUrl && (
-                <div className="mt-3 relative w-32 h-20 rounded-lg overflow-hidden border border-slate-200 bg-slate-50">
-                  <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
-                </div>
-              )}
             </div>
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                Deskripsi / Ringkasan Konten
-              </label>
-              <textarea
-                rows={4}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Tuliskan deskripsi lengkap atau ringkasan di sini..."
-                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-sans"
-              />
+            {/* Live Preview Box */}
+            <div className="space-y-2">
+              <span className="block text-xs font-bold text-slate-400 uppercase">Live Image Preview</span>
+              <div className="relative w-full h-56 rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center">
+                {promoImageUrl ? (
+                  <img src={promoImageUrl} alt="Promo Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-slate-600 text-xs">Belum ada URL gambar terpasang</span>
+                )}
+              </div>
             </div>
 
-            <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setStep('list')}
-                className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-sm rounded-xl transition-colors"
-              >
-                Batal
-              </button>
+            <div className="pt-2 flex justify-end">
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-xl transition-colors shadow-sm"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs uppercase shadow-lg shadow-red-600/30 transition-all"
               >
                 <Save size={16} />
-                <span>{loading ? 'Menyimpan...' : 'Simpan Konten'}</span>
+                <span>{loading ? 'Menyimpan...' : 'Simpan URL Banner Promo'}</span>
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {deletingId && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 max-w-sm w-full space-y-4">
-            <h4 className="font-bold text-slate-900 text-base">Konfirmasi Hapus Konten</h4>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Apakah Anda yakin ingin menghapus konten CMS ini? Tindakan ini tidak dapat dibatalkan.
-            </p>
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                onClick={() => setDeletingId(null)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs rounded-lg"
-              >
-                Batal
-              </button>
-              <button
-                onClick={() => handleDelete(deletingId)}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium text-xs rounded-lg shadow-sm"
-              >
-                Ya, Hapus
-              </button>
+      {/* ============================================================ */}
+      {/* TAB 2: MEMBERSHIP PLANS CARD UPDATE */}
+      {/* ============================================================ */}
+      {activeTab === 'membership' && (
+        <div className="space-y-6">
+          {editingMemPlan ? (
+            /* EDIT FORM MODAL / CARD FORM */
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-2xl mx-auto space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div>
+                  <h3 className="text-base font-extrabold uppercase italic text-white">
+                    Edit Konten Card: <span className="text-red-500">{editingMemPlan.name}</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">Update harga, promo badge, dan tagline tampilan kartu.</p>
+                </div>
+                <button
+                  onClick={() => setEditingMemPlan(null)}
+                  className="text-xs font-bold uppercase text-slate-400 hover:text-white bg-slate-800 px-3 py-1.5 rounded-lg"
+                >
+                  Batal
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveMemPlan} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Nama Paket</label>
+                    <input
+                      type="text"
+                      disabled
+                      value={editingMemPlan.name}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-400 cursor-not-allowed"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Promo Badge / Status Card</label>
+                    <input
+                      type="text"
+                      value={editingMemPlan.badge || ''}
+                      onChange={(e) => setEditingMemPlan({ ...editingMemPlan, badge: e.target.value })}
+                      placeholder="mis. Basic / Popular Choice / Best Value / Promo"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-red-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Harga (Rp)</label>
+                    <input
+                      type="number"
+                      required
+                      value={editingMemPlan.price}
+                      onChange={(e) => setEditingMemPlan({ ...editingMemPlan, price: Number(e.target.value) })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-red-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Harga Asli / Sebelum Promo (Rp)</label>
+                    <input
+                      type="number"
+                      value={editingMemPlan.original_price || ''}
+                      onChange={(e) =>
+                        setEditingMemPlan({ ...editingMemPlan, original_price: e.target.value ? Number(e.target.value) : undefined })
+                      }
+                      placeholder="mis. 750000 (opsional)"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-red-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Tagline Card</label>
+                  <input
+                    type="text"
+                    value={editingMemPlan.description || ''}
+                    onChange={(e) => setEditingMemPlan({ ...editingMemPlan, description: e.target.value })}
+                    placeholder="mis. Favorit member baru / Tanpa komitmen panjang"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-red-500"
+                  />
+                </div>
+
+                <div className="flex items-center gap-3 pt-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editingMemPlan.popular || false}
+                      onChange={(e) => setEditingMemPlan({ ...editingMemPlan, popular: e.target.checked })}
+                      className="w-4 h-4 accent-red-600 rounded"
+                    />
+                    <span className="text-sm font-bold text-white flex items-center gap-1.5">
+                      <Sparkles size={16} className="text-amber-400" />
+                      Tandai sebagai Paket Promo Rekomendasi Utama (Highlighted Red Ribbon)
+                    </span>
+                  </label>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setEditingMemPlan(null)}
+                    className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl font-bold text-xs uppercase"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="px-6 py-2.5 bg-red-600 text-white rounded-xl font-bold text-xs uppercase shadow-lg shadow-red-600/30"
+                  >
+                    {loading ? 'Menyimpan...' : 'Simpan Perubahan Card'}
+                  </button>
+                </div>
+              </form>
             </div>
-          </div>
+          ) : (
+            /* CARDS LIST DISPLAY */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {membershipPlans.map((plan) => (
+                <div
+                  key={plan.id}
+                  className={`bg-slate-900 border rounded-3xl p-6 space-y-4 relative flex flex-col justify-between ${
+                    plan.popular ? 'border-red-600 ring-2 ring-red-600/20' : 'border-slate-800'
+                  }`}
+                >
+                  {plan.popular && (
+                    <div className="absolute -top-3 left-6 bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-0.5 rounded-full shadow-md">
+                      🔥 PROMO UTAMA
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-red-500 uppercase">{plan.badge || 'Reguler'}</span>
+                      <span className="text-xs text-slate-400 font-bold">{plan.duration_days} Hari</span>
+                    </div>
+
+                    <h4 className="font-heading text-xl font-extrabold text-white uppercase italic">{plan.name}</h4>
+
+                    <div>
+                      {plan.original_price && (
+                        <span className="text-slate-500 text-xs line-through block font-mono">
+                          Rp{plan.original_price.toLocaleString('id-ID')}
+                        </span>
+                      )}
+                      <span className="font-heading text-2xl font-extrabold text-white italic">
+                        Rp{plan.price.toLocaleString('id-ID')}
+                      </span>
+                    </div>
+
+                    {plan.description && <p className="text-xs text-slate-400 font-body">{plan.description}</p>}
+                  </div>
+
+                  <button
+                    onClick={() => setEditingMemPlan(plan)}
+                    className="w-full py-2.5 bg-slate-800 hover:bg-red-600 text-slate-200 hover:text-white rounded-xl font-bold text-xs uppercase transition-colors flex items-center justify-center gap-2 mt-4"
+                  >
+                    <Edit size={14} />
+                    <span>Edit Content & Promo Card</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* TAB 3: PERSONAL TRAINER PLANS CARD UPDATE */}
+      {/* ============================================================ */}
+      {activeTab === 'pt' && (
+        <div className="space-y-6">
+          {editingPtPlan ? (
+            /* EDIT FORM MODAL / CARD FORM */
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-2xl mx-auto space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div>
+                  <h3 className="text-base font-extrabold uppercase italic text-white">
+                    Edit Konten PT Card: <span className="text-red-500">{editingPtPlan.name}</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">Update harga, promo badge, dan tagline Personal Trainer.</p>
+                </div>
+                <button
+                  onClick={() => setEditingPtPlan(null)}
+                  className="text-xs font-bold uppercase text-slate-400 hover:text-white bg-slate-800 px-3 py-1.5 rounded-lg"
+                >
+                  Batal
+                </button>
+              </div>
+
+              <form onSubmit={handleSavePtPlan} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Nama Paket PT</label>
+                    <input
+                      type="text"
+                      disabled
+                      value={editingPtPlan.name}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-400 cursor-not-allowed"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Promo Badge / Status Card</label>
+                    <input
+                      type="text"
+                      value={editingPtPlan.badge || ''}
+                      onChange={(e) => setEditingPtPlan({ ...editingPtPlan, badge: e.target.value })}
+                      placeholder="mis. Trial / Basic / Hemat / Popular Choice"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-red-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Harga (Rp)</label>
+                    <input
+                      type="number"
+                      required
+                      value={editingPtPlan.price}
+                      onChange={(e) => setEditingPtPlan({ ...editingPtPlan, price: Number(e.target.value) })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-red-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Harga Asli / Sebelum Promo (Rp)</label>
+                    <input
+                      type="number"
+                      value={editingPtPlan.original_price || ''}
+                      onChange={(e) =>
+                        setEditingPtPlan({ ...editingPtPlan, original_price: e.target.value ? Number(e.target.value) : undefined })
+                      }
+                      placeholder="mis. 900000 (opsional)"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-red-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Tagline Card</label>
+                  <input
+                    type="text"
+                    value={editingPtPlan.description || ''}
+                    onChange={(e) => setEditingPtPlan({ ...editingPtPlan, description: e.target.value })}
+                    placeholder="mis. Target hasil lebih cepat / Fondasi teknik tepat"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-red-500"
+                  />
+                </div>
+
+                <div className="flex items-center gap-3 pt-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editingPtPlan.popular || false}
+                      onChange={(e) => setEditingPtPlan({ ...editingPtPlan, popular: e.target.checked })}
+                      className="w-4 h-4 accent-red-600 rounded"
+                    />
+                    <span className="text-sm font-bold text-white flex items-center gap-1.5">
+                      <Sparkles size={16} className="text-amber-400" />
+                      Tandai sebagai Paket PT Promo Utama (Highlighted Red Ribbon)
+                    </span>
+                  </label>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setEditingPtPlan(null)}
+                    className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl font-bold text-xs uppercase"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="px-6 py-2.5 bg-red-600 text-white rounded-xl font-bold text-xs uppercase shadow-lg shadow-red-600/30"
+                  >
+                    {loading ? 'Menyimpan...' : 'Simpan Perubahan PT Card'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : (
+            /* CARDS LIST DISPLAY */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {ptPlans.map((plan) => (
+                <div
+                  key={plan.id}
+                  className={`bg-slate-900 border rounded-3xl p-6 space-y-4 relative flex flex-col justify-between ${
+                    plan.popular ? 'border-red-600 ring-2 ring-red-600/20' : 'border-slate-800'
+                  }`}
+                >
+                  {plan.popular && (
+                    <div className="absolute -top-3 left-6 bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-0.5 rounded-full shadow-md">
+                      🔥 PROMO UTAMA PT
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-red-500 uppercase">{plan.badge || 'Coaching'}</span>
+                      <span className="text-xs text-slate-400 font-bold">{plan.session_count} Sesi</span>
+                    </div>
+
+                    <h4 className="font-heading text-xl font-extrabold text-white uppercase italic">{plan.name}</h4>
+
+                    <div>
+                      {plan.original_price && (
+                        <span className="text-slate-500 text-xs line-through block font-mono">
+                          Rp{plan.original_price.toLocaleString('id-ID')}
+                        </span>
+                      )}
+                      <span className="font-heading text-2xl font-extrabold text-white italic">
+                        Rp{plan.price.toLocaleString('id-ID')}
+                      </span>
+                    </div>
+
+                    {plan.description && <p className="text-xs text-slate-400 font-body">{plan.description}</p>}
+                  </div>
+
+                  <button
+                    onClick={() => setEditingPtPlan(plan)}
+                    className="w-full py-2.5 bg-slate-800 hover:bg-red-600 text-slate-200 hover:text-white rounded-xl font-bold text-xs uppercase transition-colors flex items-center justify-center gap-2 mt-4"
+                  >
+                    <Edit size={14} />
+                    <span>Edit Content & Promo Card</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* TAB 4: PRABU HUB CARDS (FULL CRUD) */}
+      {/* ============================================================ */}
+      {activeTab === 'hub' && (
+        <div className="space-y-6">
+          {hubStep === 'list' ? (
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="relative w-72">
+                  <Search className="absolute left-3 top-3 text-slate-500" size={16} />
+                  <input
+                    type="text"
+                    placeholder="Cari Hub Item..."
+                    value={hubSearch}
+                    onChange={(e) => setHubSearch(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-red-500"
+                  />
+                </div>
+              </div>
+
+              <DataTable
+                data={filteredHubItems}
+                columns={hubColumns}
+                loading={loading}
+                emptyMessage="Belum ada Hub Card produk"
+              />
+            </div>
+          ) : (
+            /* CREATE / EDIT FORM FOR HUB CARD */
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-3xl mx-auto space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                <h3 className="text-lg font-extrabold uppercase italic text-white">
+                  {hubStep === 'create' ? 'Tambah Hub Card Baru' : 'Edit Item Hub Card'}
+                </h3>
+                <button
+                  onClick={() => setHubStep('list')}
+                  className="text-xs font-bold uppercase text-slate-400 hover:text-white bg-slate-800 px-3.5 py-2 rounded-xl"
+                >
+                  Kembali ke Daftar
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveHubItem} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Judul Item</label>
+                  <input
+                    type="text"
+                    required
+                    value={hubTitle}
+                    onChange={(e) => setHubTitle(e.target.value)}
+                    placeholder="mis. Prabu Starter Workout Program 30 Hari"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-red-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Kategori</label>
+                    <select
+                      value={hubCategory}
+                      onChange={(e) => setHubCategory(e.target.value as any)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-red-500"
+                    >
+                      <option value="downloads">Downloads (E-Book & Sheet)</option>
+                      <option value="videos">Videos (Tutorial & Guide)</option>
+                      <option value="exclusive">Member Exclusive</option>
+                      <option value="merchandise">Merchandise (Apparel & Gear)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Badge Tag</label>
+                    <input
+                      type="text"
+                      value={hubBadge}
+                      onChange={(e) => setHubBadge(e.target.value)}
+                      placeholder="mis. E-Book PDF / Masterclass / Apparel Resmi"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-red-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Harga Tampilan</label>
+                    <input
+                      type="text"
+                      value={hubPrice}
+                      onChange={(e) => setHubPrice(e.target.value)}
+                      placeholder="mis. GRATIS / MEMBER FREE / Rp189.000"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-red-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Harga Asli (Coret)</label>
+                    <input
+                      type="text"
+                      value={hubOriginalPrice}
+                      onChange={(e) => setHubOriginalPrice(e.target.value)}
+                      placeholder="mis. Rp229.000 (opsional)"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-red-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Format / Ket Ukuran</label>
+                  <input
+                    type="text"
+                    value={hubFormat}
+                    onChange={(e) => setHubFormat(e.target.value)}
+                    placeholder="mis. PDF • 4.2 MB / Video HD • 24 Min / Ukuran S - XXL"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-red-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Deskripsi Lengkap</label>
+                  <textarea
+                    rows={3}
+                    required
+                    value={hubDescription}
+                    onChange={(e) => setHubDescription(e.target.value)}
+                    placeholder="Jelaskan detail produk/materi..."
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-red-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Highlights (1 per baris)</label>
+                  <textarea
+                    rows={3}
+                    value={hubHighlightsStr}
+                    onChange={(e) => setHubHighlightsStr(e.target.value)}
+                    placeholder="Panduan 30 Hari Full&#10;Lengkap Set & Reps"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-red-500 font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">URL Gambar Cover</label>
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      value={hubImage}
+                      onChange={(e) => setHubImage(e.target.value)}
+                      placeholder="/images/background1.jpeg"
+                      className="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-red-500"
+                    />
+                    <label className="cursor-pointer bg-slate-800 hover:bg-slate-700 text-white px-4 py-3 rounded-xl font-bold text-xs flex items-center gap-2">
+                      <Upload size={16} />
+                      <span>{uploading ? 'Mengunggah...' : 'Unggah File'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleImageUpload(e, setHubImage)}
+                        disabled={uploading}
+                      />
+                    </label>
+                  </div>
+                  {hubImage && <img src={hubImage} alt="" className="mt-2 w-32 h-20 object-cover rounded-xl border border-slate-800" />}
+                </div>
+
+                <div className="flex items-center gap-6">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={hubIsActive}
+                      onChange={(e) => setHubIsActive(e.target.checked)}
+                      className="w-4 h-4 accent-red-600 rounded"
+                    />
+                    <span className="text-sm font-bold text-white">Tampilkan / Aktif</span>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setHubStep('list')}
+                    className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold text-xs uppercase"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs uppercase shadow-lg shadow-red-600/30"
+                  >
+                    <Save size={16} />
+                    <span>Simpan Item Hub</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* DELETE CONFIRMATION MODAL */}
+          {deletingHubId && (
+            <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+                <h4 className="font-bold text-white text-base">Konfirmasi Hapus Hub Card</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Apakah Anda yakin ingin menghapus item Hub ini? Tindakan ini tidak dapat dibatalkan.
+                </p>
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    onClick={() => setDeletingHubId(null)}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl uppercase"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={() => handleDeleteHubItem(deletingHubId)}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl uppercase shadow-lg shadow-red-600/30"
+                  >
+                    Ya, Hapus
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
