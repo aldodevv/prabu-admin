@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { dashboardApi, membersApi } from '@/core/api';
@@ -65,7 +65,7 @@ interface DashboardSummary {
 }
 
 export default function SummaryPage() {
-  const { activeBranchID } = useAuth();
+  const { activeBranchID, loading: authLoading } = useAuth();
   const router = useRouter();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [revenueAnalytics, setRevenueAnalytics] = useState<RevenueAnalytics | null>(null);
@@ -79,22 +79,32 @@ export default function SummaryPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedTxType, setSelectedTxType] = useState<string>('all');
 
-  useEffect(() => {
-    if (activeBranchID) {
-      fetchSummary();
-      fetchRevenue(selectedTxType);
-      fetchExpiring(1, expiringPerPage);
-    }
-  }, [activeBranchID]);
+  const isExpiringMount = useRef(true);
+  const isTxTypeMount = useRef(true);
 
   useEffect(() => {
-    if (activeBranchID) {
+    if (!authLoading && activeBranchID !== null) {
+      fetchSummary();
+      fetchExpiring(1, expiringPerPage);
+    }
+  }, [activeBranchID, authLoading]);
+
+  useEffect(() => {
+    if (isExpiringMount.current) {
+      isExpiringMount.current = false;
+      return;
+    }
+    if (activeBranchID !== undefined) {
       fetchExpiring(expiringPage, expiringPerPage);
     }
   }, [expiringPage, expiringPerPage]);
 
   useEffect(() => {
-    if (activeBranchID && summary) {
+    if (isTxTypeMount.current) {
+      isTxTypeMount.current = false;
+      return;
+    }
+    if (activeBranchID !== undefined) {
       fetchRevenue(selectedTxType);
     }
   }, [selectedTxType]);
@@ -124,7 +134,7 @@ export default function SummaryPage() {
       const res = await dashboardApi.summary(activeBranchID || '');
       if (res.success && res.data) {
         setSummary(res.data);
-        if (res.data.revenue_analytics && !revenueAnalytics) {
+        if (res.data.revenue_analytics) {
           setRevenueAnalytics(res.data.revenue_analytics);
         }
       } else {

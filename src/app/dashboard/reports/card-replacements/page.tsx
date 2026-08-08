@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 
 interface CardReport {
@@ -10,15 +10,17 @@ interface CardReport {
 }
 
 export default function CardReplacementReportsPage() {
-  const { activeBranchID } = useAuth();
+  const { activeBranchID, loading: authLoading } = useAuth();
+  const lastFetchedBranchRef = useRef<string | null>(null);
   const [reports, setReports] = useState<CardReport[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (activeBranchID) {
+    if (!authLoading && activeBranchID && lastFetchedBranchRef.current !== activeBranchID) {
+      lastFetchedBranchRef.current = activeBranchID;
       fetchReports();
     }
-  }, [activeBranchID]);
+  }, [activeBranchID, authLoading]);
 
   const fetchReports = async () => {
     setLoading(true);

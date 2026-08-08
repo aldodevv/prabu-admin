@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { membersApi, transactionsApi } from '@/core/api';
 import { formatDateLabel, formatIDR, getMembershipTypeFromNotes, getPaymentMethodFromNotes } from '@/core/constants';
@@ -9,7 +9,7 @@ import { PageHeader } from '@/components/core/PageHeader';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 import { DataTable, Column } from '@/components/core/DataTable';
 import { OfficialReceiptTemplate } from '@/components/core/PrintTemplates';
-import { Search, Eye, Edit, ArrowLeft, Save, Printer, FileText, FileSpreadsheet, RotateCcw, Download } from 'lucide-react';
+import { Search, Eye, Edit, Trash2, ArrowLeft, Save, Printer, FileText, FileSpreadsheet, RotateCcw, Download } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { exportToExcel } from '@/lib/excelExport';
 import { compressImage } from '@/utils/imageCompressor';
@@ -20,7 +20,8 @@ import { permissions } from '@/lib/permissions';
 import { FetchErrorAlert } from '@/components/core/FetchErrorAlert';
 
 export default function OneClubMembersPanel() {
-  const { activeBranchID, user } = useAuth();
+  const { activeBranchID, user, loading: authLoading } = useAuth();
+  const lastFetchedBranchRef = useRef<string | null>(null);
 
   // Navigation states: 'list' | 'detail' | 'edit'
   const [step, setStep] = useState<'list' | 'detail' | 'edit'>('list');
@@ -55,6 +56,28 @@ export default function OneClubMembersPanel() {
   const [editError, setEditError] = useState('');
   const [editSuccess, setEditSuccess] = useState('');
 
+  // Delete states
+  const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
+  const [deletingMember, setDeletingMember] = useState(false);
+
+  const confirmDeleteMember = async () => {
+    if (!memberToDelete) return;
+    setDeletingMember(true);
+    try {
+      const res = await membersApi.delete(memberToDelete.id);
+      if (res.success) {
+        setMembers((prev) => prev.filter((m) => m.id !== memberToDelete.id));
+        setMemberToDelete(null);
+      } else {
+        alert(res.error || 'Gagal menghapus data anggota');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Terjadi kesalahan saat menghapus data anggota');
+    } finally {
+      setDeletingMember(false);
+    }
+  };
+
   // Details Sub-tabs: 'anggota' | 'latihan'
   const [detailTab, setDetailTab] = useState<'anggota' | 'latihan'>('anggota');
   const [memberTransactions, setMemberTransactions] = useState<Transaction[]>([]);
@@ -62,7 +85,8 @@ export default function OneClubMembersPanel() {
   const [receiptTx, setReceiptTx] = useState<Transaction | null>(null);
 
   useEffect(() => {
-    if (activeBranchID) {
+    if (!authLoading && activeBranchID && lastFetchedBranchRef.current !== activeBranchID) {
+      lastFetchedBranchRef.current = activeBranchID;
       if (typeof window !== 'undefined') {
         const params = new URLSearchParams(window.location.search);
         const urlSearch = params.get('search') || params.get('no-anggota') || params.get('one-club');
@@ -74,7 +98,7 @@ export default function OneClubMembersPanel() {
       }
       fetchMembers();
     }
-  }, [activeBranchID, page, perPage]);
+  }, [activeBranchID, authLoading]);
 
   const fetchMembers = async (searchQuery = debouncedSearch) => {
     setLoading(true);
@@ -303,7 +327,7 @@ export default function OneClubMembersPanel() {
       key: 'action',
       header: 'Aksi',
       align: 'center',
-      className: 'w-24',
+      className: 'w-28',
       render: (m) => (
         <div className="flex gap-1.5 justify-center">
           <button
@@ -320,6 +344,15 @@ export default function OneClubMembersPanel() {
               className="p-2 bg-brand-cyan hover:bg-[#138496] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
             >
               <Edit className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {permissions.canDeleteMember(user?.role) && (
+            <button
+              onClick={() => setMemberToDelete(m)}
+              title="Hapus Anggota"
+              className="p-2 bg-[#DC3545] hover:bg-[#c82333] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
@@ -971,6 +1004,65 @@ export default function OneClubMembersPanel() {
             cashierName: user?.full_name || 'Kasir Prabu GYM'
           }}
         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {memberToDelete && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-5 border border-slate-200">
+            <div className="flex items-center gap-3 text-red-600">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-heading font-extrabold text-base uppercase tracking-wider text-slate-900">
+                  {user?.role === 'developer' ? 'Hapus Permanen Anggota' : 'Nonaktifkan Status Anggota'}
+                </h3>
+                <p className="text-xs text-slate-500 font-medium">
+                  {user?.role === 'developer' ? 'Tindakan ini menghapus data total dari database.' : 'Status anggota akan diubah menjadi tidak aktif.'}
+                </p>
+              </div>
+            </div>
+            
+            <p className="text-xs text-slate-600 font-semibold leading-relaxed">
+              {user?.role === 'developer' ? (
+                <>
+                  Apakah Anda yakin ingin <span className="text-red-600 font-extrabold uppercase">menghapus permanen</span> data anggota <span className="font-bold text-slate-900">"{memberToDelete.full_name}"</span> (ID: @{memberToDelete.username})? Seluruh riwayat kunjungan dan cuti terkait akan dihapus total.
+                </>
+              ) : (
+                <>
+                  Apakah Anda yakin ingin <span className="text-amber-600 font-bold uppercase">menonaktifkan</span> status anggota <span className="font-bold text-slate-900">"{memberToDelete.full_name}"</span> (ID: @{memberToDelete.username})?
+                </>
+              )}
+            </p>
+
+            <div className="flex items-center gap-3 justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setMemberToDelete(null)}
+                disabled={deletingMember}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold uppercase transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteMember}
+                disabled={deletingMember}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold uppercase shadow-sm transition-colors cursor-pointer flex items-center gap-2"
+              >
+                {deletingMember ? (
+                  <span>Memproses...</span>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>{user?.role === 'developer' ? 'Hapus Permanen' : 'Nonaktifkan Anggota'}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

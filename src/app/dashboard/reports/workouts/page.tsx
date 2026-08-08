@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
@@ -27,7 +27,8 @@ interface PTRegistrationReportItem {
 }
 
 export default function WorkoutReportsPage() {
-  const { activeBranchID, user } = useAuth();
+  const { activeBranchID, user, loading: authLoading } = useAuth();
+  const lastFetchedBranchRef = useRef<string | null>(null);
   const [registrations, setRegistrations] = useState<PTRegistrationReportItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -37,10 +38,11 @@ export default function WorkoutReportsPage() {
   const [dateTo, setDateTo] = useState('');
 
   useEffect(() => {
-    if (activeBranchID) {
+    if (!authLoading && activeBranchID && (lastFetchedBranchRef.current !== activeBranchID || dateFrom || dateTo)) {
+      lastFetchedBranchRef.current = activeBranchID;
       fetchRegistrations();
     }
-  }, [activeBranchID, dateFrom, dateTo]);
+  }, [activeBranchID, dateFrom, dateTo, authLoading]);
 
   const fetchRegistrations = async () => {
     setLoading(true);

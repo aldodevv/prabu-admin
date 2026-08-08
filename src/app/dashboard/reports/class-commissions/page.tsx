@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { contentsApi } from '@/core/api';
@@ -18,6 +18,7 @@ interface CommissionReport {
 
 export default function ClassCommissionReportsPage() {
   const { activeBranchID, user } = useAuth();
+  const lastFetchedBranchRef = useRef<string | null>(null);
   const [reports, setReports] = useState<CommissionReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [isPrintOpen, setIsPrintOpen] = useState(false);
@@ -26,7 +27,8 @@ export default function ClassCommissionReportsPage() {
   const [dateTo, setDateTo] = useState('');
 
   useEffect(() => {
-    if (activeBranchID) {
+    if (activeBranchID && (lastFetchedBranchRef.current !== activeBranchID || dateFrom || dateTo)) {
+      lastFetchedBranchRef.current = activeBranchID;
       fetchReports();
     }
   }, [activeBranchID, dateFrom, dateTo]);

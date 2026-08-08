@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
@@ -18,7 +18,8 @@ interface PTSessionReportItem {
 }
 
 export default function PTSessionReportsPage() {
-  const { activeBranchID } = useAuth();
+  const { activeBranchID, loading: authLoading } = useAuth();
+  const lastFetchedBranchRef = useRef<string | null>(null);
   const [reports, setReports] = useState<PTSessionReportItem[]>([]);
   const [trainers, setTrainers] = useState<string[]>([]);
   const [selectedTrainer, setSelectedTrainer] = useState('Semua');
@@ -29,10 +30,11 @@ export default function PTSessionReportsPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    if (activeBranchID) {
+    if (!authLoading && activeBranchID && (lastFetchedBranchRef.current !== activeBranchID || dateFrom || dateTo)) {
+      lastFetchedBranchRef.current = activeBranchID;
       fetchPTSessionReports();
     }
-  }, [activeBranchID, dateFrom, dateTo]);
+  }, [activeBranchID, dateFrom, dateTo, authLoading]);
 
   const fetchPTSessionReports = async () => {
     setLoading(true);

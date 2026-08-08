@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { checkinsApi } from '@/core/api';
 import { formatDateLabel, formatDateLong } from '@/core/constants';
@@ -12,7 +12,8 @@ import { UserCheck, Clock, Search, RotateCcw } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 
 export default function CheckinsPage() {
-  const { activeBranchID } = useAuth();
+  const { activeBranchID, loading: authLoading } = useAuth();
+  const lastFetchedBranchRef = useRef<string | null>(null);
   const [checkins, setCheckins] = useState<Checkin[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -27,10 +28,11 @@ export default function CheckinsPage() {
   const [perPage, setPerPage] = useState(50);
 
   useEffect(() => {
-    if (activeBranchID) {
+    if (!authLoading && activeBranchID && (lastFetchedBranchRef.current !== activeBranchID || page > 1 || dateFrom || dateTo)) {
+      lastFetchedBranchRef.current = activeBranchID;
       fetchCheckins();
     }
-  }, [activeBranchID, page, perPage, dateFrom, dateTo]);
+  }, [activeBranchID, page, perPage, dateFrom, dateTo, authLoading]);
 
   const fetchCheckins = async () => {
     setLoading(true);

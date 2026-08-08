@@ -31,6 +31,7 @@ const BRANCH_ADDRESSES: Record<string, string> = {
 
 export default function TransaksiTunaiPage() {
   const { activeBranchID, branches, user } = useAuth();
+  const lastFetchedBranchRef = useRef<string | null>(null);
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +55,8 @@ export default function TransaksiTunaiPage() {
   const [isPrintOpen, setIsPrintOpen] = useState(false);
 
   useEffect(() => {
-    if (activeBranchID) {
+    if (activeBranchID && lastFetchedBranchRef.current !== activeBranchID) {
+      lastFetchedBranchRef.current = activeBranchID;
       fetchProducts();
     }
   }, [activeBranchID]);

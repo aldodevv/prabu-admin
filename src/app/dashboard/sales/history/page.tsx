@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { FileText, Printer, ArrowLeft, Eye, Search, X, FileSpreadsheet, RotateCcw, Trash2 } from 'lucide-react';
@@ -35,7 +35,8 @@ interface Transaction {
 }
 
 export default function TransactionHistoryPage() {
-  const { activeBranchID, branches, user } = useAuth();
+  const { activeBranchID, branches, user, loading: authLoading } = useAuth();
+  const lastFetchedBranchRef = useRef<string | null>(null);
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
@@ -54,11 +55,12 @@ export default function TransactionHistoryPage() {
   const [isPrintOpen, setIsPrintOpen] = useState(false);
 
   useEffect(() => {
-    if (activeBranchID) {
+    if (!authLoading && activeBranchID && lastFetchedBranchRef.current !== activeBranchID) {
+      lastFetchedBranchRef.current = activeBranchID;
       fetchTransactions();
       setSelectedTx(null);
     }
-  }, [activeBranchID]);
+  }, [activeBranchID, authLoading]);
 
   // Handle typing state
   useEffect(() => {

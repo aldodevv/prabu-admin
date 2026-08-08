@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { productsApi, distributorsApi } from '@/core/api';
 import { Product, Distributor } from '@/core/types';
@@ -14,6 +14,7 @@ import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 
 export default function ProductsPage() {
   const { activeBranchID, user } = useAuth();
+  const lastFetchedBranchRef = useRef<string | null>(null);
   const canWrite = !permissions.isReadOnly(user?.role);
 
   // view: 'list' | 'add' | 'edit' | 'detail'
@@ -49,11 +50,12 @@ export default function ProductsPage() {
   const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (activeBranchID) {
+    if (activeBranchID && lastFetchedBranchRef.current !== activeBranchID) {
+      lastFetchedBranchRef.current = activeBranchID;
       fetchProducts();
       fetchDistributors();
     }
-  }, [activeBranchID, page, perPage]);
+  }, [activeBranchID]);
 
   // Handle typing state
   useEffect(() => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { membersApi, memberLeavesApi } from '@/core/api';
 import { Member, MemberLeave } from '@/core/types';
@@ -27,6 +27,7 @@ import { MemberLeaveReceiptTemplate } from '@/components/core/PrintTemplates';
 export default function MemberLeavesPage() {
   const { activeBranchID, user } = useAuth();
   const canWrite = !permissions.isReadOnly(user?.role);
+  const lastFetchedBranchRef = useRef<string | null>(null);
 
   // View mode state: 'list' | 'create'
   const [step, setStep] = useState<'list' | 'create'>('list');
@@ -57,7 +58,10 @@ export default function MemberLeavesPage() {
   const [printLeave, setPrintLeave] = useState<MemberLeave | null>(null);
 
   useEffect(() => {
-    fetchLeaves();
+    if (activeBranchID && (lastFetchedBranchRef.current !== activeBranchID || page > 1 || search)) {
+      lastFetchedBranchRef.current = activeBranchID;
+      fetchLeaves();
+    }
   }, [activeBranchID, page, perPage, search]);
 
   const fetchLeaves = async () => {
