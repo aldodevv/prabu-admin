@@ -36,19 +36,19 @@ interface Transaction {
 
 export default function TransactionHistoryPage() {
   const { activeBranchID, branches, user } = useAuth();
-  
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   // Search, Debounce & Column Filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [filterColumn, setFilterColumn] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 400);
   const [isTyping, setIsTyping] = useState(false);
   const [searchPaymentMethod, setSearchPaymentMethod] = useState('');
-  
+
   // Selected detailed transaction state
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const [isPrintOpen, setIsPrintOpen] = useState(false);
@@ -236,7 +236,7 @@ export default function TransactionHistoryPage() {
             </>
           )}
         </div>
-        
+
         {/* Dynamic Branch Tag */}
         {activeBranch && (
           <div className="px-3.5 py-1.5 border border-red-500 text-red-500 font-extrabold text-xs rounded-full uppercase tracking-wider bg-red-50/50 select-none">
@@ -284,7 +284,7 @@ export default function TransactionHistoryPage() {
 
           {/* Card: Riwayat Transaksi */}
           <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-            <div className="bg-[#17A2B8] px-6 py-4 text-white font-bold">
+            <div className="bg-brand-cyan px-6 py-4 text-white font-bold">
               <span className="text-sm uppercase tracking-wider">Riwayat Transaksi</span>
             </div>
 
@@ -378,7 +378,7 @@ export default function TransactionHistoryPage() {
       {/* 2. DETAIL VIEW */}
       {selectedTx && (
         <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden no-print">
-          <div className="bg-[#17A2B8] px-6 py-4 text-white font-bold flex items-center gap-2">
+          <div className="bg-brand-cyan px-6 py-4 text-white font-bold flex items-center gap-2">
             <Eye className="w-5 h-5" />
             <span className="text-sm uppercase tracking-wider">Lihat Detail</span>
           </div>

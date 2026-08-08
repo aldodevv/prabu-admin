@@ -48,7 +48,7 @@ export default function CardReplacementReportsPage() {
         </div>
       ) : (
         <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
-          <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold select-none">
+          <div className="bg-brand-cyan px-5 py-3 text-white font-bold select-none">
             <span className="text-sm uppercase tracking-wider">Rekapitulasi Administrasi Kartu Anggota</span>
           </div>
           <div className="p-6">

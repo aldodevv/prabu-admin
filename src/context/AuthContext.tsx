@@ -58,20 +58,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchAdminData = async () => {
     try {
-      // First, get branches (available to logged-in admins)
+      // Get branches (available to logged-in admins) and verify token
       const branchRes = await api.get<Branch[]>('/admin/branches');
-      if (branchRes.success && branchRes.data) {
-        setBranches(branchRes.data);
-      }
-
-      // Next, get active admin session info. 
-      // We can use a simple get list or config. Since we don't have a direct /profile for admin, 
-      // we can deduce or decode token claims, or call an active checkin endpoint to verify token validity.
-      // Alternatively, let's verify token validity by loading dashboard summary (cheap request).
-      const verifyRes = await api.get<any>('/admin/dashboard/summary');
-      if (!verifyRes.success && verifyRes.error === 'Token tidak valid atau expired') {
+      if (!branchRes.success && (branchRes.error === 'Token tidak valid atau expired' || branchRes.error?.includes('Token'))) {
         logout();
         return;
+      }
+      if (branchRes.success && branchRes.data) {
+        setBranches(branchRes.data);
       }
 
       // Restore user object from localstorage

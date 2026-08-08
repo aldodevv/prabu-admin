@@ -15,7 +15,7 @@ import { exportToExcel } from '@/lib/excelExport';
 
 export default function CardReplacementPage() {
   const { activeBranchID, user } = useAuth();
-  
+
   // Navigation steps: 'list' | 'add'
   const [step, setStep] = useState<'list' | 'add'>('list');
   const [printLog, setPrintLog] = useState<CardReplacementLog | null>(null);
@@ -92,7 +92,7 @@ export default function CardReplacementPage() {
 
             list.push({
               id: tx.id,
-              transaction_number: tx.transaction_number || `PRABU-CC-${tx.id.substring(0,6).toUpperCase()}`,
+              transaction_number: tx.transaction_number || `PRABU-CC-${tx.id.substring(0, 6).toUpperCase()}`,
               date: tx.transaction_date.substring(0, 10),
               member_id: tx.member_id || '',
               member_name: tx.member_name || 'Member',
@@ -359,7 +359,7 @@ export default function CardReplacementPage() {
   return (
     <div className="space-y-8 font-sans">
       <div className="no-print space-y-6">
-        
+
         {/* Step 1: List View */}
         {step === 'list' && (
           <div className="space-y-6 animate-fadeIn">
@@ -369,7 +369,7 @@ export default function CardReplacementPage() {
               action={
                 <button
                   onClick={handleOpenAdd}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Pindah Cabang</span>
@@ -412,7 +412,7 @@ export default function CardReplacementPage() {
         {/* Step 2: Add New Form */}
         {step === 'add' && (
           <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden w-full animate-fadeIn">
-            <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold select-none flex items-center gap-2">
+            <div className="bg-brand-cyan px-5 py-3 text-white font-bold select-none flex items-center gap-2">
               <CreditCard className="w-4 h-4" />
               <span className="text-sm uppercase tracking-wider font-heading">Form Pergantian Cabang</span>
             </div>
@@ -495,7 +495,7 @@ export default function CardReplacementPage() {
                   <button
                     type="submit"
                     disabled={submitting || formError !== '' || !newUsername}
-                    className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors disabled:opacity-50"
                   >
                     <Save className="w-4 h-4" />
                     <span>{submitting ? 'Menyimpan...' : 'Simpan Transaksi'}</span>

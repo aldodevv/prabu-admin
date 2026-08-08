@@ -9,8 +9,8 @@ interface CyanHeaderBarProps {
 
 export const CyanHeaderBar: React.FC<CyanHeaderBarProps> = ({ title, icon, action, className = '' }) => {
   return (
-    <div 
-      className={`bg-[#17A2B8] px-5 py-3 text-white font-bold select-none flex items-center justify-between no-print rounded-t ${className}`}
+    <div
+      className={`bg-brand-cyan px-5 py-3 text-white font-bold select-none flex items-center justify-between no-print rounded-t ${className}`}
     >
       <div className="flex items-center gap-2">
         {icon}

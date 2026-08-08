@@ -122,11 +122,10 @@ export default function CheckinsPage() {
         const isLatihan = c.status === 'active';
         return (
           <span
-            className={`inline-block px-2.5 py-0.5 text-[10px] font-accent uppercase tracking-widest font-semibold border rounded ${
-              isLatihan
+            className={`inline-block px-2.5 py-0.5 text-[10px] font-accent uppercase tracking-widest font-semibold border rounded ${isLatihan
                 ? 'bg-green-50 text-green-800 border-green-200'
                 : 'bg-slate-100 text-slate-500 border-slate-200'
-            }`}
+              }`}
           >
             {isLatihan ? 'LATIHAN' : 'SELESAI'}
           </span>
@@ -137,9 +136,9 @@ export default function CheckinsPage() {
 
   return (
     <div className="space-y-6 font-sans">
-      <PageHeader 
-        title="Log Presensi & Tracking Kunjungan Member" 
-        description="Pencarian & Tracking Total Kunjungan Anggota di Cabang Gym" 
+      <PageHeader
+        title="Log Presensi & Tracking Kunjungan Member"
+        description="Pencarian & Tracking Total Kunjungan Anggota di Cabang Gym"
       />
 
       {/* Member Search & Date Filter Bar */}
@@ -157,7 +156,7 @@ export default function CheckinsPage() {
                 placeholder="Ketik nama atau nomor anggota untuk tracking..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 focus:border-[#17A2B8] focus:outline-none text-slate-800 pl-9 pr-3 py-2.5 text-xs rounded font-body"
+                className="w-full bg-slate-50 border border-slate-200 focus:border-brand-cyan focus:outline-none text-slate-800 pl-9 pr-3 py-2.5 text-xs rounded font-body"
               />
             </div>
           </div>
@@ -175,7 +174,7 @@ export default function CheckinsPage() {
                   setDateFrom(e.target.value);
                   setPage(1);
                 }}
-                className="bg-slate-50 border border-slate-200 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3 py-2 text-xs rounded font-mono cursor-pointer"
+                className="bg-slate-50 border border-slate-200 focus:border-brand-cyan focus:outline-none text-slate-800 px-3 py-2 text-xs rounded font-mono cursor-pointer"
               />
             </div>
             <div>
@@ -189,7 +188,7 @@ export default function CheckinsPage() {
                   setDateTo(e.target.value);
                   setPage(1);
                 }}
-                className="bg-slate-50 border border-slate-200 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3 py-2 text-xs rounded font-mono cursor-pointer"
+                className="bg-slate-50 border border-slate-200 focus:border-brand-cyan focus:outline-none text-slate-800 px-3 py-2 text-xs rounded font-mono cursor-pointer"
               />
             </div>
             <button

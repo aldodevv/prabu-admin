@@ -153,9 +153,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       {/* Input Trigger Button */}
       <div
         onClick={() => !disabled && !readOnly && setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded cursor-pointer select-none transition-all ${
-          isOpen ? 'ring-2 ring-[#17A2B8] border-[#17A2B8] bg-white' : 'hover:border-slate-400'
-        } ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-100' : ''} ${readOnly ? 'bg-slate-100 cursor-default' : ''} ${className}`}
+        className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded cursor-pointer select-none transition-all ${isOpen ? 'ring-2 ring-[#17A2B8] border-[#17A2B8] bg-white' : 'hover:border-slate-400'
+          } ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-100' : ''} ${readOnly ? 'bg-slate-100 cursor-default' : ''} ${className}`}
       >
         <div className="flex items-center gap-2 overflow-hidden text-xs">
           <CalendarIcon className="w-4 h-4 text-[#17A2B8] shrink-0" />
@@ -251,13 +250,12 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                   key={dayNum}
                   type="button"
                   onClick={() => handleSelectDay(dayNum)}
-                  className={`h-8 w-8 mx-auto flex items-center justify-center rounded-lg font-mono text-xs transition-all cursor-pointer ${
-                    selected
-                      ? 'bg-[#17A2B8] text-white font-bold shadow-sm scale-105'
+                  className={`h-8 w-8 mx-auto flex items-center justify-center rounded-lg font-mono text-xs transition-all cursor-pointer ${selected
+                      ? 'bg-brand-cyan text-white font-bold shadow-sm scale-105'
                       : today
-                      ? 'border-2 border-[#17A2B8] text-[#17A2B8] font-bold bg-cyan-50/50'
-                      : 'hover:bg-slate-100 text-slate-700 font-medium'
-                  }`}
+                        ? 'border-2 border-[#17A2B8] text-[#17A2B8] font-bold bg-cyan-50/50'
+                        : 'hover:bg-slate-100 text-slate-700 font-medium'
+                    }`}
                 >
                   {dayNum}
                 </button>

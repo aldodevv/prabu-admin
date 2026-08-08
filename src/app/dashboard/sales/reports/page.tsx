@@ -23,13 +23,13 @@ interface SalesReportItem {
 
 export default function LaporanPenjualanPage() {
   const { activeBranchID, branches, user } = useAuth();
-  
+
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [reportData, setReportData] = useState<SalesReportItem[] | null>(null);
-  
+
   // Track filters used to generate the report
   const [generatedFilters, setGeneratedFilters] = useState({
     dateFrom: '',
@@ -110,7 +110,7 @@ export default function LaporanPenjualanPage() {
       const branchCode = parts[1];
       const datePart = parts[2]; // YYYYMMDD
       const seq = parts[3];
-      
+
       const codeMap: Record<string, string> = {
         'LIMO': 'LMO',
         'GROGOL': 'GGL',
@@ -121,7 +121,7 @@ export default function LaporanPenjualanPage() {
       const mm = datePart.substring(4, 6);
       const dd = datePart.substring(6, 8);
       const shortSeq = String(Number(seq)).padStart(3, '0');
-      
+
       return `PRABU.${bCode}.${yy}${mm}${dd}.${shortSeq}`;
     }
     return txNumber;
@@ -176,7 +176,7 @@ export default function LaporanPenjualanPage() {
             </>
           )}
         </div>
-        
+
         {/* Dynamic Branch Tag */}
         {activeBranch && (
           <div className="px-3.5 py-1.5 border border-red-500 text-red-500 font-extrabold text-xs rounded-full uppercase tracking-wider bg-red-50/50 select-none">
@@ -194,7 +194,7 @@ export default function LaporanPenjualanPage() {
       {/* 1. Filter View */}
       {!reportData && (
         <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden no-print">
-          <div className="bg-[#17A2B8] px-6 py-4 text-white font-bold flex items-center gap-2">
+          <div className="bg-brand-cyan px-6 py-4 text-white font-bold flex items-center gap-2">
             <FileText className="w-5 h-5" />
             <span className="text-sm uppercase tracking-wider">Laporan Penjualan</span>
           </div>
@@ -209,8 +209,8 @@ export default function LaporanPenjualanPage() {
                   type="date"
                   value={dateFrom}
                   onChange={(e) => setDateFrom(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 text-xs focus:outline-none focus:border-[#17A2B8] rounded h-10 cursor-pointer"
-                  onClick={(e) => { try { e.currentTarget.showPicker(); } catch {} }}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 text-xs focus:outline-none focus:border-brand-cyan rounded h-10 cursor-pointer"
+                  onClick={(e) => { try { e.currentTarget.showPicker(); } catch { } }}
                 />
               </div>
 
@@ -222,8 +222,8 @@ export default function LaporanPenjualanPage() {
                   type="date"
                   value={dateTo}
                   onChange={(e) => setDateTo(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 text-xs focus:outline-none focus:border-[#17A2B8] rounded h-10 cursor-pointer"
-                  onClick={(e) => { try { e.currentTarget.showPicker(); } catch {} }}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 text-xs focus:outline-none focus:border-brand-cyan rounded h-10 cursor-pointer"
+                  onClick={(e) => { try { e.currentTarget.showPicker(); } catch { } }}
                 />
               </div>
 
@@ -246,7 +246,7 @@ export default function LaporanPenjualanPage() {
       {reportData && (
         <div className="space-y-6 no-print">
           <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-            <div className="bg-[#17A2B8] px-6 py-4 text-white font-bold flex items-center gap-2">
+            <div className="bg-brand-cyan px-6 py-4 text-white font-bold flex items-center gap-2">
               <FileText className="w-5 h-5" />
               <span className="text-sm uppercase tracking-wider">Daftar Laporan Penjualan</span>
             </div>
@@ -424,7 +424,7 @@ export default function LaporanPenjualanPage() {
                   <span className="text-[8px] uppercase font-bold text-slate-500">Gym & Fitness Center</span>
                 </div>
               </div>
-              
+
               <div className="text-right border-l border-black pl-8 pr-4">
                 <h2 className="text-2xl font-black uppercase tracking-widest text-black">
                   PRABU SALES REPORT

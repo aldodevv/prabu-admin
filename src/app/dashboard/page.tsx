@@ -342,7 +342,7 @@ export default function SummaryPage() {
               <span className="w-3.5 h-3.5 border-2 border-slate-200 border-t-[#007BFF] rounded-full animate-spin ml-1" />
             )}
           </h3>
-          
+
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-accent">Filter Jenis Transaksi:</span>
             <select
@@ -368,9 +368,8 @@ export default function SummaryPage() {
               <div className="bg-white border border-slate-200 p-4 rounded shadow-sm flex flex-col justify-between">
                 <div className="flex justify-between items-start">
                   <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider font-accent">Bulan Ini vs Lalu</span>
-                  <span className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                    revenueAnalytics.month_growth_percent >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                  }`}>
+                  <span className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded ${revenueAnalytics.month_growth_percent >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    }`}>
                     {revenueAnalytics.month_growth_percent >= 0 ? '+' : ''}
                     {revenueAnalytics.month_growth_percent.toFixed(1)}%
                   </span>
@@ -389,9 +388,8 @@ export default function SummaryPage() {
               <div className="bg-white border border-slate-200 p-4 rounded shadow-sm flex flex-col justify-between">
                 <div className="flex justify-between items-start">
                   <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider font-accent">Tahun Ini vs Lalu</span>
-                  <span className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                    revenueAnalytics.year_growth_percent >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                  }`}>
+                  <span className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded ${revenueAnalytics.year_growth_percent >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    }`}>
                     {revenueAnalytics.year_growth_percent >= 0 ? '+' : ''}
                     {revenueAnalytics.year_growth_percent.toFixed(1)}%
                   </span>
@@ -456,7 +454,7 @@ export default function SummaryPage() {
                       {/* Bar */}
                       <div
                         style={{ height: `${heightPercent}%` }}
-                        className="w-full bg-[#17A2B8] hover:bg-[#138496] rounded-t transition-all duration-300 group-hover:scale-y-105 origin-bottom shadow-xs"
+                        className="w-full bg-brand-cyan hover:bg-[#138496] rounded-t transition-all duration-300 group-hover:scale-y-105 origin-bottom shadow-xs"
                       />
                       {/* X-axis Label */}
                       <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter truncate w-full text-center mt-1">
@@ -500,8 +498,8 @@ export default function SummaryPage() {
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {[
-            { label: 'Anggota Laki-laki Aktif', value: summary.male_active, iconBg: 'bg-[#17A2B8]' },
-            { label: 'Anggota Perempuan Aktif', value: summary.female_active, iconBg: 'bg-[#17A2B8]' },
+            { label: 'Anggota Laki-laki Aktif', value: summary.male_active, iconBg: 'bg-brand-cyan' },
+            { label: 'Anggota Perempuan Aktif', value: summary.female_active, iconBg: 'bg-brand-cyan' },
             { label: 'Anggota Laki-laki Tidak Aktif', value: summary.male_inactive, iconBg: 'bg-[#DC3545]' },
             { label: 'Anggota Perempuan Tidak Aktif', value: summary.female_inactive, iconBg: 'bg-[#DC3545]' }
           ].map((item, idx) => (

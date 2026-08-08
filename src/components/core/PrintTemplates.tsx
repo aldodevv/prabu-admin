@@ -96,7 +96,7 @@ const PrintContainer: React.FC<PrintContainerProps> = ({ onClose, title, childre
         <div className="mt-6 flex justify-end gap-4 no-print border-t border-slate-100 pt-4">
           <button
             onClick={() => window.print()}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase rounded cursor-pointer transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase rounded cursor-pointer transition-colors shadow-sm"
           >
             <Printer className="w-4 h-4" />
             Cetak {title}

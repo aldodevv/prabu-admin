@@ -468,10 +468,10 @@ export default function PurchaseTransactionsPage() {
           {step === 'list'
             ? 'Transaksi Pembelian'
             : step === 'create_meta'
-            ? 'Tambah Pembelian'
-            : step === 'add_items'
-            ? 'Add Purchase'
-            : 'Lihat Detail'}
+              ? 'Tambah Pembelian'
+              : step === 'add_items'
+                ? 'Add Purchase'
+                : 'Lihat Detail'}
         </h2>
       </div>
 
@@ -492,13 +492,13 @@ export default function PurchaseTransactionsPage() {
 
           {/* Card Table Transaksi Pembelian */}
           <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
-            <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex justify-between items-center select-none">
+            <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex justify-between items-center select-none">
               <span className="text-sm uppercase tracking-wider">Transaksi Pembelian</span>
             </div>
             <div className="p-6 space-y-4">
               <button
                 onClick={handleOpenCreateMeta}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Tambah Pembelian
@@ -574,7 +574,7 @@ export default function PurchaseTransactionsPage() {
       {step === 'create_meta' && (
         /* Form Step 1: Tambah Pembelian (Metadata) */
         <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden w-full">
-          <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
+          <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
             <Plus className="w-4 h-4" />
             <span className="text-sm uppercase tracking-wider font-heading">Tambah Pembelian</span>
           </div>
@@ -594,8 +594,8 @@ export default function PurchaseTransactionsPage() {
                     type="date"
                     value={transactionDate}
                     onChange={(e) => setTransactionDate(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono cursor-pointer"
-                    onClick={(e) => { try { e.currentTarget.showPicker(); } catch {} }}
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono cursor-pointer"
+                    onClick={(e) => { try { e.currentTarget.showPicker(); } catch { } }}
                     required
                   />
                 </div>
@@ -608,7 +608,7 @@ export default function PurchaseTransactionsPage() {
                     value={invoiceNumber}
                     onChange={(e) => setInvoiceNumber(e.target.value)}
                     placeholder="Masukkan Nomor Invoice"
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono font-semibold"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono font-semibold"
                     required
                   />
                 </div>
@@ -619,7 +619,7 @@ export default function PurchaseTransactionsPage() {
                   <select
                     value={distributorId}
                     onChange={(e) => setDistributorId(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-medium"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-medium"
                     required
                   >
                     <option value="">-Pilih-</option>
@@ -639,7 +639,7 @@ export default function PurchaseTransactionsPage() {
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Masukkan Keterangan (contoh: L Mineral Besar 2 dus 24 Botol)"
                     rows={3}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded resize-none"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded resize-none"
                   />
                 </div>
               </div>
@@ -648,7 +648,7 @@ export default function PurchaseTransactionsPage() {
               <div className="flex items-center gap-3 justify-end pt-6 border-t border-slate-200/60">
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
                 >
                   <Check className="w-4 h-4" />
                   Simpan & Lanjut Add Purchase
@@ -670,7 +670,7 @@ export default function PurchaseTransactionsPage() {
       {step === 'add_items' && (
         /* Form Step 2: Add Purchase Items */
         <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
-          <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
+          <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
             <Plus className="w-4 h-4" />
             <span className="text-sm uppercase tracking-wider">Add Purchase</span>
           </div>
@@ -736,7 +736,7 @@ export default function PurchaseTransactionsPage() {
               <button
                 type="button"
                 onClick={handleAddItem}
-                className="inline-flex items-center justify-center p-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold rounded shadow-sm cursor-pointer transition-colors"
+                className="inline-flex items-center justify-center p-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold rounded shadow-sm cursor-pointer transition-colors"
               >
                 <Plus className="w-4 h-4" />
               </button>
@@ -800,7 +800,7 @@ export default function PurchaseTransactionsPage() {
                 type="button"
                 onClick={handleCompleteTransaction}
                 disabled={submitting || itemsList.length === 0}
-                className="w-full py-3 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm disabled:opacity-50 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm disabled:opacity-50 transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Check className="w-4 h-4" />
                 {submitting ? 'MEMPROSES TRANSAKSI...' : '✔ Transaction is complete'}
@@ -813,7 +813,7 @@ export default function PurchaseTransactionsPage() {
       {step === 'detail' && selectedOrder && (
         /* Halaman Lihat Detail & Print Invoice Transaksi Pembelian */
         <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
-          <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex justify-between items-center select-none">
+          <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex justify-between items-center select-none">
             <span className="text-sm uppercase tracking-wider">Lihat Detail</span>
             <div className="flex items-center gap-2">
               <button

@@ -6,7 +6,7 @@ import api from '@/lib/api';
 import Link from 'next/link';
 import { Printer, ArrowLeft, CheckCircle, UserPlus, Check } from 'lucide-react';
 import { compressImage } from '@/utils/imageCompressor';
-import { uploadToCloudinary } from '@/lib/cloudinary';
+import { uploadToCloudflare } from '@/lib/cloudflare';
 import { DigitalMemberCard } from '@/components/core/DigitalMemberCard';
 import { DatePicker } from '@/components/core/DatePicker';
 import FieldInfo from '@/components/core/FieldInfo';
@@ -151,12 +151,12 @@ export default function MemberRegistrationPage() {
       const username = memRes.data.username;
       const password = memRes.data.password;
 
-      // 2. If member creation succeeded, upload photo to cloud
+      // 2. If member creation succeeded, upload photo to cloud (Cloudflare R2)
       let finalPhotoUrl = '';
       if (photoBase64) {
         try {
-          setLoadingText('Proses Upload Foto ke Cloudinary...');
-          finalPhotoUrl = await uploadToCloudinary(photoBase64, 'prabugym/members');
+          setLoadingText('Proses Upload Foto ke Cloudflare R2...');
+          finalPhotoUrl = await uploadToCloudflare(photoBase64, 'members');
 
           if (finalPhotoUrl) {
             setLoadingText('Mengupdate Foto Anggota...');
@@ -166,7 +166,7 @@ export default function MemberRegistrationPage() {
             createdMember.photo_url = finalPhotoUrl;
           }
         } catch (err: any) {
-          console.error('Gagal mengunggah foto ke Cloudinary:', err);
+          console.error('Gagal mengunggah foto ke Cloudflare R2:', err);
         }
       }
 
@@ -184,7 +184,7 @@ export default function MemberRegistrationPage() {
       };
 
       const txRes = await api.post<any>('/admin/transactions', txBody);
-      let txNumber = `RGS-MEM-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-0001`;
+      let txNumber = `RGS-MEM-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-0001`;
       if (txRes.success && txRes.data) {
         txNumber = txRes.data.transaction_number;
       }
@@ -427,7 +427,7 @@ export default function MemberRegistrationPage() {
       {/* Main Registration Form - Full Width Grid Layout */}
       {!successData && (
         <div className="bg-white border border-slate-200 rounded shadow-sm overflow-visible w-full no-print">
-          <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
+          <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
             <UserPlus className="w-4 h-4" />
             <span className="text-sm uppercase tracking-wider font-heading">Pendaftaran Anggota</span>
           </div>
@@ -706,7 +706,7 @@ export default function MemberRegistrationPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer disabled:opacity-50 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer disabled:opacity-50 transition-colors"
                 >
                   <Check className="w-4 h-4" />
                   <span>{loading ? (loadingText || 'Uploading Image & Menyimpan Transaksi...') : 'Simpan Transaksi'}</span>

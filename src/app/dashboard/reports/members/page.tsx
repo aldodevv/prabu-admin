@@ -13,7 +13,7 @@ import { DatePicker } from '@/components/core/DatePicker';
 
 export default function MemberReportsPage() {
   const { activeBranchID, user } = useAuth();
-  
+
   // Form states
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -34,7 +34,7 @@ export default function MemberReportsPage() {
     const aWeekAgo = new Date();
     aWeekAgo.setDate(aWeekAgo.getDate() - 7);
     const aWeekAgoStr = aWeekAgo.toISOString().split('T')[0];
-    
+
     setStartDate(aWeekAgoStr);
     setEndDate(today);
   }, []);
@@ -57,20 +57,20 @@ export default function MemberReportsPage() {
       }
 
       // Filter transactions to only those belonging to member transactions (registration or manual payment)
-      let filtered = txsList.filter(tx => 
-        tx.member_name || 
+      let filtered = txsList.filter(tx =>
+        tx.member_name ||
         (tx.notes && (tx.notes.toLowerCase().includes('anggota') || tx.notes.toLowerCase().includes('member') || tx.notes.toLowerCase().includes('pembayaran')))
       );
 
       // Filter by Date Range
       if (startDate) {
         const start = new Date(startDate);
-        start.setHours(0,0,0,0);
+        start.setHours(0, 0, 0, 0);
         filtered = filtered.filter(tx => new Date(tx.transaction_date) >= start);
       }
       if (endDate) {
         const end = new Date(endDate);
-        end.setHours(23,59,59,999);
+        end.setHours(23, 59, 59, 999);
         filtered = filtered.filter(tx => new Date(tx.transaction_date) <= end);
       }
 
@@ -89,7 +89,7 @@ export default function MemberReportsPage() {
         if (!isNaN(days) && days > 0) {
           const cutoff = new Date();
           cutoff.setDate(cutoff.getDate() - days);
-          cutoff.setHours(0,0,0,0);
+          cutoff.setHours(0, 0, 0, 0);
           filtered = filtered.filter(tx => new Date(tx.transaction_date) >= cutoff);
         }
       }
@@ -126,7 +126,7 @@ export default function MemberReportsPage() {
 
       {step === 'form' ? (
         <div className="bg-white border border-slate-200 rounded shadow-sm overflow-visible w-full no-print">
-          <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
+          <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
             <FileText className="w-4 h-4" />
             <span className="text-sm uppercase tracking-wider font-heading">LAPORAN FITNES ANGGOTA</span>
           </div>
@@ -134,7 +134,7 @@ export default function MemberReportsPage() {
           <div className="p-6 md:p-8">
             <form onSubmit={handleGenerate} className="space-y-6 w-full text-slate-700">
               <div className="space-y-5">
-                
+
                 {/* Dari Tanggal */}
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
@@ -169,7 +169,7 @@ export default function MemberReportsPage() {
                     <select
                       value={transactionType}
                       onChange={(e) => setTransactionType(e.target.value)}
-                      className="w-full border border-slate-200 rounded-md px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#17A2B8]/20 focus:border-[#17A2B8] transition-all bg-white cursor-pointer"
+                      className="w-full border border-slate-200 rounded-md px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#17A2B8]/20 focus:border-brand-cyan transition-all bg-white cursor-pointer"
                     >
                       <option value="Semua Transaksi">Semua Transaksi</option>
                       <option value="Tunai">Tunai</option>
@@ -182,7 +182,7 @@ export default function MemberReportsPage() {
                         placeholder="Masukkan jenis transaksi kustom..."
                         value={manualTxType}
                         onChange={(e) => setManualTxType(e.target.value)}
-                        className="w-full border border-slate-200 rounded-md px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#17A2B8]/20 focus:border-[#17A2B8] transition-all bg-white"
+                        className="w-full border border-slate-200 rounded-md px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#17A2B8]/20 focus:border-brand-cyan transition-all bg-white"
                         required
                       />
                     )}
@@ -199,7 +199,7 @@ export default function MemberReportsPage() {
                     <select
                       value={daysCount}
                       onChange={(e) => setDaysCount(e.target.value)}
-                      className="w-full border border-slate-200 rounded-md px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#17A2B8]/20 focus:border-[#17A2B8] transition-all bg-white cursor-pointer"
+                      className="w-full border border-slate-200 rounded-md px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#17A2B8]/20 focus:border-brand-cyan transition-all bg-white cursor-pointer"
                     >
                       <option value="Semua Hari">Semua Hari</option>
                       <option value="30 Hari">30 Hari</option>
@@ -212,7 +212,7 @@ export default function MemberReportsPage() {
                         placeholder="Masukkan jumlah hari kustom (contoh: 15)..."
                         value={manualDaysCount}
                         onChange={(e) => setManualDaysCount(e.target.value)}
-                        className="w-full border border-slate-200 rounded-md px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#17A2B8]/20 focus:border-[#17A2B8] transition-all bg-white"
+                        className="w-full border border-slate-200 rounded-md px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#17A2B8]/20 focus:border-brand-cyan transition-all bg-white"
                         required
                       />
                     )}
@@ -228,7 +228,7 @@ export default function MemberReportsPage() {
                   <select
                     value={ppnFormat}
                     onChange={(e) => setPpnFormat(e.target.value)}
-                    className="w-full border border-slate-200 rounded-md px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#17A2B8]/20 focus:border-[#17A2B8] transition-all bg-white cursor-pointer"
+                    className="w-full border border-slate-200 rounded-md px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#17A2B8]/20 focus:border-brand-cyan transition-all bg-white cursor-pointer"
                   >
                     <option value="PPN 10%">PPN 10%</option>
                     <option value="Non-PPN">Tanpa PPN (Non-PPN)</option>

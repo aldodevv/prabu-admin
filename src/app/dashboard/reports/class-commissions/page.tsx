@@ -171,7 +171,7 @@ export default function ClassCommissionReportsPage() {
         </div>
         <button
           onClick={() => setIsPrintOpen(true)}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer"
         >
           <Printer className="w-4 h-4" />
           <span>Cetak Laporan</span>
@@ -202,7 +202,7 @@ export default function ClassCommissionReportsPage() {
       </SearchFilterBar>
 
       <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
-        <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex items-center justify-between select-none">
+        <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex items-center justify-between select-none">
           <span className="text-sm uppercase tracking-wider font-heading flex items-center gap-2">
             <Award className="w-4 h-4" />
             <span>Rekapitulasi Insentif Mengajar Instruktur</span>

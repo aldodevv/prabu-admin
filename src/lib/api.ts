@@ -16,6 +16,19 @@ export const getBaseUrl = (): string => {
   return process.env.NEXT_PUBLIC_PROD_API_URL || 'https://prabu-service.vercel.app/api';
 };
 
+export const formatPhotoUrl = (url?: string): string => {
+  if (!url) return '';
+  if (url.includes('r2.cloudflarestorage.com')) {
+    const parts = url.split('.r2.cloudflarestorage.com/');
+    if (parts.length > 1) {
+      let key = parts[1];
+      key = key.replace(/^prabugym\//, '');
+      return `${getBaseUrl()}/public/assets/${key}`;
+    }
+  }
+  return url;
+};
+
 export interface ApiResponse<T> {
   success: boolean;
   rc?: string;
@@ -95,6 +108,7 @@ class ApiClient {
       const res = await fetch(`${getBaseUrl()}${path}`, {
         method: 'GET',
         headers: this.getHeaders(),
+        cache: 'no-store',
       });
       return this.handleResponse<T>(res);
     } catch (err: any) {

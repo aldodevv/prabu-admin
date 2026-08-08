@@ -154,7 +154,7 @@ export default function TrainerStaffManagementPage() {
         <div className="flex gap-1.5 justify-center">
           <button
             onClick={() => handleOpenEdit(row)}
-            className="px-2.5 py-1 bg-[#17A2B8] hover:bg-[#138496] text-white text-[10px] font-bold uppercase rounded flex items-center gap-1 cursor-pointer"
+            className="px-2.5 py-1 bg-brand-cyan hover:bg-[#138496] text-white text-[10px] font-bold uppercase rounded flex items-center gap-1 cursor-pointer"
           >
             <Edit className="w-3 h-3" />
             Ubah
@@ -183,7 +183,7 @@ export default function TrainerStaffManagementPage() {
             canWrite && (
               <button
                 onClick={handleOpenCreate}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
               >
                 <UserPlus className="w-4 h-4" />
                 <span>+ Tambah Pelatih</span>
@@ -237,7 +237,7 @@ export default function TrainerStaffManagementPage() {
 
       {(step === 'create' || step === 'edit') && (
         <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden max-w-2xl mx-auto">
-          <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold select-none flex items-center gap-2">
+          <div className="bg-brand-cyan px-5 py-3 text-white font-bold select-none flex items-center gap-2">
             <UserCheck className="w-4 h-4" />
             <span className="text-sm uppercase tracking-wider font-heading">
               {step === 'create' ? 'Tambah Pelatih Baru' : 'Ubah Data Pelatih'}

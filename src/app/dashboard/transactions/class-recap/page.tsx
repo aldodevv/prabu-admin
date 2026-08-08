@@ -36,7 +36,7 @@ interface ClassRecapDisplay {
 
 export default function ClassRecapPage() {
   const { activeBranchID, user } = useAuth();
-  
+
   // Navigation steps: 'list' | 'add'
   const [step, setStep] = useState<'list' | 'add'>('list');
 
@@ -170,7 +170,7 @@ export default function ClassRecapPage() {
     setClassCommission('');
     setFormError('');
     setFormSuccess('');
-    
+
     const today = new Date();
     setRekapDate(today.toISOString().split('T')[0]);
     const hours = String(today.getHours()).padStart(2, '0');
@@ -241,7 +241,7 @@ export default function ClassRecapPage() {
 
   return (
     <div className="space-y-8 font-sans">
-      
+
       {/* Step 1: List View (Riwayat Rekap Kelas) */}
       {step === 'list' && (
         <div className="space-y-6 animate-fadeIn">
@@ -252,10 +252,10 @@ export default function ClassRecapPage() {
                 Rapel Kelas Latihan & Presensi Kehadiran Anggota
               </p>
             </div>
-            
+
             <button
               onClick={handleOpenAdd}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-xs"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-xs"
             >
               <ClipboardCheck className="w-4 h-4" />
               <span>Tambah Rekap Kelas</span>
@@ -264,7 +264,7 @@ export default function ClassRecapPage() {
 
           {/* Pencarian Box */}
           <div className="bg-white border border-slate-200 rounded shadow-xs overflow-hidden">
-            <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold select-none flex items-center gap-2">
+            <div className="bg-brand-cyan px-5 py-3 text-white font-bold select-none flex items-center gap-2">
               <Search className="w-4 h-4" />
               <span className="text-sm uppercase tracking-wider">Pencarian</span>
             </div>
@@ -295,7 +295,7 @@ export default function ClassRecapPage() {
             </div>
           ) : (
             <div className="bg-white border border-slate-200 rounded shadow-xs overflow-hidden">
-              <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold select-none">
+              <div className="bg-brand-cyan px-5 py-3 text-white font-bold select-none">
                 <span className="text-sm uppercase tracking-wider font-heading">Riwayat Rekap Kelas</span>
               </div>
               <div className="p-6">
@@ -357,7 +357,7 @@ export default function ClassRecapPage() {
             Transaksi &gt; Rekap Kelas &gt; Tambah Rekap Kelas
           </div>
 
-          <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold select-none flex items-center gap-2 rounded-t">
+          <div className="bg-brand-cyan px-5 py-3 text-white font-bold select-none flex items-center gap-2 rounded-t">
             <Plus className="w-4 h-4" />
             <span className="text-sm uppercase tracking-wider font-heading">Tambah Rekap Kelas</span>
           </div>
@@ -376,7 +376,7 @@ export default function ClassRecapPage() {
 
           <div className="bg-white border border-slate-200 p-8 rounded shadow-xs">
             <form onSubmit={handleSaveRecap} className="space-y-6 text-sm text-slate-700">
-              
+
               {/* Nama Kelas (Terhubung ke Pengaturan -> Daftar Nama Kelas) */}
               <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
                 <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">
@@ -454,7 +454,7 @@ export default function ClassRecapPage() {
                     value={rekapDate}
                     onChange={(e) => setRekapDate(e.target.value)}
                     className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full cursor-pointer"
-                    onClick={(e) => { try { e.currentTarget.showPicker(); } catch {} }}
+                    onClick={(e) => { try { e.currentTarget.showPicker(); } catch { } }}
                   />
                   <input
                     type="time"
@@ -462,7 +462,7 @@ export default function ClassRecapPage() {
                     value={rekapTime}
                     onChange={(e) => setRekapTime(e.target.value)}
                     className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full cursor-pointer"
-                    onClick={(e) => { try { e.currentTarget.showPicker(); } catch {} }}
+                    onClick={(e) => { try { e.currentTarget.showPicker(); } catch { } }}
                   />
                 </div>
               </div>

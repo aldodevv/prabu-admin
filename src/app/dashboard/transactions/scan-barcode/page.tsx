@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import api from '@/lib/api';
+import api, { formatPhotoUrl } from '@/lib/api';
 import { checkinsApi } from '@/core/api';
 import * as Icons from 'lucide-react';
 
@@ -149,7 +149,7 @@ export default function ScanBarcodePage() {
   const handleCheckin = async (memberId: string) => {
     if (!result || result.type !== 'member') return;
     const member = result.data as MemberData;
-    
+
     setLoading(true);
     try {
       const res = await checkinsApi.checkin(memberId);
@@ -201,7 +201,7 @@ export default function ScanBarcodePage() {
   };
 
   // Find if there is an active checkin (no checkout time)
-  const activeCheckin = result?.type === 'member' 
+  const activeCheckin = result?.type === 'member'
     ? (result.checkins as MemberCheckin[])?.find(c => !c.check_out_at)
     : null;
 
@@ -217,7 +217,7 @@ export default function ScanBarcodePage() {
 
       <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
         {/* Cyan Heading Title Bar */}
-        <div className="bg-[#17A2B8] px-6 py-4 flex items-center gap-2 text-white select-none">
+        <div className="bg-brand-cyan px-6 py-4 flex items-center gap-2 text-white select-none">
           <Icons.Search className="w-5 h-5" />
           <h2 className="text-sm font-bold uppercase tracking-wider font-sans">Scan Barcode</h2>
         </div>
@@ -233,12 +233,12 @@ export default function ScanBarcodePage() {
               value={barcode}
               onChange={(e) => setBarcode(e.target.value)}
               placeholder="Masukkan Kode Barcode di sini..."
-              className="flex-1 bg-slate-50 border border-slate-350 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#17A2B8] text-slate-800"
+              className="flex-1 bg-slate-50 border border-slate-350 rounded px-3 py-2 text-sm focus:outline-none focus:border-brand-cyan text-slate-800"
             />
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold rounded flex items-center justify-center transition-colors cursor-pointer disabled:opacity-55"
+              className="px-4 py-2 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold rounded flex items-center justify-center transition-colors cursor-pointer disabled:opacity-55"
             >
               <Icons.Search className="w-4 h-4" />
             </button>
@@ -275,9 +275,9 @@ export default function ScanBarcodePage() {
                   return (
                     <div className="w-full bg-[#d9edf7] border border-[#bce8f1] text-[#31708f] px-4 py-6 rounded text-center relative font-sans text-2xl font-bold uppercase tracking-wider select-none">
                       MASA AKTIF TINGGAL {daysLeft} HARI
-                      <button 
-                        type="button" 
-                        onClick={() => setResult(null)} 
+                      <button
+                        type="button"
+                        onClick={() => setResult(null)}
                         className="absolute right-4 top-1/2 -translate-y-1/2 text-[#31708f] opacity-50 hover:opacity-100 text-lg cursor-pointer"
                       >
                         ×
@@ -305,10 +305,10 @@ export default function ScanBarcodePage() {
                   <div className="w-full max-w-sm mx-auto">
                     <div className="w-full bg-[#4A4A4A] aspect-[4/3] flex items-center justify-center rounded overflow-hidden border border-slate-200 shadow-sm">
                       {result.type === 'member' && (result.data as MemberData).photo_url ? (
-                        <img 
-                          src={(result.data as MemberData).photo_url} 
-                          alt={result.data.full_name} 
-                          className="w-full h-full object-cover" 
+                        <img
+                          src={formatPhotoUrl((result.data as MemberData).photo_url)}
+                          alt={result.data.full_name}
+                          className="w-full h-full object-cover"
                         />
                       ) : (
                         <svg className="w-32 h-32 text-slate-300" fill="currentColor" viewBox="0 0 24 24">
@@ -462,13 +462,13 @@ export default function ScanBarcodePage() {
                                   {checkInDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
                                 </td>
                                 <td className="py-2.5 px-3 border border-slate-200 font-mono">
-                                  {checkOutDate 
-                                    ? checkOutDate.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-') 
+                                  {checkOutDate
+                                    ? checkOutDate.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')
                                     : '-'}
                                 </td>
                                 <td className="py-2.5 px-3 border border-slate-200 font-mono">
-                                  {checkOutDate 
-                                    ? checkOutDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) 
+                                  {checkOutDate
+                                    ? checkOutDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
                                     : <span className="text-orange-600 font-bold uppercase text-[9px] tracking-wider bg-orange-50 px-2 py-0.5 rounded border border-orange-100">Dalam Club</span>}
                                 </td>
                               </tr>
@@ -496,11 +496,10 @@ export default function ScanBarcodePage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fadeIn">
           <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden font-sans relative">
             {/* Header with Prabu Logo & Theme */}
-            <div className={`px-6 py-4 flex items-center justify-between ${
-              leaveModal.type === 'leave'
-                ? 'bg-gradient-to-r from-[#17A2B8] to-[#117a8b]'
-                : 'bg-gradient-to-r from-red-600 to-rose-700'
-            } text-white shadow-md select-none`}>
+            <div className={`px-6 py-4 flex items-center justify-between ${leaveModal.type === 'leave'
+              ? 'bg-gradient-to-r from-[#17A2B8] to-[#117a8b]'
+              : 'bg-gradient-to-r from-red-600 to-rose-700'
+              } text-white shadow-md select-none`}>
               <div className="flex items-center gap-3">
                 <img
                   src="/logo-transparent.png"
@@ -526,11 +525,10 @@ export default function ScanBarcodePage() {
             <div className="p-6 space-y-4 text-center">
               {/* Status Badge Icon */}
               <div className="flex justify-center">
-                <div className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg ${
-                  leaveModal.type === 'leave'
-                    ? 'bg-amber-100 border-2 border-amber-300 text-amber-600'
-                    : 'bg-red-100 border-2 border-red-300 text-red-600'
-                }`}>
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg ${leaveModal.type === 'leave'
+                  ? 'bg-amber-100 border-2 border-amber-300 text-amber-600'
+                  : 'bg-red-100 border-2 border-red-300 text-red-600'
+                  }`}>
                   {leaveModal.type === 'leave' ? (
                     <Icons.Calendar className="w-8 h-8" />
                   ) : (
@@ -564,12 +562,12 @@ export default function ScanBarcodePage() {
                     PERIODE TANGGAL CUTI (FREEZE)
                   </span>
                   <div className="flex items-center justify-center gap-2 py-3 px-3 bg-slate-50 border border-slate-200 rounded-xl">
-                    <div className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#17A2B8] text-white rounded-full font-mono font-bold text-xs shadow-sm">
+                    <div className="flex items-center gap-1.5 px-3.5 py-1.5 bg-brand-cyan text-white rounded-full font-mono font-bold text-xs shadow-sm">
                       <Icons.Calendar className="w-3.5 h-3.5 text-cyan-100" />
                       <span>{leaveModal.startDate}</span>
                     </div>
                     <span className="text-xs font-black text-slate-400 uppercase tracking-widest">S/D</span>
-                    <div className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#17A2B8] text-white rounded-full font-mono font-bold text-xs shadow-sm">
+                    <div className="flex items-center gap-1.5 px-3.5 py-1.5 bg-brand-cyan text-white rounded-full font-mono font-bold text-xs shadow-sm">
                       <Icons.Calendar className="w-3.5 h-3.5 text-cyan-100" />
                       <span>{leaveModal.endDate}</span>
                     </div>
@@ -581,7 +579,7 @@ export default function ScanBarcodePage() {
               <div className="pt-2">
                 <button
                   onClick={() => setLeaveModal(null)}
-                  className="w-full py-3 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded-xl shadow-md transition-all cursor-pointer"
+                  className="w-full py-3 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded-xl shadow-md transition-all cursor-pointer"
                 >
                   Saya Mengerti
                 </button>

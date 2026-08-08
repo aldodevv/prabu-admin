@@ -114,7 +114,7 @@ export default function MembershipPackagesPage() {
   };
 
   const filteredPackages = packages.filter((pkg) => {
-    return pkg.name.toLowerCase().includes(search.toLowerCase()) || 
+    return pkg.name.toLowerCase().includes(search.toLowerCase()) ||
       (pkg.description || '').toLowerCase().includes(search.toLowerCase());
   });
 
@@ -168,7 +168,7 @@ export default function MembershipPackagesPage() {
         <div className="space-y-6">
           {/* Top Search Filter Box matching Screenshot UI */}
           <div className="bg-white border border-slate-200 rounded shadow-xs overflow-hidden">
-            <div className="bg-[#17A2B8] px-4 py-2.5 text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2">
+            <div className="bg-brand-cyan px-4 py-2.5 text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2">
               <Search className="w-4 h-4" />
               <span>Pencarian</span>
             </div>
@@ -182,8 +182,8 @@ export default function MembershipPackagesPage() {
               />
               <button
                 type="button"
-                onClick={() => {}}
-                className="px-4 py-2 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded cursor-pointer flex items-center gap-1.5"
+                onClick={() => { }}
+                className="px-4 py-2 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded cursor-pointer flex items-center gap-1.5"
               >
                 <Search className="w-3.5 h-3.5" />
                 <span>Pencarian</span>
@@ -201,7 +201,7 @@ export default function MembershipPackagesPage() {
 
           {/* Main Table Box */}
           <div className="bg-white border border-slate-200 rounded shadow-xs overflow-hidden">
-            <div className="bg-[#17A2B8] px-4 py-2.5 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-between">
+            <div className="bg-brand-cyan px-4 py-2.5 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <List className="w-4 h-4" />
                 <span>Paket Anggota</span>
@@ -211,7 +211,7 @@ export default function MembershipPackagesPage() {
             <div className="p-4 space-y-4">
               <button
                 onClick={handleOpenCreate}
-                className="px-3.5 py-2 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded cursor-pointer flex items-center gap-1.5 shadow-xs"
+                className="px-3.5 py-2 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded cursor-pointer flex items-center gap-1.5 shadow-xs"
               >
                 <Plus className="w-4 h-4" />
                 <span>Tambah Paket Anggota</span>
@@ -238,7 +238,7 @@ export default function MembershipPackagesPage() {
 
       {(step === 'create' || step === 'edit') && (
         <div className="bg-white border border-slate-200 rounded shadow-xs overflow-hidden w-full">
-          <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold select-none flex items-center gap-2">
+          <div className="bg-brand-cyan px-5 py-3 text-white font-bold select-none flex items-center gap-2">
             <List className="w-4 h-4" />
             <span className="text-sm uppercase tracking-wider font-heading">
               {step === 'create' ? 'Tambah Paket Anggota Baru' : 'Ubah Paket Anggota'}

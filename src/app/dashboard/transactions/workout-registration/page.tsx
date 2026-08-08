@@ -205,7 +205,7 @@ export default function PTRegistrationPage() {
       if (res.success && res.data) {
         setSuccessTx({
           id: res.data.id,
-          transaction_number: res.data.transaction_number || `RGS-TRA-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-0001`,
+          transaction_number: res.data.transaction_number || `RGS-TRA-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-0001`,
           member_id: selectedMemberID,
           member_name: memberObj?.full_name || 'Member',
           member_username: memberObj?.username || 'Member',
@@ -314,7 +314,7 @@ export default function PTRegistrationPage() {
         )}
 
         <div className="bg-white border border-slate-200 rounded shadow-sm w-full overflow-hidden">
-          <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold select-none flex items-center gap-2">
+          <div className="bg-brand-cyan px-5 py-3 text-white font-bold select-none flex items-center gap-2">
             <UserCheck className="w-4 h-4" />
             <span className="text-sm uppercase tracking-wider font-heading">Pendaftaran Personal Trainer</span>
           </div>
@@ -501,7 +501,7 @@ export default function PTRegistrationPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer disabled:opacity-50 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer disabled:opacity-50 transition-colors"
                 >
                   <Save className="w-4 h-4" />
                   <span>{loading ? 'MEMPROSES...' : 'Simpan Transaksi'}</span>
@@ -517,7 +517,7 @@ export default function PTRegistrationPage() {
         <OfficialPTReceiptTemplate
           onClose={() => setSuccessTx(null)}
           data={{
-            transactionNumber: successTx.transaction_number || `RGS-TRA-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-0001`,
+            transactionNumber: successTx.transaction_number || `RGS-TRA-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-0001`,
             transactionDate: new Date().toISOString(),
             memberUsername: successTx.member_username || '-',
             memberName: successTx.member_name,

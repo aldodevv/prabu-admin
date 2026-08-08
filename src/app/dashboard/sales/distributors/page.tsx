@@ -11,25 +11,25 @@ import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 
 export default function DistributorsPage() {
   const { activeBranchID } = useAuth();
-  
+
   // view: 'list' | 'add' | 'edit'
   const [view, setView] = useState<'list' | 'add' | 'edit'>('list');
   const [distributors, setDistributors] = useState<Distributor[]>([]);
   const [selectedDistributor, setSelectedDistributor] = useState<Distributor | null>(null);
-  
+
   // Form fields
   const [name, setName] = useState('');
   const [phoneHP, setPhoneHP] = useState('');
   const [phoneTelp, setPhoneTelp] = useState('');
   const [address, setAddress] = useState('');
-  
+
   // Search, Debounce & Column Filter
   const [searchQuery, setSearchQuery] = useState('');
   const [filterColumn, setFilterColumn] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 400);
   const [isTyping, setIsTyping] = useState(false);
   const [filteredDistributors, setFilteredDistributors] = useState<Distributor[]>([]);
-  
+
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -262,13 +262,13 @@ export default function DistributorsPage() {
 
           {/* Card Tabel Data */}
           <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
-            <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex justify-between items-center select-none">
+            <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex justify-between items-center select-none">
               <span className="text-sm uppercase tracking-wider">Data Distributor</span>
             </div>
             <div className="p-6 space-y-4">
               <button
                 onClick={handleOpenAdd}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Tambah Distributor
@@ -311,7 +311,7 @@ export default function DistributorsPage() {
                               <button
                                 onClick={() => handleOpenEdit(d)}
                                 title="Ubah Data Distributor"
-                                className="p-2 bg-[#17A2B8] hover:bg-[#138496] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
+                                className="p-2 bg-brand-cyan hover:bg-[#138496] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
@@ -336,7 +336,7 @@ export default function DistributorsPage() {
       ) : (
         /* Form Tambah / Edit */
         <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden w-full">
-          <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
+          <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
             <Plus className="w-4 h-4" />
             <span className="text-sm uppercase tracking-wider font-heading">
               {view === 'add' ? 'Tambah Distributor' : 'Ubah Distributor'}
@@ -366,7 +366,7 @@ export default function DistributorsPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Masukkan Nama Distributor"
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded"
                     required
                   />
                 </div>
@@ -381,7 +381,7 @@ export default function DistributorsPage() {
                     value={phoneHP}
                     onChange={(e) => setPhoneHP(e.target.value.replace(/[^0-9]/g, ''))}
                     placeholder="Masukkan Nomor HP"
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono"
                   />
                 </div>
 
@@ -395,7 +395,7 @@ export default function DistributorsPage() {
                     value={phoneTelp}
                     onChange={(e) => setPhoneTelp(e.target.value.replace(/[^0-9]/g, ''))}
                     placeholder="Masukkan Nomor Telepon"
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono"
                   />
                 </div>
 
@@ -409,7 +409,7 @@ export default function DistributorsPage() {
                     onChange={(e) => setAddress(e.target.value)}
                     placeholder="Masukkan Alamat"
                     rows={4}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded resize-none"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded resize-none"
                   />
                 </div>
               </div>
@@ -419,7 +419,7 @@ export default function DistributorsPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer disabled:opacity-50 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer disabled:opacity-50 transition-colors"
                 >
                   <Save className="w-4 h-4" />
                   Simpan

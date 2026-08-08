@@ -338,7 +338,7 @@ export default function ProductsPage() {
               <button
                 onClick={() => handleOpenEdit(p)}
                 title="Ubah Data Barang"
-                className="p-2 bg-[#17A2B8] hover:bg-[#138496] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
+                className="p-2 bg-brand-cyan hover:bg-[#138496] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
               >
                 <Edit2 className="w-3.5 h-3.5" />
               </button>
@@ -419,14 +419,14 @@ export default function ProductsPage() {
 
           {/* Card Table Product */}
           <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
-            <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex justify-between items-center select-none">
+            <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex justify-between items-center select-none">
               <span className="text-sm uppercase tracking-wider">Product</span>
             </div>
             <div className="p-6 space-y-4">
               {canWrite && (
                 <button
                   onClick={handleOpenAdd}
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Add Product
@@ -456,7 +456,7 @@ export default function ProductsPage() {
       {(view === 'add' || view === 'edit') && (
         /* Form Tambah / Ubah Data Barang */
         <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden w-full">
-          <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
+          <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
             <Plus className="w-4 h-4" />
             <span className="text-sm uppercase tracking-wider font-heading">
               {view === 'add' ? 'Tambah Data Barang' : 'Ubah Data Barang'}
@@ -482,7 +482,7 @@ export default function ProductsPage() {
                   <select
                     value={distributorId}
                     onChange={(e) => setDistributorId(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded"
                   >
                     <option value="">-- PILIH DISTRIBUTOR --</option>
                     {distributors.map((d) => (
@@ -501,7 +501,7 @@ export default function ProductsPage() {
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
                     placeholder="Auto-generate kode barang..."
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono font-bold"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono font-bold"
                   />
                 </div>
 
@@ -513,7 +513,7 @@ export default function ProductsPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Masukkan Nama Barang"
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-semibold"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-semibold"
                     required
                   />
                 </div>
@@ -524,7 +524,7 @@ export default function ProductsPage() {
                   <select
                     value={jenisBarang}
                     onChange={(e) => setJenisBarang(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-medium"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-medium"
                     required
                   >
                     <option value="Suplemen">Suplemen</option>
@@ -541,7 +541,7 @@ export default function ProductsPage() {
                     value={buyPrice}
                     onChange={(e) => setBuyPrice(e.target.value)}
                     placeholder="0"
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono font-semibold"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono font-semibold"
                     required
                   />
                 </div>
@@ -554,7 +554,7 @@ export default function ProductsPage() {
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
                     placeholder="0"
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono font-bold"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono font-bold"
                     required
                   />
                 </div>
@@ -567,7 +567,7 @@ export default function ProductsPage() {
                     value={stock}
                     onChange={(e) => setStock(e.target.value)}
                     placeholder="0"
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono"
                   />
                 </div>
               </div>
@@ -577,7 +577,7 @@ export default function ProductsPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer disabled:opacity-50 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer disabled:opacity-50 transition-colors"
                 >
                   <Save className="w-4 h-4" />
                   Simpan
@@ -599,7 +599,7 @@ export default function ProductsPage() {
       {view === 'detail' && selectedProduct && (
         /* Halaman Lihat Detail Data Barang & Riwayat Perubahan Unit */
         <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
-          <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold flex justify-between items-center select-none">
+          <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex justify-between items-center select-none">
             <span className="text-sm uppercase tracking-wider">Detail Product</span>
             <button
               onClick={() => setView('list')}

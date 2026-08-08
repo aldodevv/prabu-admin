@@ -13,7 +13,8 @@ import { Search, Eye, Edit, ArrowLeft, Save, Printer, FileText, FileSpreadsheet,
 import { useDebounce } from '@/hooks/useDebounce';
 import { exportToExcel } from '@/lib/excelExport';
 import { compressImage } from '@/utils/imageCompressor';
-import { uploadToCloudinary } from '@/lib/cloudinary';
+import { uploadToCloudflare } from '@/lib/cloudflare';
+import { formatPhotoUrl } from '@/lib/api';
 import { DigitalMemberCard } from '@/components/core/DigitalMemberCard';
 import { permissions } from '@/lib/permissions';
 import { FetchErrorAlert } from '@/components/core/FetchErrorAlert';
@@ -208,10 +209,10 @@ export default function OneClubMembersPanel() {
     let finalPhotoUrl = photoUrl;
     if (photoBase64 && photoBase64.startsWith('data:')) {
       try {
-        finalPhotoUrl = await uploadToCloudinary(photoBase64, 'prabugym/members');
+        finalPhotoUrl = await uploadToCloudflare(photoBase64, 'members');
       } catch (err: any) {
-        console.error('Cloudinary upload error:', err);
-        setEditError('Gagal mengunggah foto ke Cloudinary: ' + (err.message || 'Error'));
+        console.error('Cloudflare upload error:', err);
+        setEditError('Gagal mengunggah foto ke Cloudflare R2: ' + (err.message || 'Error'));
         setLoading(false);
         return;
       }
@@ -275,7 +276,7 @@ export default function OneClubMembersPanel() {
       render: (m) => (
         <div className="w-16 h-16 mx-auto bg-slate-50 border border-slate-200 rounded overflow-hidden flex items-center justify-center text-slate-400 text-[10px] uppercase font-bold select-none">
           {m.photo_url ? (
-            <img src={m.photo_url} alt="Profile" className="w-full h-full object-cover" />
+            <img src={formatPhotoUrl(m.photo_url)} alt="Profile" className="w-full h-full object-cover" />
           ) : (
             'No Photo'
           )}
@@ -316,7 +317,7 @@ export default function OneClubMembersPanel() {
             <button
               onClick={() => handleOpenEdit(m)}
               title="Ubah Data Anggota"
-              className="p-2 bg-[#17A2B8] hover:bg-[#138496] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
+              className="p-2 bg-brand-cyan hover:bg-[#138496] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
             >
               <Edit className="w-3.5 h-3.5" />
             </button>
@@ -396,7 +397,7 @@ export default function OneClubMembersPanel() {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setShowDigitalCard(true)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
                   >
                     <span>🪪 Kartu Member Digital</span>
                   </button>
@@ -458,7 +459,7 @@ export default function OneClubMembersPanel() {
                   <div className="w-32 h-32 bg-slate-50 border border-slate-200 rounded-lg overflow-hidden flex items-center justify-center text-slate-400 font-bold text-xs shadow-xs">
                     {selectedMember.photo_url ? (
                       <img
-                        src={selectedMember.photo_url}
+                        src={formatPhotoUrl(selectedMember.photo_url)}
                         alt={selectedMember.full_name}
                         className="w-full h-full object-cover"
                       />
@@ -520,8 +521,8 @@ export default function OneClubMembersPanel() {
                 <button
                   onClick={() => setDetailTab('anggota')}
                   className={`py-2 px-4 font-bold border-b-2 transition-all cursor-pointer ${detailTab === 'anggota'
-                      ? 'border-[#007BFF] text-[#007BFF]'
-                      : 'border-transparent text-slate-500 hover:text-slate-800'
+                    ? 'border-[#007BFF] text-[#007BFF]'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
                     }`}
                 >
                   Transaksi Pembayaran Anggota
@@ -529,8 +530,8 @@ export default function OneClubMembersPanel() {
                 <button
                   onClick={() => setDetailTab('latihan')}
                   className={`py-2 px-4 font-bold border-b-2 transition-all cursor-pointer ${detailTab === 'latihan'
-                      ? 'border-[#007BFF] text-[#007BFF]'
-                      : 'border-transparent text-slate-500 hover:text-slate-800'
+                    ? 'border-[#007BFF] text-[#007BFF]'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
                     }`}
                 >
                   Transaksi Pembayaran Latihan
@@ -632,7 +633,7 @@ export default function OneClubMembersPanel() {
                   return (
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-xs border border-slate-200 border-collapse">
-                        <thead className="bg-[#17A2B8] text-white text-[10px] font-bold uppercase tracking-wider">
+                        <thead className="bg-brand-cyan text-white text-[10px] font-bold uppercase tracking-wider">
                           <tr>
                             <th className="py-2.5 px-3 border-r border-slate-200 w-10 text-center">No</th>
                             <th className="py-2.5 px-3 border-r border-slate-200">Tanggal Pembayaran</th>
@@ -817,7 +818,7 @@ export default function OneClubMembersPanel() {
         {/* Ubah Data Anggota Step */}
         {step === 'edit' && selectedMember && (
           <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden w-full animate-fadeIn">
-            <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold select-none flex items-center gap-2">
+            <div className="bg-brand-cyan px-5 py-3 text-white font-bold select-none flex items-center gap-2">
               <Edit className="w-4 h-4" />
               <span className="text-sm uppercase tracking-wider font-heading">Ubah Data Anggota</span>
             </div>

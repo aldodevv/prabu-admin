@@ -5,13 +5,13 @@ import { useAuth } from '@/context/AuthContext';
 import { membersApi, memberLeavesApi } from '@/core/api';
 import { Member, MemberLeave } from '@/core/types';
 import { DataTable, Column } from '@/components/core/DataTable';
-import { 
-  PauseCircle, 
-  Plus, 
-  Search, 
-  Printer, 
-  XCircle, 
-  Calendar, 
+import {
+  PauseCircle,
+  Plus,
+  Search,
+  Printer,
+  XCircle,
+  Calendar,
   FileSpreadsheet,
   X,
   UserCheck,
@@ -291,11 +291,10 @@ export default function MemberLeavesPage() {
         const isAktif = l.status === 'active';
         const isCancelled = l.status === 'cancelled';
         return (
-          <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${
-            isAktif ? 'bg-cyan-50 text-cyan-700 border border-cyan-200' :
+          <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${isAktif ? 'bg-cyan-50 text-cyan-700 border border-cyan-200' :
             isCancelled ? 'bg-red-50 text-red-700 border border-red-200' :
-            'bg-slate-100 text-slate-600 border border-slate-200'
-          }`}>
+              'bg-slate-100 text-slate-600 border border-slate-200'
+            }`}>
             {isAktif ? '● Aktif Cuti' : isCancelled ? 'Batal' : 'Selesai'}
           </span>
         );
@@ -351,7 +350,7 @@ export default function MemberLeavesPage() {
               {canWrite && (
                 <button
                   onClick={handleOpenCreate}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-xs transition-all hover:scale-105 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-xs transition-all hover:scale-105 cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   Pengajuan Cuti Anggota
@@ -420,12 +419,12 @@ export default function MemberLeavesPage() {
       {/* STEP 2: DEDICATED FORM PAGE */}
       {step === 'create' && (
         <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden animate-fadeIn">
-          <div className="bg-[#17A2B8] px-6 py-4 text-white font-bold flex justify-between items-center select-none">
+          <div className="bg-brand-cyan px-6 py-4 text-white font-bold flex justify-between items-center select-none">
             <div className="flex items-center gap-2">
               <PauseCircle className="w-5 h-5" />
               <span className="text-sm uppercase tracking-wider">Form Pengajuan Cuti Anggota Baru</span>
             </div>
-            <button 
+            <button
               onClick={() => setStep('list')}
               className="text-xs bg-white/20 hover:bg-white/30 text-white font-semibold px-3 py-1 rounded flex items-center gap-1 transition-colors cursor-pointer"
             >
@@ -485,11 +484,11 @@ export default function MemberLeavesPage() {
                   <div className="space-y-0.5">
                     <div className="font-bold text-slate-900 text-base flex items-center gap-2">
                       <span>{selectedMember.full_name}</span>
-                      <span className="px-2 py-0.5 bg-[#17A2B8] text-white text-[10px] uppercase font-bold rounded">Member</span>
+                      <span className="px-2 py-0.5 bg-brand-cyan text-white text-[10px] uppercase font-bold rounded">Member</span>
                     </div>
                     <div className="text-xs text-slate-600 font-mono">
-                      No. Anggota: <span className="font-bold text-slate-900">{selectedMember.username}</span> | 
-                      Paket: <span className="font-bold text-slate-900">{selectedMember.membership_type}</span> | 
+                      No. Anggota: <span className="font-bold text-slate-900">{selectedMember.username}</span> |
+                      Paket: <span className="font-bold text-slate-900">{selectedMember.membership_type}</span> |
                       Masa Aktif s/d: <span className="font-bold text-cyan-700">{selectedMember.membership_end}</span>
                     </div>
                   </div>
@@ -517,7 +516,7 @@ export default function MemberLeavesPage() {
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 p-2.5 rounded font-semibold text-slate-800 focus:outline-none focus:border-[#17A2B8]"
+                    className="w-full bg-slate-50 border border-slate-300 p-2.5 rounded font-semibold text-slate-800 focus:outline-none focus:border-brand-cyan"
                     required
                   />
                 </div>
@@ -527,7 +526,7 @@ export default function MemberLeavesPage() {
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 p-2.5 rounded font-semibold text-slate-800 focus:outline-none focus:border-[#17A2B8]"
+                    className="w-full bg-slate-50 border border-slate-300 p-2.5 rounded font-semibold text-slate-800 focus:outline-none focus:border-brand-cyan"
                     required
                   />
                 </div>
@@ -574,7 +573,7 @@ export default function MemberLeavesPage() {
                   <select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 p-2.5 rounded font-bold text-slate-800 focus:outline-none focus:border-[#17A2B8]"
+                    className="w-full bg-slate-50 border border-slate-300 p-2.5 rounded font-bold text-slate-800 focus:outline-none focus:border-brand-cyan"
                   >
                     <option value="cash">Tunai (Cash)</option>
                     <option value="transfer">Bank Transfer</option>
@@ -589,7 +588,7 @@ export default function MemberLeavesPage() {
                     value={feeAmount}
                     onChange={(e) => setFeeAmount(Number(e.target.value))}
                     placeholder="100000"
-                    className="w-full bg-slate-50 border border-slate-300 p-2.5 rounded font-bold font-mono text-slate-800 focus:outline-none focus:border-[#17A2B8]"
+                    className="w-full bg-slate-50 border border-slate-300 p-2.5 rounded font-bold font-mono text-slate-800 focus:outline-none focus:border-brand-cyan"
                     required
                   />
                   <div className="text-[10px] text-slate-400">Default Rp 100.000 (dapat disesuaikan)</div>
@@ -605,7 +604,7 @@ export default function MemberLeavesPage() {
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Keterangan cuti anggota (misal: Sakit, Dinas luar kota)..."
                 rows={3}
-                className="w-full bg-slate-50 border border-slate-300 p-3 rounded text-xs text-slate-800 focus:outline-none focus:border-[#17A2B8]"
+                className="w-full bg-slate-50 border border-slate-300 p-3 rounded text-xs text-slate-800 focus:outline-none focus:border-brand-cyan"
               />
             </div>
 
@@ -621,7 +620,7 @@ export default function MemberLeavesPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white font-bold uppercase tracking-wider rounded cursor-pointer transition-all hover:scale-105 disabled:opacity-50 shadow-sm"
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white font-bold uppercase tracking-wider rounded cursor-pointer transition-all hover:scale-105 disabled:opacity-50 shadow-sm"
               >
                 <Save className="w-4 h-4" />
                 <span>{submitting ? 'Memproses...' : 'Simpan & Freeze Cuti'}</span>

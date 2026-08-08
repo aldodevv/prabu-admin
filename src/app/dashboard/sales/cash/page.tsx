@@ -231,7 +231,7 @@ export default function TransaksiTunaiPage() {
 
       {/* Main card */}
       <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden no-print">
-        <div className="bg-[#17A2B8] px-6 py-4 text-white font-bold flex items-center gap-2">
+        <div className="bg-brand-cyan px-6 py-4 text-white font-bold flex items-center gap-2">
           <CreditCard className="w-5 h-5" />
           <span className="text-sm uppercase tracking-wider">Transaksi Tunai</span>
         </div>
@@ -249,7 +249,7 @@ export default function TransaksiTunaiPage() {
                 <select
                   value={selectedProductID}
                   onChange={(e) => setSelectedProductID(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 text-xs focus:outline-none focus:border-[#17A2B8] rounded h-10 cursor-pointer"
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 text-xs focus:outline-none focus:border-brand-cyan rounded h-10 cursor-pointer"
                 >
                   <option value="">-Pilih-</option>
                   {products.map((p) => (
@@ -270,7 +270,7 @@ export default function TransaksiTunaiPage() {
                   placeholder="Masukan Unit"
                   value={unit}
                   onChange={(e) => setUnit(e.target.value === '' ? '' : Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 text-xs focus:outline-none focus:border-[#17A2B8] rounded h-10"
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 text-xs focus:outline-none focus:border-brand-cyan rounded h-10"
                 />
               </div>
 
@@ -281,7 +281,7 @@ export default function TransaksiTunaiPage() {
                 <select
                   value={discountPercent}
                   onChange={(e) => setDiscountPercent(Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 text-xs focus:outline-none focus:border-[#17A2B8] rounded h-10 cursor-pointer"
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 text-xs focus:outline-none focus:border-brand-cyan rounded h-10 cursor-pointer"
                 >
                   <option value="0">-Pilih-</option>
                   <option value="10">10%</option>
@@ -392,7 +392,7 @@ export default function TransaksiTunaiPage() {
                   <select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 text-xs focus:outline-none focus:border-[#17A2B8] rounded h-10 cursor-pointer"
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 text-xs focus:outline-none focus:border-brand-cyan rounded h-10 cursor-pointer"
                   >
                     <option value="">-Pilih-</option>
                     <option value="Tunai">Tunai</option>
@@ -413,7 +413,7 @@ export default function TransaksiTunaiPage() {
                         placeholder="Masukkan nomor transaksi debit atau keterangan tambahan..."
                         value={keterangan}
                         onChange={(e) => setKeterangan(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#17A2B8] rounded font-body"
+                        className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-cyan rounded font-body"
                       />
                     </div>
 
@@ -532,7 +532,7 @@ export default function TransaksiTunaiPage() {
             <div className="mt-8 flex justify-end gap-3 border-t pt-4">
               <button
                 onClick={handlePrint}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#17A2B8] hover:bg-[#138496] text-white text-[11px] font-accent font-bold uppercase rounded cursor-pointer transition-colors shadow-sm"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-cyan hover:bg-[#138496] text-white text-[11px] font-accent font-bold uppercase rounded cursor-pointer transition-colors shadow-sm"
               >
                 <Printer className="w-3.5 h-3.5" />
                 Cetak Struk

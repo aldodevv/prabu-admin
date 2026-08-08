@@ -76,13 +76,13 @@ export const SearchFilterBar: React.FC<SearchFilterBarProps> = ({
                     value={searchQuery || ''}
                     onChange={(e) => onSearchChange?.(e.target.value)}
                     placeholder={searchPlaceholder}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 pl-10 text-xs rounded transition-all font-medium"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan focus:outline-none text-slate-800 px-3.5 py-2.5 pl-10 text-xs rounded transition-all font-medium"
                   />
                   <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 </div>
                 <button
                   type="submit"
-                  className="px-4 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm transition-colors cursor-pointer flex-shrink-0"
+                  className="px-4 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm transition-colors cursor-pointer flex-shrink-0"
                 >
                   Pencarian
                 </button>
@@ -94,7 +94,7 @@ export const SearchFilterBar: React.FC<SearchFilterBarProps> = ({
                   value={searchQuery}
                   onChange={(e) => onSearchChange?.(e.target.value)}
                   placeholder={searchPlaceholder}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#17A2B8] focus:outline-none text-slate-800 px-3.5 py-2.5 pl-10 text-xs rounded transition-all font-medium"
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan focus:outline-none text-slate-800 px-3.5 py-2.5 pl-10 text-xs rounded transition-all font-medium"
                 />
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               </div>

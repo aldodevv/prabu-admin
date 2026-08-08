@@ -144,7 +144,7 @@ export default function GymClassesPage() {
 
       {step === 'list' && (
         <div className="bg-white border border-slate-200 rounded shadow-xs overflow-hidden">
-          <div className="bg-[#17A2B8] px-4 py-2.5 text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2">
+          <div className="bg-brand-cyan px-4 py-2.5 text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2">
             <List className="w-4 h-4" />
             <span>Daftar Nama Kelas</span>
           </div>
@@ -152,7 +152,7 @@ export default function GymClassesPage() {
           <div className="p-4 space-y-4">
             <button
               onClick={handleOpenCreate}
-              className="px-3.5 py-2 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded cursor-pointer flex items-center gap-1.5 shadow-xs"
+              className="px-3.5 py-2 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded cursor-pointer flex items-center gap-1.5 shadow-xs"
             >
               <Plus className="w-4 h-4" />
               <span>Tambah Nama Kelas</span>
@@ -178,7 +178,7 @@ export default function GymClassesPage() {
 
       {(step === 'create' || step === 'edit') && (
         <div className="bg-white border border-slate-200 rounded shadow-xs overflow-hidden w-full">
-          <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold select-none flex items-center gap-2">
+          <div className="bg-brand-cyan px-5 py-3 text-white font-bold select-none flex items-center gap-2">
             <List className="w-4 h-4" />
             <span className="text-sm uppercase tracking-wider font-heading">
               {step === 'create' ? 'Tambah Nama Kelas Baru' : 'Ubah Nama Kelas'}

@@ -30,7 +30,7 @@ interface Member {
 interface Transaction {
   id: string;
   transaction_number: string;
-	member_id?: string;
+  member_id?: string;
   member_name?: string;
   admin_name: string;
   transaction_date: string;
@@ -435,7 +435,7 @@ export default function MemberPaymentPage() {
               </div>
             ) : (
               <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
-                <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold select-none">
+                <div className="bg-brand-cyan px-5 py-3 text-white font-bold select-none">
                   <span className="text-sm uppercase tracking-wider font-heading">Pembayaran Anggota</span>
                 </div>
 
@@ -486,7 +486,7 @@ export default function MemberPaymentPage() {
                                     <button
                                       onClick={() => handleOpenPayment(m)}
                                       title="Proses Pembayaran / Perpanjangan"
-                                      className="p-2 bg-[#17A2B8] hover:bg-[#138496] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
+                                      className="p-2 bg-brand-cyan hover:bg-[#138496] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
                                     >
                                       <PlusCircle className="w-4 h-4" />
                                     </button>
@@ -522,7 +522,7 @@ export default function MemberPaymentPage() {
         {step === 'pay' && selectedMember && !successTx && (
           <div className="space-y-6 animate-fadeIn max-w-4xl mx-auto">
             {/* Header cyan bar */}
-            <div className="bg-[#17A2B8] px-5 py-3 text-white font-bold select-none flex items-center gap-2 rounded-t">
+            <div className="bg-brand-cyan px-5 py-3 text-white font-bold select-none flex items-center gap-2 rounded-t">
               <span className="text-sm uppercase tracking-wider font-heading">Transaksi Pembayaran Anggota</span>
             </div>
 
@@ -693,7 +693,7 @@ export default function MemberPaymentPage() {
           <div className="flex gap-4 no-print select-none">
             <button
               onClick={() => window.print()}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-widest rounded transition-colors cursor-pointer shadow-sm"
+              className="inline-flex items-center gap-2 px-5 py-3 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-widest rounded transition-colors cursor-pointer shadow-sm"
             >
               <Printer className="w-4 h-4" />
               Cetak Receipt

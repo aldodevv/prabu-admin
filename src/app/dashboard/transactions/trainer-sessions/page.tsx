@@ -3,12 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { ptRegistrationsApi, trainersApi } from '@/core/api';
-import { 
-  formatDateLabel, 
-  formatIDR, 
-  calculateExpiryDate, 
-  getSessionCountFromPackage, 
-  getSessionCountFromPackage as parseNotesCount 
+import {
+  formatDateLabel,
+  formatIDR,
+  calculateExpiryDate,
+  getSessionCountFromPackage,
+  getSessionCountFromPackage as parseNotesCount
 } from '@/core/constants';
 import { PTRegistration, Trainer } from '@/core/types';
 import { PageHeader } from '@/components/core/PageHeader';
@@ -34,7 +34,7 @@ interface ParsedNotes {
 
 export default function TrainerSessionsPage() {
   const { activeBranchID, user } = useAuth();
-  
+
   // Navigation steps: 'list' | 'rekap' | 'lihat'
   const [step, setStep] = useState<'list' | 'rekap' | 'lihat'>('list');
   const [selectedReg, setSelectedReg] = useState<PTRegistration | null>(null);
@@ -118,7 +118,7 @@ export default function TrainerSessionsPage() {
 
   const handleOpenRekap = (reg: PTRegistration) => {
     setSelectedReg(reg);
-    
+
     // Default trainer option with branch suffix
     const defaultTrainer = reg.trainer_name ? `${reg.trainer_name} - GROGOL` : '';
     setRekapTrainerName(defaultTrainer);
@@ -143,7 +143,7 @@ export default function TrainerSessionsPage() {
     setFormSuccess('');
 
     const parsed = parseNotes(selectedReg.notes || '', selectedReg.package_name);
-    
+
     if (rekapUsedCount > parsed.remaining_sessions) {
       setFormError(`Jumlah sesi terpakai tidak boleh melebihi sisa sesi (${parsed.remaining_sessions})!`);
       setSubmitting(false);
@@ -189,7 +189,7 @@ export default function TrainerSessionsPage() {
     return registrations.filter(reg => {
       // Filter by search query (member name, username, package name)
       const q = searchQuery.toLowerCase();
-      const matchQuery = 
+      const matchQuery =
         reg.member_name.toLowerCase().includes(q) ||
         (reg.member_username && reg.member_username.toLowerCase().includes(q)) ||
         reg.package_name.toLowerCase().includes(q);
@@ -273,7 +273,7 @@ export default function TrainerSessionsPage() {
           </button>
           <button
             onClick={() => setPrintReg(r)}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#17A2B8] hover:bg-[#138496] text-white font-bold uppercase text-[9px] tracking-wider rounded cursor-pointer transition-colors shadow-sm"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-brand-cyan hover:bg-[#138496] text-white font-bold uppercase text-[9px] tracking-wider rounded cursor-pointer transition-colors shadow-sm"
           >
             <Printer className="w-3.5 h-3.5" />
             Cetak
@@ -286,13 +286,13 @@ export default function TrainerSessionsPage() {
   return (
     <div className="space-y-8 font-sans">
       <div className="no-print space-y-6">
-        
+
         {/* Step 1: Listing (Daftar Sesi Latihan) */}
         {step === 'list' && (
           <div className="space-y-6 animate-fadeIn">
-            <PageHeader 
-              title="Sesi Latihan Pelatih" 
-              description="Daftar Pelacakan Kehadiran & Sisa Sesi Latihan Anggota" 
+            <PageHeader
+              title="Sesi Latihan Pelatih"
+              description="Daftar Pelacakan Kehadiran & Sisa Sesi Latihan Anggota"
             />
 
             {/* Pencarian Filter */}
@@ -368,7 +368,7 @@ export default function TrainerSessionsPage() {
               <h3 className="font-heading text-lg font-bold border-b border-slate-100 pb-2 text-slate-800">
                 Informasi Sesi
               </h3>
-              
+
               <div className="grid grid-cols-2 gap-4 text-xs font-semibold max-sm:grid-cols-1">
                 <div className="p-4 bg-slate-50 border border-slate-200 rounded">
                   <div className="text-slate-400 font-accent uppercase text-[9px] mb-1">Nama Anggota</div>
@@ -389,7 +389,7 @@ export default function TrainerSessionsPage() {
                     value={rekapDate}
                     onChange={(e) => setRekapDate(e.target.value)}
                     className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full font-mono cursor-pointer"
-                    onClick={(e) => { try { e.currentTarget.showPicker(); } catch {} }}
+                    onClick={(e) => { try { e.currentTarget.showPicker(); } catch { } }}
                   />
                 </div>
 
@@ -473,7 +473,7 @@ export default function TrainerSessionsPage() {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setPrintReg(selectedReg)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#17A2B8] hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
                   >
                     <Printer className="w-4 h-4" />
                     <span>Cetak Kartu</span>
@@ -531,7 +531,7 @@ export default function TrainerSessionsPage() {
               <h3 className="font-heading text-lg font-bold border-b border-slate-100 pb-2 text-slate-800">
                 Log Kehadiran Sesi Latihan
               </h3>
-              
+
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border border-slate-200 border-collapse">
                   <thead className="bg-[#6C7A89] text-white text-[10px] uppercase font-bold tracking-wider">
