@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { useAuth } from '@/context/AuthContext';
 import { membersApi, transactionsApi } from '@/core/api';
 import { formatDateLabel, formatIDR, getMembershipTypeFromNotes, getPaymentMethodFromNotes } from '@/core/constants';
@@ -8,16 +9,24 @@ import { Member, Transaction } from '@/core/types';
 import { PageHeader } from '@/components/core/PageHeader';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 import { DataTable, Column } from '@/components/core/DataTable';
-import { OfficialReceiptTemplate } from '@/components/core/PrintTemplates';
 import { Search, Eye, Edit, Trash2, ArrowLeft, Save, Printer, FileText, FileSpreadsheet, RotateCcw, Download } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { exportToExcel } from '@/lib/excelExport';
 import { compressImage } from '@/utils/imageCompressor';
 import { uploadToCloudflare } from '@/lib/cloudflare';
 import { formatPhotoUrl } from '@/lib/api';
-import { DigitalMemberCard } from '@/components/core/DigitalMemberCard';
 import { permissions } from '@/lib/permissions';
 import { FetchErrorAlert } from '@/components/core/FetchErrorAlert';
+
+const OfficialReceiptTemplate = dynamic(
+  () => import('@/components/core/PrintTemplates').then((mod) => mod.OfficialReceiptTemplate),
+  { ssr: false }
+);
+
+const DigitalMemberCard = dynamic(
+  () => import('@/components/core/DigitalMemberCard').then((mod) => mod.DigitalMemberCard),
+  { ssr: false }
+);
 
 export default function OneClubMembersPanel() {
   const { activeBranchID, user, loading: authLoading } = useAuth();

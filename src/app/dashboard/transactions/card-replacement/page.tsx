@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { membersApi, transactionsApi } from '@/core/api';
 import { formatDateLabel, formatIDR } from '@/core/constants';
-import { Member, CardReplacementLog } from '@/core/types';
+import { Member, CardReplacementLog, Transaction } from '@/core/types';
 import { PageHeader } from '@/components/core/PageHeader';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 import { DataTable, Column } from '@/components/core/DataTable';
@@ -14,7 +14,8 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { exportToExcel } from '@/lib/excelExport';
 
 export default function CardReplacementPage() {
-  const { activeBranchID, user } = useAuth();
+  const { activeBranchID, user, loading: authLoading } = useAuth();
+  const lastFetchedBranchRef = useRef<string | null>(null);
 
   // Navigation steps: 'list' | 'add'
   const [step, setStep] = useState<'list' | 'add'>('list');
@@ -22,9 +23,6 @@ export default function CardReplacementPage() {
 
   // Data states
   const [members, setMembers] = useState<Member[]>([]);
-  const [logs, setLogs] = useState<CardReplacementLog[]>([]);
-  const [loading, setLoading] = useState(true);
-
   // Search filter
   const [searchQuery, setSearchQuery] = useState('');
   const [filterColumn, setFilterColumn] = useState('');
@@ -36,7 +34,14 @@ export default function CardReplacementPage() {
   const [newUsername, setNewUsername] = useState('');
   const [cardPrice, setCardPrice] = useState('0');
   const [reason, setReason] = useState('Mutasi Anggota');
+
+  const [replacementFee, setReplacementFee] = useState<number>(50000);
+  const [notes, setNotes] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('cash');
   const [submitting, setSubmitting] = useState(false);
+
+  const [logs, setLogs] = useState<CardReplacementLog[]>([]);
+  const [loading, setLoading] = useState(true);
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
 
@@ -45,11 +50,12 @@ export default function CardReplacementPage() {
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    if (activeBranchID) {
+    if (!authLoading && activeBranchID && lastFetchedBranchRef.current !== activeBranchID) {
+      lastFetchedBranchRef.current = activeBranchID;
       fetchMembers();
       fetchLogs();
     }
-  }, [activeBranchID, page, perPage]);
+  }, [activeBranchID, authLoading]);
 
   const fetchMembers = async () => {
     try {
