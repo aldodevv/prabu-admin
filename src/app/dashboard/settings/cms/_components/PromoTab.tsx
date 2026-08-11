@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import api from '@/lib/api';
-import { Image as ImageIcon, Save, Upload } from 'lucide-react';
+import { Image as ImageIcon, Save, Upload, Link as LinkIcon, Type } from 'lucide-react';
 import { compressAndConvertToWebP } from './utils';
 
 interface PromoTabProps {
@@ -10,15 +10,23 @@ interface PromoTabProps {
   onError: (msg: string) => void;
 }
 
+export interface PromoSlideData {
+  image: string;
+  buttonText: string;
+  buttonLink: string;
+}
+
+const DEFAULT_SLIDES: PromoSlideData[] = [
+  { image: '/images/background5.jpeg', buttonText: 'LIHAT PAKET MEMBERSHIP →', buttonLink: '/membership' },
+  { image: '/images/promox.png', buttonText: 'LIHAT PAKET PT →', buttonLink: '/membership#pt' },
+  { image: '/images/background4.jpeg', buttonText: 'KLAIM PROMO SEKARANG →', buttonLink: 'https://wa.me/628123456789' },
+  { image: '/images/background5.jpeg', buttonText: 'KLAIM BONUS REFERRAL →', buttonLink: 'https://wa.me/628123456789' },
+];
+
 export const PromoTab: React.FC<PromoTabProps> = ({ onSuccess, onError }) => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [promoImageUrls, setPromoImageUrls] = useState<string[]>([
-    '/images/background5.jpeg',
-    '/images/promox.png',
-    '/images/background4.jpeg',
-    '/images/background5.jpeg',
-  ]);
+  const [slides, setSlides] = useState<PromoSlideData[]>(DEFAULT_SLIDES);
   const [slideUploadStatus, setSlideUploadStatus] = useState<{
     [key: number]: { loading?: boolean; success?: string; error?: string };
   }>({});
@@ -34,15 +42,24 @@ export const PromoTab: React.FC<PromoTabProps> = ({ onSuccess, onError }) => {
     isFetchingRef.current = true;
     setLoading(true);
     try {
-      const res = await api.get<{ imageUrls?: string[]; imageUrl?: string }>('/public/promo-image');
+      const res = await api.get<{ imageUrls?: string[]; slides?: PromoSlideData[] }>('/public/promo-image');
       if (res.success && res.data) {
-        const urls = res.data.imageUrls || [res.data.imageUrl || '/images/promox.png'];
-        setPromoImageUrls([
-          urls[0] || '/images/background5.jpeg',
-          urls[1] || '/images/promox.png',
-          urls[2] || '/images/background4.jpeg',
-          urls[3] || '/images/background5.jpeg',
-        ]);
+        if (res.data.slides && res.data.slides.length > 0) {
+          setSlides([
+            res.data.slides[0] || DEFAULT_SLIDES[0],
+            res.data.slides[1] || DEFAULT_SLIDES[1],
+            res.data.slides[2] || DEFAULT_SLIDES[2],
+            res.data.slides[3] || DEFAULT_SLIDES[3],
+          ]);
+        } else if (res.data.imageUrls && res.data.imageUrls.length > 0) {
+          const urls = res.data.imageUrls;
+          setSlides([
+            { image: urls[0] || DEFAULT_SLIDES[0].image, buttonText: DEFAULT_SLIDES[0].buttonText, buttonLink: DEFAULT_SLIDES[0].buttonLink },
+            { image: urls[1] || DEFAULT_SLIDES[1].image, buttonText: DEFAULT_SLIDES[1].buttonText, buttonLink: DEFAULT_SLIDES[1].buttonLink },
+            { image: urls[2] || DEFAULT_SLIDES[2].image, buttonText: DEFAULT_SLIDES[2].buttonText, buttonLink: DEFAULT_SLIDES[2].buttonLink },
+            { image: urls[3] || DEFAULT_SLIDES[3].image, buttonText: DEFAULT_SLIDES[3].buttonText, buttonLink: DEFAULT_SLIDES[3].buttonLink },
+          ]);
+        }
       }
     } catch (err: any) {
       onError(err.message || 'Gagal memuat data promo image');
@@ -54,17 +71,23 @@ export const PromoTab: React.FC<PromoTabProps> = ({ onSuccess, onError }) => {
 
   const handleSavePromoImage = async (e: React.FormEvent) => {
     e.preventDefault();
-    const validUrls = promoImageUrls.map((u) => u.trim()).filter(Boolean);
-    if (validUrls.length === 0) {
-      onError('URL Gambar Promo tidak boleh kosong');
+    const validSlides = slides.map((s) => ({
+      image: s.image.trim(),
+      buttonText: s.buttonText.trim() || 'KLAIM PROMO',
+      buttonLink: s.buttonLink.trim() || '/membership',
+    }));
+
+    if (validSlides.some((s) => !s.image)) {
+      onError('URL Gambar Promo tidak boleh ada yang kosong');
       return;
     }
 
     setLoading(true);
     try {
-      const res = await api.put('/admin/promo-image', { imageUrls: validUrls });
+      const imageUrls = validSlides.map((s) => s.image);
+      const res = await api.put('/admin/promo-image', { imageUrls, slides: validSlides });
       if (res.success) {
-        onSuccess('4 Gambar Banner Promo berhasil disimpan!');
+        onSuccess('4 Slide Banner Promo (Gambar, Teks Tombol & Link Target) berhasil disimpan!');
       }
     } catch (err: any) {
       onError(err.message || 'Gagal memperbarui gambar promo');
@@ -98,9 +121,9 @@ export const PromoTab: React.FC<PromoTabProps> = ({ onSuccess, onError }) => {
 
       const res = await api.post<{ url: string }>('/admin/promo-upload', { image: base64Data });
       if (res.success && res.data?.url) {
-        const updated = [...promoImageUrls];
-        updated[slideIdx] = res.data.url;
-        setPromoImageUrls(updated);
+        const updated = [...slides];
+        updated[slideIdx] = { ...updated[slideIdx], image: res.data.url };
+        setSlides(updated);
         setSlideUploadStatus((prev) => ({
           ...prev,
           [slideIdx]: { success: '✓ WebP Ready' },
@@ -121,18 +144,24 @@ export const PromoTab: React.FC<PromoTabProps> = ({ onSuccess, onError }) => {
     }
   };
 
+  const updateSlideField = (slideIdx: number, field: keyof PromoSlideData, value: string) => {
+    const updated = [...slides];
+    updated[slideIdx] = { ...updated[slideIdx], [field]: value };
+    setSlides(updated);
+  };
+
   return (
     <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden w-full">
       <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex items-center justify-between select-none">
         <h3 className="text-sm font-extrabold uppercase tracking-wider font-heading flex items-center gap-2 text-white">
           <ImageIcon size={18} />
-          <span>Kelola 4 Slide Banner Promo Landing Page</span>
+          <span>Kelola 4 Card Slide Banner Promo Landing Page</span>
         </h3>
       </div>
 
       <div className="p-6 sm:p-8 space-y-6">
         <p className="text-xs text-slate-500 font-body">
-          Atur 4 gambar promo yang tampil pada carousel `PromoSection.tsx`. Unggahan file akan otomatis di-kompres dan dikonversi ke format WebP (.webp) secara cepat di browser sebelum disimpan.
+          Atur 4 card promo yang tampil pada carousel landing page. Setiap card memiliki <strong>Gambar Background</strong>, <strong>Teks Tombol Action</strong>, dan <strong>Link Href Tujuan</strong> (seperti <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">/membership</code> atau <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">https://wa.me/...</code>).
         </p>
 
         <form onSubmit={handleSavePromoImage} className="space-y-6">
@@ -141,7 +170,7 @@ export const PromoTab: React.FC<PromoTabProps> = ({ onSuccess, onError }) => {
               <div key={idx} className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-[#17A2B8] uppercase">Slide {idx + 1}</span>
+                    <span className="text-xs font-bold text-[#17A2B8] uppercase">Card Slide {idx + 1}</span>
                     {slideUploadStatus[idx]?.loading ? (
                       <span className="text-[10px] font-bold text-[#17A2B8] bg-teal-50 px-2 py-0.5 rounded border border-teal-200 animate-pulse">
                         ⏳ Compressing...
@@ -157,41 +186,74 @@ export const PromoTab: React.FC<PromoTabProps> = ({ onSuccess, onError }) => {
                     )}
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase">URL Gambar Slide {idx + 1}</label>
-                    <input
-                      type="text"
-                      required
-                      value={promoImageUrls[idx] || ''}
-                      onChange={(e) => {
-                        const updated = [...promoImageUrls];
-                        updated[idx] = e.target.value;
-                        setPromoImageUrls(updated);
-                      }}
-                      placeholder={`/images/promo-slide-${idx + 1}.webp`}
-                      className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-xs text-slate-800 focus:outline-none focus:border-brand-cyan font-mono font-semibold"
-                    />
-
-                    <label className="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 w-full border border-slate-300 transition-colors">
-                      <Upload size={14} />
-                      <span>{uploading ? 'Compressing...' : 'Upload & Compress WebP'}</span>
+                  <div className="space-y-3">
+                    {/* Image URL & Upload */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                        URL Gambar Slide {idx + 1}
+                      </label>
                       <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handlePromoFileUpload(e, idx)}
-                        disabled={uploading}
+                        type="text"
+                        required
+                        value={slides[idx]?.image || ''}
+                        onChange={(e) => updateSlideField(idx, 'image', e.target.value)}
+                        placeholder={`/images/promo-slide-${idx + 1}.webp`}
+                        className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-xs text-slate-800 focus:outline-none focus:border-brand-cyan font-mono font-semibold"
                       />
-                    </label>
+
+                      <label className="mt-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 w-full border border-slate-300 transition-colors">
+                        <Upload size={14} />
+                        <span>{uploading ? 'Compressing...' : 'Upload & Compress WebP'}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handlePromoFileUpload(e, idx)}
+                          disabled={uploading}
+                        />
+                      </label>
+                    </div>
+
+                    {/* Button Text */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1 flex items-center gap-1">
+                        <Type size={12} />
+                        <span>Teks Tombol</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={slides[idx]?.buttonText || ''}
+                        onChange={(e) => updateSlideField(idx, 'buttonText', e.target.value)}
+                        placeholder="KLAIM PROMO SEKARANG →"
+                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs text-slate-800 focus:outline-none focus:border-brand-cyan font-semibold"
+                      />
+                    </div>
+
+                    {/* Button Link Href */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1 flex items-center gap-1">
+                        <LinkIcon size={12} />
+                        <span>Link Target (Href)</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={slides[idx]?.buttonLink || ''}
+                        onChange={(e) => updateSlideField(idx, 'buttonLink', e.target.value)}
+                        placeholder="/membership atau https://wa.me/..."
+                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs text-slate-800 focus:outline-none focus:border-brand-cyan font-mono"
+                      />
+                    </div>
                   </div>
                 </div>
 
                 {/* Thumbnail Preview Box */}
-                <div className="space-y-1 pt-2">
+                <div className="space-y-1 pt-2 border-t border-slate-200/80">
                   <span className="block text-[10px] font-bold text-slate-500 uppercase">Preview Slide {idx + 1}</span>
-                  <div className="relative w-full h-36 rounded-lg overflow-hidden bg-slate-200 border border-slate-300 flex items-center justify-center">
-                    {promoImageUrls[idx] ? (
-                      <img src={promoImageUrls[idx]} alt={`Slide ${idx + 1}`} className="w-full h-full object-cover" />
+                  <div className="relative w-full h-32 rounded-lg overflow-hidden bg-slate-200 border border-slate-300 flex items-center justify-center">
+                    {slides[idx]?.image ? (
+                      <img src={slides[idx].image} alt={`Slide ${idx + 1}`} className="w-full h-full object-cover" />
                     ) : (
                       <span className="text-slate-500 text-xs">Belum ada gambar</span>
                     )}
@@ -208,7 +270,7 @@ export const PromoTab: React.FC<PromoTabProps> = ({ onSuccess, onError }) => {
               className="inline-flex items-center gap-2 px-6 py-3 bg-brand-cyan hover:bg-[#138496] text-white rounded-lg font-bold text-xs uppercase shadow-sm transition-all cursor-pointer"
             >
               <Save size={16} />
-              <span>{loading ? 'Menyimpan...' : 'Simpan 4 Slide Banner Promo'}</span>
+              <span>{loading ? 'Menyimpan...' : 'Simpan 4 Card Banner Promo'}</span>
             </button>
           </div>
         </form>

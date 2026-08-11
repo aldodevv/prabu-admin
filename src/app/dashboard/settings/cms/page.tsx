@@ -6,8 +6,6 @@ import {
   Image as ImageIcon,
   CreditCard,
   Dumbbell,
-  ShoppingBag,
-  Plus,
   AlertCircle,
 } from 'lucide-react';
 import { CMSTab } from './_components/types';
@@ -15,39 +13,22 @@ import { SuccessModal } from './_components/SuccessModal';
 import { PromoTab } from './_components/PromoTab';
 import { MembershipTab } from './_components/MembershipTab';
 import { PtPlansTab } from './_components/PtPlansTab';
-import { HubTab } from './_components/HubTab';
 
 export default function CMSManagementPage() {
   const [activeTab, setActiveTab] = useState<CMSTab>('promo');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [hubStep, setHubStep] = useState<'list' | 'create' | 'edit'>('list');
-  const [hubCreateTrigger, setHubCreateTrigger] = useState(0);
 
   const handleTabChange = (tab: CMSTab) => {
     setActiveTab(tab);
     setError(null);
-    if (tab === 'hub') {
-      setHubStep('list');
-    }
   };
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="CONTENT MANAGEMENT SYSTEM (CMS)"
-        description="PENGATURAN BANNER PROMO, PAKET MEMBERSHIP, PAKET PERSONAL TRAINER, DAN PRABU HUB STORE"
-        action={
-          activeTab === 'hub' && hubStep === 'list' ? (
-            <button
-              onClick={() => setHubCreateTrigger((prev) => prev + 1)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-cyan text-white rounded-lg font-bold text-xs uppercase hover:bg-[#138496] transition-colors shadow-sm cursor-pointer"
-            >
-              <Plus size={16} />
-              <span>Tambah Hub Card Baru</span>
-            </button>
-          ) : null
-        }
+        description="PENGATURAN BANNER PROMO, PAKET MEMBERSHIP, DAN PAKET PERSONAL TRAINER"
       />
 
       {/* ALERT NOTIFICATIONS */}
@@ -72,7 +53,6 @@ export default function CMSManagementPage() {
           { id: 'promo', label: 'Image Promo (Landing)', icon: <ImageIcon size={16} /> },
           { id: 'membership', label: 'Paket Membership Cards', icon: <CreditCard size={16} /> },
           { id: 'pt', label: 'Paket Personal Trainer Cards', icon: <Dumbbell size={16} /> },
-          { id: 'hub', label: 'Prabu Hub Cards (Store)', icon: <ShoppingBag size={16} /> },
         ].map((tab) => {
           const isActive = activeTab === tab.id;
           return (
@@ -100,15 +80,6 @@ export default function CMSManagementPage() {
       )}
       {activeTab === 'pt' && (
         <PtPlansTab onSuccess={setSuccess} onError={setError} />
-      )}
-      {activeTab === 'hub' && (
-        <HubTab
-          onSuccess={setSuccess}
-          onError={setError}
-          hubStep={hubStep}
-          setHubStep={setHubStep}
-          createTrigger={hubCreateTrigger}
-        />
       )}
     </div>
   );
