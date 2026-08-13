@@ -53,6 +53,7 @@ export const ROUTES = {
   SETTINGS_CLASSES: '/dashboard/settings/classes',
   SETTINGS_CMS: '/dashboard/settings/cms',
   SETTINGS_HUB_ITEMS: '/dashboard/settings/hub-items',
+  SETTINGS_MIGRATION: '/dashboard/settings/migration',
 };
 
 /**
@@ -154,6 +155,7 @@ export const NAVIGATION_MENU: NavigationGroup[] = [
       { label: 'Paket Personal Trainer', href: ROUTES.SETTINGS_PT_PACKAGES, iconName: 'List' },
       { label: 'Daftar Nama Kelas', href: ROUTES.SETTINGS_CLASSES, iconName: 'List' },
       { label: 'Manajemen CMS (News & Promo)', href: ROUTES.SETTINGS_CMS, iconName: 'FileText' },
+      { label: 'Migrasi Data DB Pajak', href: ROUTES.SETTINGS_MIGRATION, iconName: 'Database' },
     ]
   }
 ];

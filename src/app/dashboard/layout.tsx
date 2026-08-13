@@ -2,13 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { PajakProvider, usePajakMode } from '@/context/PajakContext';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { ROUTES, NAVIGATION_MENU } from '@/core/constants';
 import * as Icons from 'lucide-react';
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const { user, activeBranchID, selectBranch, branches, logout, loading } = useAuth();
+  const { isPajakMode } = usePajakMode();
   const pathname = usePathname();
   const router = useRouter();
   const [mobileSidebar, setMobileSidebar] = useState(false);
@@ -24,9 +26,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return IconComponent || Icons.HelpCircle;
   };
 
+  // Filter navigation menu based on role and Pajak mode
+  const filteredNavigation = NAVIGATION_MENU.filter((group) => {
+    if (isPajakMode) {
+      if (group.id === 'data-staff' || group.id === 'pengaturan') {
+        return false;
+      }
+    }
+    if (user?.role === 'cs') {
+      if (group.id === 'data-staff' || group.id === 'pengaturan') {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  // Guard access to staff and settings pages when Pajak Mode is active
+  useEffect(() => {
+    if (isPajakMode && (pathname.startsWith('/dashboard/staff') || pathname.startsWith('/dashboard/settings'))) {
+      router.push(ROUTES.DASHBOARD);
+    }
+  }, [isPajakMode, pathname, router]);
+
   // Auto-expand menu group on page load/navigation based on pathname
   useEffect(() => {
-    const matched = NAVIGATION_MENU.find(group =>
+    const matched = filteredNavigation.find(group =>
       group.items.some(item => pathname === item.href || pathname.startsWith(item.href + '/'))
     );
     if (matched) {
@@ -36,7 +60,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       setActiveGroup(null);
       setMobileActiveGroup(null);
     }
-  }, [pathname]);
+  }, [pathname, isPajakMode]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -54,15 +78,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
     );
   }
-
-  const filteredNavigation = NAVIGATION_MENU.filter((group) => {
-    if (user?.role === 'cs') {
-      if (group.id === 'data-staff' || group.id === 'pengaturan') {
-        return false;
-      }
-    }
-    return true;
-  });
 
   const hasSubmenu = activeGroup && activeGroup !== 'beranda';
   const activeGroupConfig = filteredNavigation.find(g => g.id === activeGroup);
@@ -171,8 +186,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
             </div>
 
-
-
             <button
               onClick={logout}
               className="w-full py-2 bg-slate-700/40 hover:bg-[#DC3545] text-slate-350 hover:text-white text-[10px] font-bold uppercase tracking-widest transition-all rounded cursor-pointer flex items-center justify-center gap-1.5"
@@ -206,8 +219,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           )}
 
+          {/* Easter Egg Mode Pajak Badge */}
+          {isPajakMode && (
+            <div className="inline-flex items-center gap-1.5 ml-2 px-2.5 sm:px-3 py-1 border border-amber-500 bg-amber-50 text-amber-700 font-extrabold text-[10px] sm:text-xs rounded-full uppercase tracking-wider select-none no-print shrink-0 animate-pulse shadow-xs">
+              <Icons.ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
+              <span>MODE PAJAK</span>
+            </div>
+          )}
+
           {/* Read-Only Badge for Admin */}
-          {user?.role === 'admin' && (
+          {user?.role === 'admin' && !isPajakMode && (
             <div className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-300 text-amber-700 font-bold text-[10px] rounded-full uppercase tracking-wider shadow-xs no-print shrink-0">
               <Icons.Eye className="w-3.5 h-3.5 text-amber-600" />
               <span>Akses Membaca (Read-Only)</span>
@@ -307,7 +328,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
 
               <nav className="space-y-2 flex-1">
-                {NAVIGATION_MENU.map((group) => {
+                {filteredNavigation.map((group) => {
                   const Icon = resolveIcon(group.iconName);
                   const isBeranda = group.id === 'beranda';
                   const isMobileActive = isBeranda
@@ -400,5 +421,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       )}
     </div>
+  );
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <PajakProvider>
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+    </PajakProvider>
   );
 }

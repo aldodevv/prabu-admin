@@ -72,6 +72,11 @@ class ApiClient {
       if (branchID) {
         headers['X-Branch-ID'] = branchID;
       }
+
+      const isPajakMode = localStorage.getItem('prabu_pajak_mode') === 'true';
+      if (isPajakMode) {
+        headers['X-DB-Mode'] = 'pajak';
+      }
     }
     return headers;
   }
