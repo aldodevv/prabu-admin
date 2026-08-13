@@ -61,21 +61,24 @@ class ApiClient {
     if (!isMultipart) {
       headers['Content-Type'] = 'application/json';
     }
-    
+
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('prabu_admin_token');
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
-      
+
       const branchID = localStorage.getItem('prabu_admin_branch_id');
       if (branchID) {
         headers['X-Branch-ID'] = branchID;
       }
 
-      const isPajakMode = localStorage.getItem('prabu_pajak_mode') === 'true';
-      if (isPajakMode) {
-        headers['X-DB-Mode'] = 'pajak';
+      const isMainMode =
+        localStorage.getItem('prabu_main_mode') === 'true' ||
+        localStorage.getItem('prabu_prod_mode') === 'true' ||
+        localStorage.getItem('prabu_pajak_mode') === 'true';
+      if (isMainMode) {
+        headers['X-DB-Mode'] = 'main';
       }
     }
     return headers;
@@ -96,7 +99,7 @@ class ApiClient {
       }
       return data;
     }
-    
+
     if (!res.ok) {
       return {
         success: false,
@@ -104,7 +107,7 @@ class ApiClient {
         error: translateRC('SYS99', `HTTP Error ${res.status}: ${res.statusText}`),
       };
     }
-    
+
     return { success: true, rc: '00' };
   }
 

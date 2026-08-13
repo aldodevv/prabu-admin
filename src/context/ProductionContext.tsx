@@ -1,8 +1,8 @@
 'use client';
 
 export {
-  MainModeProvider as PajakProvider,
-  usePajakMode,
+  MainModeProvider as ProductionProvider,
+  useProductionMode,
   MainModeProvider,
   useMainMode,
 } from './MainModeContext';

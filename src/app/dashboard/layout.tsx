@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { PajakProvider, usePajakMode } from '@/context/PajakContext';
+import { MainModeProvider, useMainMode } from '@/context/MainModeContext';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { ROUTES, NAVIGATION_MENU } from '@/core/constants';
@@ -10,7 +10,7 @@ import * as Icons from 'lucide-react';
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const { user, activeBranchID, selectBranch, branches, logout, loading } = useAuth();
-  const { isPajakMode } = usePajakMode();
+  const { isMainMode: isPajakMode } = useMainMode();
   const pathname = usePathname();
   const router = useRouter();
   const [mobileSidebar, setMobileSidebar] = useState(false);
@@ -219,11 +219,11 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             </div>
           )}
 
-          {/* Easter Egg Mode Pajak Badge */}
+          {/* Easter Egg Mode Main Badge */}
           {isPajakMode && (
             <div className="inline-flex items-center gap-1.5 ml-2 px-2.5 sm:px-3 py-1 border border-amber-500 bg-amber-50 text-amber-700 font-extrabold text-[10px] sm:text-xs rounded-full uppercase tracking-wider select-none no-print shrink-0 animate-pulse shadow-xs">
               <Icons.ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
-              <span>MODE PAJAK</span>
+              <span>MODE MAIN</span>
             </div>
           )}
 
@@ -426,8 +426,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <PajakProvider>
+    <MainModeProvider>
       <DashboardLayoutContent>{children}</DashboardLayoutContent>
-    </PajakProvider>
+    </MainModeProvider>
   );
 }

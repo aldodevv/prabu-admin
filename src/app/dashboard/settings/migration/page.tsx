@@ -120,8 +120,8 @@ export default function MigrationPage() {
     <div className="space-y-6 animate-fade-in font-body pb-12">
       {/* Existing Theme Standard Page Header */}
       <PageHeader
-        title="Migrasi Data DB Pajak"
-        description="Fitur Production Pemindahan Data Pilihan Ke URL_DB_PAJAK"
+        title="Migrasi Data DB Main"
+        description="Fitur Production Pemindahan Data Pilihan Ke URL_DB_MAIN"
       />
 
       {/* Existing Theme Alert Error */}
@@ -146,7 +146,7 @@ export default function MigrationPage() {
         <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
           <Database className="w-4 h-4" />
           <span className="text-sm uppercase tracking-wider font-heading">
-            Form Migrasi Data Khusus DB Pajak (URL_DB_PAJAK)
+            Form Migrasi Data Khusus DB Main (URL_DB_MAIN)
           </span>
         </div>
 
@@ -244,7 +244,7 @@ export default function MigrationPage() {
             <div className="space-y-0.5">
               <h4 className="font-bold uppercase text-amber-950">Proteksi Duplikasi (Unique Check)</h4>
               <p className="text-[11px] text-amber-800 leading-relaxed">
-                Data yang sudah berada di <code className="font-mono bg-amber-100 px-1 rounded text-amber-900 font-bold">URL_DB_PAJAK</code> tidak akan diduplikasi (di-skip otomatis oleh server). Aman dieksekusi berkali-kali.
+                Data yang sudah berada di <code className="font-mono bg-amber-100 px-1 rounded text-amber-900 font-bold">URL_DB_MAIN</code> tidak akan diduplikasi (di-skip otomatis oleh server). Aman dieksekusi berkali-kali.
               </p>
             </div>
           </div>
@@ -267,7 +267,7 @@ export default function MigrationPage() {
               ) : (
                 <>
                   <Database className="w-4 h-4" />
-                  <span>Proses Migrasi ke DB Pajak</span>
+                  <span>Proses Migrasi ke DB Main</span>
                 </>
               )}
             </button>
