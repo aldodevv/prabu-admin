@@ -18,7 +18,7 @@ export interface PromoSlideData {
 
 const DEFAULT_SLIDES: PromoSlideData[] = [
   { image: '/images/background5.jpeg', buttonText: 'LIHAT PAKET MEMBERSHIP →', buttonLink: '/membership' },
-  { image: '/images/promox.png', buttonText: 'LIHAT PAKET PT →', buttonLink: '/membership#pt' },
+  { image: '/images/background2.jpeg', buttonText: 'LIHAT PAKET PT →', buttonLink: '/membership#pt' },
   { image: '/images/background4.jpeg', buttonText: 'KLAIM PROMO SEKARANG →', buttonLink: 'https://wa.me/628123456789' },
   { image: '/images/background5.jpeg', buttonText: 'KLAIM BONUS REFERRAL →', buttonLink: 'https://wa.me/628123456789' },
 ];
