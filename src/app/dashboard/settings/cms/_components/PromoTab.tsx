@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import api from '@/lib/api';
+import api, { formatPhotoUrl } from '@/lib/api';
 import { Image as ImageIcon, Save, Upload, Link as LinkIcon, Type } from 'lucide-react';
 import { compressAndConvertToWebP } from './utils';
 
@@ -253,7 +253,7 @@ export const PromoTab: React.FC<PromoTabProps> = ({ onSuccess, onError }) => {
                   <span className="block text-[10px] font-bold text-slate-500 uppercase">Preview Slide {idx + 1}</span>
                   <div className="relative w-full h-32 rounded-lg overflow-hidden bg-slate-200 border border-slate-300 flex items-center justify-center">
                     {slides[idx]?.image ? (
-                      <img src={slides[idx].image} alt={`Slide ${idx + 1}`} className="w-full h-full object-cover" />
+                      <img src={formatPhotoUrl(slides[idx].image)} alt={`Slide ${idx + 1}`} className="w-full h-full object-cover" />
                     ) : (
                       <span className="text-slate-500 text-xs">Belum ada gambar</span>
                     )}

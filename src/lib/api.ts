@@ -18,15 +18,27 @@ export const getBaseUrl = (): string => {
 
 export const formatPhotoUrl = (url?: string): string => {
   if (!url) return '';
-  if (url.includes('r2.cloudflarestorage.com')) {
-    const parts = url.split('.r2.cloudflarestorage.com/');
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+
+  const baseUrl = getBaseUrl();
+
+  if (trimmed.includes('r2.cloudflarestorage.com')) {
+    const parts = trimmed.split('.r2.cloudflarestorage.com/');
     if (parts.length > 1) {
       let key = parts[1];
       key = key.replace(/^prabugym\//, '');
-      return `${getBaseUrl()}/public/assets/${key}`;
+      return `${baseUrl}/public/assets/${key}`;
     }
   }
-  return url;
+  if (trimmed.startsWith('http://localhost:8080/api') || trimmed.startsWith('http://127.0.0.1:8080/api')) {
+    return trimmed.replace(/^http:\/\/(localhost|127\.0\.0\.1):8080\/api/, baseUrl);
+  }
+  if (trimmed.startsWith('/public/assets/') || trimmed.startsWith('public/assets/')) {
+    const clean = trimmed.replace(/^\/?/, '');
+    return `${baseUrl}/${clean}`;
+  }
+  return trimmed;
 };
 
 export interface ApiResponse<T> {
