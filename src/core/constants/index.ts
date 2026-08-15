@@ -37,7 +37,6 @@ export const ROUTES = {
   SALES_REPORTS: '/dashboard/sales/reports',
   SALES_HISTORY: '/dashboard/sales/history',
   MEMBERS_ONE_CLUB: '/dashboard/members/one-club',
-  MEMBERS_ALL_CLUB: '/dashboard/members/all-club',
   MEMBERS_LEAVES: '/dashboard/members/leaves',
   MEMBERS_VISITS: '/dashboard/members/visits',
   REPORT_MEMBERS: '/dashboard/reports/members',
