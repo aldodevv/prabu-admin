@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import api from '@/lib/api';
-import { Edit, X } from 'lucide-react';
+import { Edit, X, Link as LinkIcon, Type } from 'lucide-react';
 import { PTPlanItem } from './types';
 
 interface PtPlansTabProps {
@@ -30,6 +30,8 @@ export const PtPlansTab: React.FC<PtPlansTabProps> = ({ onSuccess, onError }) =>
         'Cocok untuk yang pertama kali mau coba coaching',
       ],
       featuresStr: '1 kali sesi bersama Personal Trainer\nJadwal fleksibel sesuai kesepakatan\nProgram latihan disesuaikan kebutuhan\nCocok untuk yang pertama kali mau coba coaching',
+      button_text: 'DAFTAR SEKARANG',
+      button_link: 'https://wa.me/p/9066064706772680/6285158889050',
     },
     {
       id: 'pt-3-session',
@@ -49,6 +51,8 @@ export const PtPlansTab: React.FC<PtPlansTabProps> = ({ onSuccess, onError }) =>
         'Didampingi langsung oleh PT',
       ],
       featuresStr: 'Masa aktif 1 bulan\nJadwal fleksibel sesuai kesepakatan\nCocok untuk mulai belajar teknik dasar\nDidampingi langsung oleh PT',
+      button_text: 'DAFTAR SEKARANG',
+      button_link: 'https://wa.me/p/9728890043881333/6285158889050',
     },
     {
       id: 'pt-6-session',
@@ -68,6 +72,8 @@ export const PtPlansTab: React.FC<PtPlansTabProps> = ({ onSuccess, onError }) =>
         'Pendampingan rutin selama sesi',
       ],
       featuresStr: 'Masa aktif 1 bulan\nJadwal fleksibel sesuai kesepakatan\nProgram lebih terarah sesuai goal\nPendampingan rutin selama sesi',
+      button_text: 'DAFTAR SEKARANG',
+      button_link: 'https://wa.me/p/9013236362130291/6285158889050',
     },
     {
       id: 'pt-12-session',
@@ -87,6 +93,8 @@ export const PtPlansTab: React.FC<PtPlansTabProps> = ({ onSuccess, onError }) =>
         'Cocok untuk target transformasi lebih serius',
       ],
       featuresStr: 'Masa aktif 1 bulan\nJadwal fleksibel sesuai kesepakatan\nProgram latihan lebih konsisten\nCocok untuk target transformasi lebih serius',
+      button_text: 'DAFTAR SEKARANG',
+      button_link: 'https://wa.me/p/28674323278848434/6285158889050',
     },
   ]);
   const [editingPtPlan, setEditingPtPlan] = useState<PTPlanItem | null>(null);
@@ -120,6 +128,8 @@ export const PtPlansTab: React.FC<PtPlansTabProps> = ({ onSuccess, onError }) =>
             tagline: p.tagline || '',
             features: Array.isArray(p.features) ? p.features : [],
             featuresStr: Array.isArray(p.features) ? p.features.join('\n') : '',
+            button_text: p.buttonText || p.button_text || 'DAFTAR SEKARANG',
+            button_link: p.buttonLink || p.button_link || '',
           }))
         );
       }
@@ -151,6 +161,8 @@ export const PtPlansTab: React.FC<PtPlansTabProps> = ({ onSuccess, onError }) =>
         discount_badge: editingPtPlan.discount_badge || '',
         tagline: editingPtPlan.tagline || '',
         features: featArray,
+        button_text: editingPtPlan.button_text || 'DAFTAR SEKARANG',
+        button_link: editingPtPlan.button_link || '',
       };
 
       const res = await api.put(`/admin/pt-packages/${editingPtPlan.id}`, payload);
@@ -250,6 +262,37 @@ export const PtPlansTab: React.FC<PtPlansTabProps> = ({ onSuccess, onError }) =>
                     onChange={(e) => setEditingPtPlan({ ...editingPtPlan, bonus_text: e.target.value })}
                     placeholder="mis. Didampingi langsung oleh PT"
                     className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-xs text-slate-800 font-semibold focus:outline-none focus:border-brand-cyan"
+                  />
+                </div>
+              </div>
+
+              {/* Action Button Dynamic Settings (Teks Tombol & Link Target Href) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1 flex items-center gap-1">
+                    <Type size={12} />
+                    <span>Teks Tombol Action</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingPtPlan.button_text || ''}
+                    onChange={(e) => setEditingPtPlan({ ...editingPtPlan, button_text: e.target.value })}
+                    placeholder="DAFTAR SEKARANG"
+                    className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs text-slate-800 focus:outline-none focus:border-brand-cyan font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1 flex items-center gap-1">
+                    <LinkIcon size={12} />
+                    <span>Link Target (Href / WhatsApp Catalog)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={editingPtPlan.button_link || ''}
+                    onChange={(e) => setEditingPtPlan({ ...editingPtPlan, button_link: e.target.value })}
+                    placeholder="https://wa.me/p/..."
+                    className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs text-slate-800 focus:outline-none focus:border-brand-cyan font-mono"
                   />
                 </div>
               </div>

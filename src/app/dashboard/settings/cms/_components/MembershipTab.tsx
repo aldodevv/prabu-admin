@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import api from '@/lib/api';
-import { Edit } from 'lucide-react';
+import { Edit, Link as LinkIcon, Type } from 'lucide-react';
 import { MembershipPlanItem } from './types';
 
 interface MembershipTabProps {
@@ -43,6 +43,8 @@ export const MembershipTab: React.FC<MembershipTabProps> = ({ onSuccess, onError
             tagline: p.tagline || '',
             features: Array.isArray(p.features) ? p.features : [],
             featuresStr: Array.isArray(p.features) ? p.features.join('\n') : '',
+            button_text: p.buttonText || p.button_text || 'DAFTAR SEKARANG',
+            button_link: p.buttonLink || p.button_link || '',
           }))
         );
       }
@@ -74,6 +76,8 @@ export const MembershipTab: React.FC<MembershipTabProps> = ({ onSuccess, onError
         discount_badge: editingMemPlan.discount_badge || '',
         tagline: editingMemPlan.tagline || '',
         features: featArray,
+        button_text: editingMemPlan.button_text || 'DAFTAR SEKARANG',
+        button_link: editingMemPlan.button_link || '',
       };
 
       const res = await api.put(`/admin/membership-packages/${editingMemPlan.id}`, payload);
@@ -99,7 +103,7 @@ export const MembershipTab: React.FC<MembershipTabProps> = ({ onSuccess, onError
               <h3 className="text-sm font-extrabold uppercase tracking-wider font-heading text-white">
                 Edit Konten Card: <span className="underline">{editingMemPlan.name}</span>
               </h3>
-              <p className="text-[11px] text-teal-100 font-normal mt-0.5">Update harga, promo badge, dan tagline tampilan kartu.</p>
+              <p className="text-[11px] text-teal-100 font-normal mt-0.5">Update harga, promo badge, action button, dan tagline tampilan kartu.</p>
             </div>
             <button
               onClick={() => setEditingMemPlan(null)}
@@ -179,6 +183,37 @@ export const MembershipTab: React.FC<MembershipTabProps> = ({ onSuccess, onError
                     onChange={(e) => setEditingMemPlan({ ...editingMemPlan, bonus_text: e.target.value })}
                     placeholder="mis. + Biaya pendaftaran Rp50.000 (1x)"
                     className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-xs text-slate-800 font-semibold focus:outline-none focus:border-brand-cyan"
+                  />
+                </div>
+              </div>
+
+              {/* Action Button Dynamic Settings (Teks Tombol & Link Target Href) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1 flex items-center gap-1">
+                    <Type size={12} />
+                    <span>Teks Tombol Action</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingMemPlan.button_text || ''}
+                    onChange={(e) => setEditingMemPlan({ ...editingMemPlan, button_text: e.target.value })}
+                    placeholder="DAFTAR SEKARANG"
+                    className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs text-slate-800 focus:outline-none focus:border-brand-cyan font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1 flex items-center gap-1">
+                    <LinkIcon size={12} />
+                    <span>Link Target (Href / WhatsApp Catalog)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={editingMemPlan.button_link || ''}
+                    onChange={(e) => setEditingMemPlan({ ...editingMemPlan, button_link: e.target.value })}
+                    placeholder="https://wa.me/p/..."
+                    className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs text-slate-800 focus:outline-none focus:border-brand-cyan font-mono"
                   />
                 </div>
               </div>

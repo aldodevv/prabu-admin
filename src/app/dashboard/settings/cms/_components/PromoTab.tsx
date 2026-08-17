@@ -16,17 +16,17 @@ export interface PromoSlideData {
   buttonLink: string;
 }
 
-const DEFAULT_SLIDES: PromoSlideData[] = [
-  { image: '/images/background5.jpeg', buttonText: 'LIHAT PAKET MEMBERSHIP →', buttonLink: '/membership' },
-  { image: '/images/background2.jpeg', buttonText: 'LIHAT PAKET PT →', buttonLink: '/membership#pt' },
-  { image: '/images/background4.jpeg', buttonText: 'KLAIM PROMO SEKARANG →', buttonLink: 'https://wa.me/628123456789' },
-  { image: '/images/background5.jpeg', buttonText: 'KLAIM BONUS REFERRAL →', buttonLink: 'https://wa.me/628123456789' },
+const EMPTY_SLIDES: PromoSlideData[] = [
+  { image: '', buttonText: '', buttonLink: '' },
+  { image: '', buttonText: '', buttonLink: '' },
+  { image: '', buttonText: '', buttonLink: '' },
+  { image: '', buttonText: '', buttonLink: '' },
 ];
 
 export const PromoTab: React.FC<PromoTabProps> = ({ onSuccess, onError }) => {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [slides, setSlides] = useState<PromoSlideData[]>(DEFAULT_SLIDES);
+  const [slides, setSlides] = useState<PromoSlideData[]>(EMPTY_SLIDES);
   const [slideUploadStatus, setSlideUploadStatus] = useState<{
     [key: number]: { loading?: boolean; success?: string; error?: string };
   }>({});
@@ -46,18 +46,18 @@ export const PromoTab: React.FC<PromoTabProps> = ({ onSuccess, onError }) => {
       if (res.success && res.data) {
         if (res.data.slides && res.data.slides.length > 0) {
           setSlides([
-            res.data.slides[0] || DEFAULT_SLIDES[0],
-            res.data.slides[1] || DEFAULT_SLIDES[1],
-            res.data.slides[2] || DEFAULT_SLIDES[2],
-            res.data.slides[3] || DEFAULT_SLIDES[3],
+            res.data.slides[0] || EMPTY_SLIDES[0],
+            res.data.slides[1] || EMPTY_SLIDES[1],
+            res.data.slides[2] || EMPTY_SLIDES[2],
+            res.data.slides[3] || EMPTY_SLIDES[3],
           ]);
         } else if (res.data.imageUrls && res.data.imageUrls.length > 0) {
           const urls = res.data.imageUrls;
           setSlides([
-            { image: urls[0] || DEFAULT_SLIDES[0].image, buttonText: DEFAULT_SLIDES[0].buttonText, buttonLink: DEFAULT_SLIDES[0].buttonLink },
-            { image: urls[1] || DEFAULT_SLIDES[1].image, buttonText: DEFAULT_SLIDES[1].buttonText, buttonLink: DEFAULT_SLIDES[1].buttonLink },
-            { image: urls[2] || DEFAULT_SLIDES[2].image, buttonText: DEFAULT_SLIDES[2].buttonText, buttonLink: DEFAULT_SLIDES[2].buttonLink },
-            { image: urls[3] || DEFAULT_SLIDES[3].image, buttonText: DEFAULT_SLIDES[3].buttonText, buttonLink: DEFAULT_SLIDES[3].buttonLink },
+            { image: urls[0] || '', buttonText: 'KLAIM PROMO SEKARANG →', buttonLink: '/membership' },
+            { image: urls[1] || '', buttonText: 'LIHAT PAKET PT →', buttonLink: '/membership#pt' },
+            { image: urls[2] || '', buttonText: 'KLAIM PROMO SEKARANG →', buttonLink: 'https://wa.me/...' },
+            { image: urls[3] || '', buttonText: 'KLAIM BONUS REFERRAL →', buttonLink: 'https://wa.me/...' },
           ]);
         }
       }
@@ -164,117 +164,131 @@ export const PromoTab: React.FC<PromoTabProps> = ({ onSuccess, onError }) => {
           Atur 4 card promo yang tampil pada carousel landing page. Setiap card memiliki <strong>Gambar Background</strong>, <strong>Teks Tombol Action</strong>, dan <strong>Link Href Tujuan</strong> (seperti <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">/membership</code> atau <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">https://wa.me/...</code>).
         </p>
 
-        <form onSubmit={handleSavePromoImage} className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[0, 1, 2, 3].map((idx) => (
-              <div key={idx} className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-[#17A2B8] uppercase">Card Slide {idx + 1}</span>
-                    {slideUploadStatus[idx]?.loading ? (
-                      <span className="text-[10px] font-bold text-[#17A2B8] bg-teal-50 px-2 py-0.5 rounded border border-teal-200 animate-pulse">
-                        ⏳ Compressing...
-                      </span>
-                    ) : slideUploadStatus[idx]?.error ? (
-                      <span className="text-[10px] font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded border border-red-300">
-                        {slideUploadStatus[idx]?.error}
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
-                        {slideUploadStatus[idx]?.success || '⚡ WebP Ready'}
-                      </span>
-                    )}
-                  </div>
+        {loading ? (
+          <div className="py-16 text-center space-y-3">
+            <div className="w-9 h-9 border-3 border-slate-200 border-t-brand-cyan rounded-full animate-spin mx-auto" />
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Memuat konfigurasi promo...</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSavePromoImage} className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[0, 1, 2, 3].map((idx) => (
+                <div key={idx} className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-[#17A2B8] uppercase">Card Slide {idx + 1}</span>
+                      {slideUploadStatus[idx]?.loading ? (
+                        <span className="text-[10px] font-bold text-[#17A2B8] bg-teal-50 px-2 py-0.5 rounded border border-teal-200 animate-pulse">
+                          ⏳ Compressing...
+                        </span>
+                      ) : slideUploadStatus[idx]?.error ? (
+                        <span className="text-[10px] font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded border border-red-300">
+                          {slideUploadStatus[idx]?.error}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
+                          {slideUploadStatus[idx]?.success || '⚡ WebP Ready'}
+                        </span>
+                      )}
+                    </div>
 
-                  <div className="space-y-3">
-                    {/* Image URL & Upload */}
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
-                        URL Gambar Slide {idx + 1}
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={slides[idx]?.image || ''}
-                        onChange={(e) => updateSlideField(idx, 'image', e.target.value)}
-                        placeholder={`/images/promo-slide-${idx + 1}.webp`}
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-xs text-slate-800 focus:outline-none focus:border-brand-cyan font-mono font-semibold"
-                      />
-
-                      <label className="mt-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 w-full border border-slate-300 transition-colors">
-                        <Upload size={14} />
-                        <span>{uploading ? 'Compressing...' : 'Upload & Compress WebP'}</span>
+                    <div className="space-y-3">
+                      {/* Image URL & Upload */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                          URL Gambar Slide {idx + 1}
+                        </label>
                         <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => handlePromoFileUpload(e, idx)}
-                          disabled={uploading}
+                          type="text"
+                          required
+                          value={slides[idx]?.image || ''}
+                          onChange={(e) => updateSlideField(idx, 'image', e.target.value)}
+                          placeholder={`/images/promo-slide-${idx + 1}.webp`}
+                          className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-xs text-slate-800 focus:outline-none focus:border-brand-cyan font-mono font-semibold"
                         />
-                      </label>
-                    </div>
 
-                    {/* Button Text */}
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1 flex items-center gap-1">
-                        <Type size={12} />
-                        <span>Teks Tombol</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={slides[idx]?.buttonText || ''}
-                        onChange={(e) => updateSlideField(idx, 'buttonText', e.target.value)}
-                        placeholder="KLAIM PROMO SEKARANG →"
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs text-slate-800 focus:outline-none focus:border-brand-cyan font-semibold"
-                      />
-                    </div>
+                        <label className="mt-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 w-full border border-slate-300 transition-colors">
+                          <Upload size={14} />
+                          <span>{uploading ? 'Compressing...' : 'Upload & Compress WebP'}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handlePromoFileUpload(e, idx)}
+                            disabled={uploading}
+                          />
+                        </label>
+                      </div>
 
-                    {/* Button Link Href */}
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1 flex items-center gap-1">
-                        <LinkIcon size={12} />
-                        <span>Link Target (Href)</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={slides[idx]?.buttonLink || ''}
-                        onChange={(e) => updateSlideField(idx, 'buttonLink', e.target.value)}
-                        placeholder="/membership atau https://wa.me/..."
-                        className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs text-slate-800 focus:outline-none focus:border-brand-cyan font-mono"
-                      />
+                      {/* Button Text */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1 flex items-center gap-1">
+                          <Type size={12} />
+                          <span>Teks Tombol</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={slides[idx]?.buttonText || ''}
+                          onChange={(e) => updateSlideField(idx, 'buttonText', e.target.value)}
+                          placeholder="KLAIM PROMO SEKARANG →"
+                          className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs text-slate-800 focus:outline-none focus:border-brand-cyan font-semibold"
+                        />
+                      </div>
+
+                      {/* Button Link Href */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1 flex items-center gap-1">
+                          <LinkIcon size={12} />
+                          <span>Link Target (Href)</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={slides[idx]?.buttonLink || ''}
+                          onChange={(e) => updateSlideField(idx, 'buttonLink', e.target.value)}
+                          placeholder="/membership atau https://wa.me/..."
+                          className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs text-slate-800 focus:outline-none focus:border-brand-cyan font-mono"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Thumbnail Preview Box (Ratio 2 : 1) */}
+                  <div className="space-y-1 pt-2 border-t border-slate-200/80">
+                    <span className="block text-[10px] font-bold text-slate-500 uppercase">Preview Slide {idx + 1} (2 : 1)</span>
+                    <div className="relative w-full aspect-[2/1] rounded-lg overflow-hidden bg-slate-200 border border-slate-300 flex items-center justify-center">
+                      {slides[idx]?.image ? (
+                        <img src={formatPhotoUrl(slides[idx].image)} alt={`Slide ${idx + 1}`} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-slate-500 text-xs">Belum ada gambar</span>
+                      )}
                     </div>
                   </div>
                 </div>
+              ))}
+            </div>
 
-                {/* Thumbnail Preview Box (Ratio 2 : 1) */}
-                <div className="space-y-1 pt-2 border-t border-slate-200/80">
-                  <span className="block text-[10px] font-bold text-slate-500 uppercase">Preview Slide {idx + 1} (2 : 1)</span>
-                  <div className="relative w-full aspect-[2/1] rounded-lg overflow-hidden bg-slate-200 border border-slate-300 flex items-center justify-center">
-                    {slides[idx]?.image ? (
-                      <img src={formatPhotoUrl(slides[idx].image)} alt={`Slide ${idx + 1}`} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-slate-500 text-xs">Belum ada gambar</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="pt-2 flex justify-end">
-            <button
-              type="submit"
-              disabled={loading}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-brand-cyan hover:bg-[#138496] text-white rounded-lg font-bold text-xs uppercase shadow-sm transition-all cursor-pointer"
-            >
-              <Save size={16} />
-              <span>{loading ? 'Menyimpan...' : 'Simpan 4 Card Banner Promo'}</span>
-            </button>
-          </div>
-        </form>
+            <div className="pt-2 flex justify-end">
+              <button
+                type="submit"
+                disabled={loading}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-brand-cyan hover:bg-[#138496] text-white rounded-lg font-bold text-xs uppercase shadow-sm transition-all cursor-pointer"
+              >
+                <Save size={16} />
+                <span>{loading ? 'Menyimpan...' : 'Simpan 4 Card Banner Promo'}</span>
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
 };
+
+// const DEFAULT_SLIDES: PromoSlideData[] = [
+//   { image: '/images/background5.jpeg', buttonText: 'LIHAT PAKET MEMBERSHIP →', buttonLink: '/membership' },
+//   { image: '/images/background2.jpeg', buttonText: 'LIHAT PAKET PT →', buttonLink: '/membership#pt' },
+//   { image: '/images/background4.jpeg', buttonText: 'KLAIM PROMO SEKARANG →', buttonLink: 'https://wa.me/628123456789' },
+//   { image: '/images/background5.jpeg', buttonText: 'KLAIM BONUS REFERRAL →', buttonLink: 'https://wa.me/628123456789' },
+// ];

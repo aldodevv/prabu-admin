@@ -13,6 +13,8 @@ export interface MembershipPlanItem {
   tagline?: string;
   features?: string[];
   featuresStr?: string;
+  button_text?: string;
+  button_link?: string;
 }
 
 export interface PTPlanItem {
@@ -29,4 +31,6 @@ export interface PTPlanItem {
   tagline?: string;
   features?: string[];
   featuresStr?: string;
+  button_text?: string;
+  button_link?: string;
 }
