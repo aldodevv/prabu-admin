@@ -68,6 +68,7 @@ export default function ProductsPage() {
 
   // Execute filtering when debounced search query or column filter changes
   useEffect(() => {
+    setPage(1);
     applyFilter();
   }, [debouncedSearch, filterColumn, products]);
 

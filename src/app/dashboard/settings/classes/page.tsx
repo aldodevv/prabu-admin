@@ -46,7 +46,7 @@ export default function GymClassesPage() {
 
   useEffect(() => {
     fetchClasses();
-  }, [page, perPage]);
+  }, []);
 
   const handleOpenCreate = () => {
     setEditingId(null);

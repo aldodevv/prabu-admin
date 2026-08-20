@@ -79,35 +79,22 @@ export default function SummaryPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedTxType, setSelectedTxType] = useState<string>('all');
 
-  const isExpiringMount = useRef(true);
-  const isTxTypeMount = useRef(true);
+  useEffect(() => {
+    setExpiringPage(1);
+  }, [activeBranchID]);
 
   useEffect(() => {
     if (!authLoading && activeBranchID !== null) {
       fetchSummary();
-      fetchExpiring(1, expiringPerPage);
-    }
-  }, [activeBranchID, authLoading]);
-
-  useEffect(() => {
-    if (isExpiringMount.current) {
-      isExpiringMount.current = false;
-      return;
-    }
-    if (activeBranchID !== undefined) {
       fetchExpiring(expiringPage, expiringPerPage);
     }
-  }, [expiringPage, expiringPerPage]);
+  }, [activeBranchID, expiringPage, expiringPerPage, authLoading]);
 
   useEffect(() => {
-    if (isTxTypeMount.current) {
-      isTxTypeMount.current = false;
-      return;
-    }
     if (activeBranchID !== undefined) {
       fetchRevenue(selectedTxType);
     }
-  }, [selectedTxType]);
+  }, [selectedTxType, activeBranchID]);
 
   const fetchExpiring = async (page: number, perPage: number) => {
     if (!activeBranchID) return;

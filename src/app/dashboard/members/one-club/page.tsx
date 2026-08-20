@@ -93,31 +93,40 @@ export default function OneClubMembersPanel() {
   const [loadingTransactions, setLoadingTransactions] = useState(false);
   const [receiptTx, setReceiptTx] = useState<Transaction | null>(null);
 
-  useEffect(() => {
-    if (!authLoading && activeBranchID && lastFetchedBranchRef.current !== activeBranchID) {
-      lastFetchedBranchRef.current = activeBranchID;
-      if (typeof window !== 'undefined') {
-        const params = new URLSearchParams(window.location.search);
-        const urlSearch = params.get('search') || params.get('no-anggota') || params.get('one-club');
-        if (urlSearch) {
-          setSearch(urlSearch);
-          fetchMembers(urlSearch);
-          return;
-        }
-      }
-      fetchMembers();
-    }
-  }, [activeBranchID, authLoading]);
+  const initialSearchHandledRef = useRef(false);
 
-  const fetchMembers = async (searchQuery = debouncedSearch) => {
+  useEffect(() => {
+    if (!initialSearchHandledRef.current && typeof window !== 'undefined') {
+      initialSearchHandledRef.current = true;
+      const params = new URLSearchParams(window.location.search);
+      const urlSearch = params.get('search') || params.get('no-anggota') || params.get('one-club');
+      if (urlSearch) {
+        setSearch(urlSearch);
+      }
+    }
+  }, []);
+
+  // Reset page to 1 when search or branch or status filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, activeBranchID, statusFilter]);
+
+  // Fetch members whenever branch, page, perPage, or debouncedSearch changes
+  useEffect(() => {
+    if (!authLoading && activeBranchID) {
+      fetchMembers(debouncedSearch, page, perPage);
+    }
+  }, [activeBranchID, page, perPage, debouncedSearch, authLoading]);
+
+  const fetchMembers = async (searchQuery = debouncedSearch, pageNum = page, perPageNum = perPage) => {
     setLoading(true);
     setFetchError(null);
     try {
       const res = await membersApi.list({
         branch_id: activeBranchID || undefined,
         search: searchQuery || undefined,
-        page,
-        per_page: perPage
+        page: pageNum,
+        per_page: perPageNum
       });
       if (res.success && res.data) {
         let list = res.data;
@@ -146,7 +155,7 @@ export default function OneClubMembersPanel() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
-    fetchMembers();
+    fetchMembers(search, 1, perPage);
   };
 
   const handleResetSearch = () => {

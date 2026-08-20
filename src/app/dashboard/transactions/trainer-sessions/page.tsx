@@ -72,6 +72,11 @@ export default function TrainerSessionsPage() {
     setRekapDate(today);
   }, [activeBranchID]);
 
+  // Reset page when search or filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, selectedMemberFilter, activeBranchID]);
+
   const fetchRegistrations = async () => {
     setLoading(true);
     try {

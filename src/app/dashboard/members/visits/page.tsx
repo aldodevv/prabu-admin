@@ -27,9 +27,13 @@ export default function CheckinsPage() {
 
   const [perPage, setPerPage] = useState(50);
 
+  // Reset page when branch, search, or date filter changes
   useEffect(() => {
-    if (!authLoading && activeBranchID && (lastFetchedBranchRef.current !== activeBranchID || page > 1 || dateFrom || dateTo)) {
-      lastFetchedBranchRef.current = activeBranchID;
+    setPage(1);
+  }, [activeBranchID, debouncedSearch, dateFrom, dateTo]);
+
+  useEffect(() => {
+    if (!authLoading && activeBranchID) {
       fetchCheckins();
     }
   }, [activeBranchID, page, perPage, dateFrom, dateTo, authLoading]);

@@ -75,6 +75,11 @@ export function DataTable<T extends { id: string | number }>({
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
   const pageNumbers = getPageNumbers(currentPage, totalPages);
 
+  const isClientPaginated = data.length > itemsPerPage;
+  const displayData = isClientPaginated
+    ? data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+    : data;
+
   return (
     <div className={`bg-white border border-slate-200 rounded shadow-sm overflow-hidden w-full max-w-full ${className}`}>
       {title && (
@@ -109,29 +114,32 @@ export function DataTable<T extends { id: string | number }>({
                     {loadingMessage}
                   </td>
                 </tr>
-              ) : data.length === 0 ? (
+              ) : displayData.length === 0 ? (
                 <tr>
                   <td colSpan={columns.length} className="py-12 text-center text-slate-400 font-bold select-none uppercase tracking-widest text-xs">
                     {emptyMessage}
                   </td>
                 </tr>
               ) : (
-                data.map((item, index) => (
-                  <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-                    {columns.map((col, idx) => (
-                      <td 
-                        key={col.key} 
-                        className={`py-3 sm:py-3.5 px-3 sm:px-4 ${
-                          idx < columns.length - 1 ? 'border-r border-slate-100' : ''
-                        } ${
-                          col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'
-                        } ${col.className || ''}`}
-                      >
-                        {col.render ? col.render(item, index) : (item as any)[col.key] ?? '-'}
-                      </td>
-                    ))}
-                  </tr>
-                ))
+                displayData.map((item, index) => {
+                  const globalIndex = (currentPage - 1) * itemsPerPage + index;
+                  return (
+                    <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
+                      {columns.map((col, idx) => (
+                        <td 
+                          key={col.key} 
+                          className={`py-3 sm:py-3.5 px-3 sm:px-4 ${
+                            idx < columns.length - 1 ? 'border-r border-slate-100' : ''
+                          } ${
+                            col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'
+                          } ${col.className || ''}`}
+                        >
+                          {col.render ? col.render(item, globalIndex) : (item as any)[col.key] ?? '-'}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

@@ -50,12 +50,11 @@ export default function CardReplacementPage() {
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    if (!authLoading && activeBranchID && lastFetchedBranchRef.current !== activeBranchID) {
-      lastFetchedBranchRef.current = activeBranchID;
+    if (!authLoading && activeBranchID) {
       fetchMembers();
       fetchLogs();
     }
-  }, [activeBranchID, authLoading]);
+  }, [activeBranchID, page, perPage, authLoading]);
 
   const fetchMembers = async () => {
     try {

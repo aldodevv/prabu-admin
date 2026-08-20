@@ -50,7 +50,11 @@ export default function MembershipPackagesPage() {
 
   useEffect(() => {
     fetchPackages();
-  }, [page, perPage]);
+  }, []);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   const handleOpenCreate = () => {
     setEditingId(null);

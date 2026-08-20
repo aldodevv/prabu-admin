@@ -57,9 +57,13 @@ export default function MemberLeavesPage() {
   // Receipt Modal State
   const [printLeave, setPrintLeave] = useState<MemberLeave | null>(null);
 
+  // Reset page when branch or search changes
   useEffect(() => {
-    if (activeBranchID && (lastFetchedBranchRef.current !== activeBranchID || page > 1 || search)) {
-      lastFetchedBranchRef.current = activeBranchID;
+    setPage(1);
+  }, [activeBranchID, search]);
+
+  useEffect(() => {
+    if (activeBranchID) {
       fetchLeaves();
     }
   }, [activeBranchID, page, perPage, search]);
