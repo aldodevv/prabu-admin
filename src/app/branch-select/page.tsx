@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import { permissions } from '@/lib/permissions';
 import { LogOut, ArrowRight, Check } from 'lucide-react';
 
 interface Branch {
@@ -19,8 +20,8 @@ export default function BranchSelectPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // If karyawan, they are auto-routed in AuthContext
-    if (user && user.role === 'cs') {
+    // If CS/Karyawan (cannot switch branch), redirect directly to dashboard
+    if (user && !permissions.canSwitchBranch(user.role)) {
       router.push('/dashboard');
       return;
     }

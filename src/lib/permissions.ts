@@ -57,26 +57,36 @@ export const ROLE_CAPABILITIES: Record<Role, RoleCapability> = {
   },
 };
 
+export const normalizeRole = (role?: string): Role => {
+  if (!role) return ROLES.CS;
+  const lower = role.toLowerCase().trim();
+  if (lower === 'karyawan' || lower === 'cs' || lower === 'staff') return ROLES.CS;
+  if (lower in ROLE_CAPABILITIES) return lower as Role;
+  return ROLES.CS;
+};
+
 /**
  * Helper terpusat untuk memeriksa izin akses berdasarkan Role di Frontend
  */
 export const permissions = {
-  canSwitchBranch: (role?: string) => (role && role in ROLE_CAPABILITIES ? ROLE_CAPABILITIES[role as Role]?.canSwitchBranch : false),
-  isReadOnly: (role?: string) => (role && role in ROLE_CAPABILITIES ? ROLE_CAPABILITIES[role as Role]?.isReadOnly : false),
+  canSwitchBranch: (role?: string) => ROLE_CAPABILITIES[normalizeRole(role)]?.canSwitchBranch ?? false,
+  isReadOnly: (role?: string) => ROLE_CAPABILITIES[normalizeRole(role)]?.isReadOnly ?? false,
   canAccessMenu: (role?: string, menuId?: string) => {
-    if (!role || !menuId || !(role in ROLE_CAPABILITIES)) return false;
-    const r = role as Role;
-    if (menuId === MENU_IDS.STAFF) return ROLE_CAPABILITIES[r].canAccessMenuStaff;
-    if (menuId === MENU_IDS.SETTINGS) return ROLE_CAPABILITIES[r].canAccessMenuSettings;
+    if (!role || !menuId) return false;
+    const r = normalizeRole(role);
+    if (menuId === MENU_IDS.STAFF) return ROLE_CAPABILITIES[r]?.canAccessMenuStaff ?? false;
+    if (menuId === MENU_IDS.SETTINGS) return ROLE_CAPABILITIES[r]?.canAccessMenuSettings ?? false;
     return true;
   },
-  canDeleteMember: (role?: string) => (role && role in ROLE_CAPABILITIES ? ROLE_CAPABILITIES[role as Role]?.canDeleteMember : false),
-  canDeleteTransaction: (role?: string) => (role && role in ROLE_CAPABILITIES ? ROLE_CAPABILITIES[role as Role]?.canDeleteTransaction : false),
-  canManageStaff: (role?: string) => (role && role in ROLE_CAPABILITIES ? ROLE_CAPABILITIES[role as Role]?.canAccessMenuStaff : false),
-  canManageSettings: (role?: string) => (role && role in ROLE_CAPABILITIES ? ROLE_CAPABILITIES[role as Role]?.canAccessMenuSettings : false),
-  canManageBranches: (role?: string) => (role && role in ROLE_CAPABILITIES ? ROLE_CAPABILITIES[role as Role]?.canManageBranches : false),
+  canDeleteMember: (role?: string) => ROLE_CAPABILITIES[normalizeRole(role)]?.canDeleteMember ?? false,
+  canDeleteTransaction: (role?: string) => ROLE_CAPABILITIES[normalizeRole(role)]?.canDeleteTransaction ?? false,
+  canManageStaff: (role?: string) => ROLE_CAPABILITIES[normalizeRole(role)]?.canAccessMenuStaff ?? false,
+  canManageSettings: (role?: string) => ROLE_CAPABILITIES[normalizeRole(role)]?.canAccessMenuSettings ?? false,
+  canManageBranches: (role?: string) => ROLE_CAPABILITIES[normalizeRole(role)]?.canManageBranches ?? false,
   canModifyStaffWithRole: (currentRole?: string, targetRole?: string) => {
-    if (targetRole === ROLES.DEVELOPER) return currentRole === ROLES.DEVELOPER;
-    return currentRole === ROLES.DEVELOPER || currentRole === ROLES.OWNER;
+    const curr = normalizeRole(currentRole);
+    const target = normalizeRole(targetRole);
+    if (target === ROLES.DEVELOPER) return curr === ROLES.DEVELOPER;
+    return curr === ROLES.DEVELOPER || curr === ROLES.OWNER;
   },
 };

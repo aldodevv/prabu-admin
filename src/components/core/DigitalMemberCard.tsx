@@ -3,7 +3,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { toPng } from 'html-to-image';
 import { Download, Mail, Check, Copy } from 'lucide-react';
-import { getBranchAddress, toDataURL } from '@/utils';
+import { getBranchAddress, getBranchDisplayName, toDataURL } from '@/utils';
 
 export interface DigitalMemberCardProps {
   member: {
@@ -44,6 +44,7 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
+  const displayBranch = getBranchDisplayName(branchName || branchCodeOrName);
   const address = getBranchAddress(branchCodeOrName || branchName);
 
   // Format username with spaces for card display e.g. 1 6 5 1 2 0 0 4
@@ -123,21 +124,25 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
     }
   };
 
-  // Pre-filled Email Template
+  // Pre-filled Email Template matching the official PRABU GYM specification
   const emailSubject = encodeURIComponent(`Kartu Keanggotaan Digital Prabu Gym - ${member.full_name}`);
   const emailBodyRaw =
     `Halo ${member.full_name},\r\n\r\n` +
-    `Selamat bergabung di Prabu Gym! Berikut adalah rincian keanggotaan digital Anda:\r\n\r\n` +
+    `Selamat bergabung di PRABU GYM! Berikut adalah rincian keanggotaan digital Anda:\r\n\r\n` +
     `• Nama Lengkap: ${member.full_name}\r\n` +
     `• Nomor Anggota: ${member.username}\r\n` +
-    `• Cabang Gym: ${branchName || 'Prabu Gym'}\r\n` +
+    `• Cabang Gym: ${displayBranch}\r\n` +
     `• Paket Membership: ${member.membership_type || 'Membership'}\r\n` +
     `• Masa Aktif: ${member.membership_start || '-'} s/d ${member.membership_end || '-'}\r\n\r\n` +
     `Alamat Cabang:\r\n` +
     `${address}\r\n\r\n` +
-    `*Catatan: Silakan lampirkan foto Kartu Member Digital (PNG) yang telah di-download pada email ini untuk kemudahan absensi.*\r\n\r\n` +
+    `*Catatan: kartu member digital ini digunakan untuk mendapatkan kunci akses dan loker gym, kami sudah tidak lagi menggunakan kartu fisik, kini semua member menggunakan kartu digital. Kartu ini berlaku selamanya dan nantinya digunakan untuk:\r\n\r\n` +
+    `✅ Check-in & Check-out GYM\r\n\r\n` +
+    `✅ Akses All Club – Bisa digunakan di semua cabang tanpa beli membership lagi\r\n\r\n` +
+    `✅ Praktis! Cukup scan QR code di depan kasir secara mandiri\r\n\r\n` +
+    `Kalau ada pertanyaan lainnya, boleh langsung ditanyakan 🫡\r\n\r\n` +
     `Salam Sehat,\r\n` +
-    `Prabu Gym Official`;
+    `PRABU GYM Official`;
 
   const mailtoUrl = `mailto:${member.email || ''}?subject=${emailSubject}&body=${encodeURIComponent(emailBodyRaw)}`;
 
@@ -283,7 +288,7 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
           <span>{downloading ? 'Mengunduh Gambar...' : 'Download Kartu Member (PNG)'}</span>
         </button>
 
-        {member.email ? (
+        {member.email && (
           <a
             href={mailtoUrl}
             target="_blank"
@@ -291,18 +296,18 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
             className="w-full py-2.5 px-4 bg-[#6C7A89] hover:bg-[#5a6673] text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2 text-center"
           >
             <Mail className="w-4 h-4" />
-            <span>Kirim Email ke Anggota ({member.email})</span>
+            <span>Kirim Email ({member.email})</span>
           </a>
-        ) : (
-          <button
-            type="button"
-            onClick={handleCopyTemplate}
-            className="w-full py-2.5 px-4 bg-slate-600 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2"
-          >
-            {copiedTemplate ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-            <span>{copiedTemplate ? 'Teks Email Tersalin!' : 'Salin Template Teks Email'}</span>
-          </button>
         )}
+
+        <button
+          type="button"
+          onClick={handleCopyTemplate}
+          className="w-full py-2.5 px-4 bg-slate-600 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2"
+        >
+          {copiedTemplate ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+          <span>{copiedTemplate ? 'Teks Email Tersalin!' : 'Salin Template Teks Email'}</span>
+        </button>
       </div>
     </div>
   );

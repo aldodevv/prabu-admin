@@ -42,7 +42,7 @@ export const PromoTab: React.FC<PromoTabProps> = ({ onSuccess, onError }) => {
     isFetchingRef.current = true;
     setLoading(true);
     try {
-      const res = await api.get<{ imageUrls?: string[]; slides?: PromoSlideData[] }>('/public/promo-image');
+      const res = await api.get<{ slides?: PromoSlideData[] }>('/public/promo-image');
       if (res.success && res.data) {
         if (res.data.slides && res.data.slides.length > 0) {
           setSlides([
@@ -50,14 +50,6 @@ export const PromoTab: React.FC<PromoTabProps> = ({ onSuccess, onError }) => {
             res.data.slides[1] || EMPTY_SLIDES[1],
             res.data.slides[2] || EMPTY_SLIDES[2],
             res.data.slides[3] || EMPTY_SLIDES[3],
-          ]);
-        } else if (res.data.imageUrls && res.data.imageUrls.length > 0) {
-          const urls = res.data.imageUrls;
-          setSlides([
-            { image: urls[0] || '', buttonText: 'KLAIM PROMO SEKARANG →', buttonLink: '/membership' },
-            { image: urls[1] || '', buttonText: 'LIHAT PAKET PT →', buttonLink: '/membership#pt' },
-            { image: urls[2] || '', buttonText: 'KLAIM PROMO SEKARANG →', buttonLink: 'https://wa.me/...' },
-            { image: urls[3] || '', buttonText: 'KLAIM BONUS REFERRAL →', buttonLink: 'https://wa.me/...' },
           ]);
         }
       }
@@ -84,8 +76,7 @@ export const PromoTab: React.FC<PromoTabProps> = ({ onSuccess, onError }) => {
 
     setLoading(true);
     try {
-      const imageUrls = validSlides.map((s) => s.image);
-      const res = await api.put('/admin/promo-image', { imageUrls, slides: validSlides });
+      const res = await api.put('/admin/promo-image', { slides: validSlides });
       if (res.success) {
         onSuccess('4 Slide Banner Promo (Gambar, Teks Tombol & Link Target) berhasil disimpan!');
       }

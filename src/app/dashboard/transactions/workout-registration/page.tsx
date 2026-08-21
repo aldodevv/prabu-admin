@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
-import { Save, Printer, ArrowLeft, UserCheck } from 'lucide-react';
+import { Save, Printer, ArrowLeft, UserCheck, Search, Check, X } from 'lucide-react';
 
 import { packagesApi } from '@/core/api';
 import { DatePicker } from '@/components/core/DatePicker';
@@ -14,6 +14,7 @@ interface Member {
   id: string;
   full_name: string;
   username: string;
+  phone?: string;
   branch_id: string;
 }
 
@@ -38,30 +39,32 @@ interface PTRegistration {
   notes?: string;
 }
 
-const DEFAULT_PT_PACKAGES = [
-  { id: '1', name: 'Bonus 1 Sesi PT - Promo januari (free)', session_count: 1, price: 0 },
-  { id: '2', name: 'Bonus 2 Sesi PT - Promo januari (free)', session_count: 2, price: 0 },
-  { id: '3', name: 'PT 1 Sesi [Harga 150k]', session_count: 1, price: 150000 },
-  { id: '4', name: 'PT 3 Sesi [Harga 400k]', session_count: 3, price: 400000 },
-  { id: '5', name: 'PT 6 Sesi [Harga 750k]', session_count: 6, price: 750000 },
-  { id: '6', name: 'PT 12 Sesi [Harga 1200k]', session_count: 12, price: 1200000 }
-];
-
 export default function PTRegistrationPage() {
   const { activeBranchID, user } = useAuth();
+
+  // Role permissions
+  const canEditTransactionDate = user?.role === 'owner' || user?.role === 'developer';
 
   // Members & Trainers & Dynamic Packages
   const [members, setMembers] = useState<Member[]>([]);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
-  const [ptPackagesList, setPtPackagesList] = useState<any[]>(DEFAULT_PT_PACKAGES);
+  const [ptPackagesList, setPtPackagesList] = useState<any[]>([]);
+  const [loadingPackages, setLoadingPackages] = useState(true);
+  const [packageFetchError, setPackageFetchError] = useState<string | null>(null);
 
   // Form Fields
+  const [transactionDate, setTransactionDate] = useState('');
   const [selectedMemberID, setSelectedMemberID] = useState('');
   const [selectedTrainerID, setSelectedTrainerID] = useState('');
   const [selectedPackage, setSelectedPackage] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [startDate, setStartDate] = useState('');
   const [notes, setNotes] = useState('');
+
+  // Member Search State
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const [isMemberDropdownOpen, setIsMemberDropdownOpen] = useState(false);
+  const memberComboboxRef = useRef<HTMLDivElement>(null);
 
   // Auto-calculated fields
   const [sessionCount, setSessionCount] = useState(0);
@@ -78,24 +81,49 @@ export default function PTRegistrationPage() {
   const [successTx, setSuccessTx] = useState<PTRegistration | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
 
+  // Close member search dropdown on click outside
   useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (memberComboboxRef.current && !memberComboboxRef.current.contains(e.target as Node)) {
+        setIsMemberDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    setTransactionDate(today);
+    setStartDate(today);
+
     if (activeBranchID) {
       fetchMembers();
       fetchTrainers();
       fetchPtPackages();
     }
-    const today = new Date().toISOString().split('T')[0];
-    setStartDate(today);
   }, [activeBranchID]);
 
   const fetchPtPackages = async () => {
+    setLoadingPackages(true);
+    setPackageFetchError(null);
     try {
       const res = await packagesApi.listPTPackages(activeBranchID || undefined);
-      if (res.data && res.data.length > 0) {
+      if (res.success && res.data && res.data.length > 0) {
         setPtPackagesList(res.data);
+      } else if (res.success && (!res.data || res.data.length === 0)) {
+        setPtPackagesList([]);
+        setPackageFetchError('Belum ada paket Personal Trainer yang aktif di sistem.');
+      } else {
+        setPtPackagesList([]);
+        setPackageFetchError(res.error || 'Gagal memuat daftar paket Personal Trainer.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Gagal mengambil paket PT dari DB:', err);
+      setPtPackagesList([]);
+      setPackageFetchError(err.message || 'Gagal terhubung ke server untuk memuat paket PT.');
+    } finally {
+      setLoadingPackages(false);
     }
   };
 
@@ -103,7 +131,7 @@ export default function PTRegistrationPage() {
     setLoadingMembers(true);
     setFetchError('');
     try {
-      const res = await api.get<any>(`/admin/members?branch_id=${activeBranchID}&per_page=200`);
+      const res = await api.get<any>(`/admin/members?branch_id=${activeBranchID}&per_page=500`);
       if (res.success && res.data) {
         setMembers(res.data);
       } else {
@@ -132,6 +160,19 @@ export default function PTRegistrationPage() {
     }
   };
 
+  // Filter members based on search query
+  const filteredMembers = members.filter((m) => {
+    const q = memberSearchQuery.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      m.full_name?.toLowerCase().includes(q) ||
+      m.username?.toLowerCase().includes(q) ||
+      m.phone?.toLowerCase().includes(q)
+    );
+  });
+
+  const selectedMemberObj = members.find((m) => m.id === selectedMemberID);
+
   // Recalculate sessions and prices based on selected package
   useEffect(() => {
     if (!selectedPackage) {
@@ -143,27 +184,10 @@ export default function PTRegistrationPage() {
     const matched = ptPackagesList.find(p => p.name === selectedPackage || selectedPackage.includes(p.name));
     if (matched) {
       setSessionCount(matched.session_count || 1);
-      setTotalAmount(matched.price || 0);
+      setTotalAmount(Number(matched.price) || 0);
     } else {
-      if (selectedPackage.includes('Bonus 1 Sesi')) {
-        setSessionCount(1);
-        setTotalAmount(0);
-      } else if (selectedPackage.includes('Bonus 2 Sesi')) {
-        setSessionCount(2);
-        setTotalAmount(0);
-      } else if (selectedPackage.includes('12 Sesi')) {
-        setSessionCount(12);
-        setTotalAmount(1200000);
-      } else if (selectedPackage.includes('6 Sesi')) {
-        setSessionCount(6);
-        setTotalAmount(750000);
-      } else if (selectedPackage.includes('3 Sesi')) {
-        setSessionCount(3);
-        setTotalAmount(400000);
-      } else {
-        setSessionCount(1);
-        setTotalAmount(150000);
-      }
+      setSessionCount(1);
+      setTotalAmount(0);
     }
   }, [selectedPackage, ptPackagesList]);
 
@@ -182,7 +206,7 @@ export default function PTRegistrationPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedMemberID || !selectedTrainerID || !selectedPackage || !paymentMethod) {
-      setErrorMsg('Semua field wajib diisi!');
+      setErrorMsg('Semua field bertanda wajib harus diisi!');
       return;
     }
     setLoading(true);
@@ -197,6 +221,7 @@ export default function PTRegistrationPage() {
       package_name: selectedPackage,
       payment_method: paymentMethod,
       total_amount: totalAmount,
+      registration_date: transactionDate || new Date().toISOString().split('T')[0],
       notes: notes || 'Pendaftaran PT',
     };
 
@@ -220,6 +245,7 @@ export default function PTRegistrationPage() {
         });
 
         setSelectedMemberID('');
+        setMemberSearchQuery('');
         setSelectedTrainerID('');
         setSelectedPackage('');
         setPaymentMethod('');
@@ -244,60 +270,17 @@ export default function PTRegistrationPage() {
     return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
   };
 
-  const todayFormatted = new Date().toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-
   return (
-    <div className="space-y-8 font-sans">
-      <style jsx global>{`
-        @media print {
-          @page {
-            size: 210mm 148mm !important; /* A5 Landscape (210mm x 148mm) */
-            margin: 5mm !important;
-          }
-          header, aside, button, .no-print {
-            display: none !important;
-          }
-          body, .min-h-screen, main, #pt-receipt-print-area {
-            background: white !important;
-            color: black !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            width: 200mm !important;
-          }
-          #pt-receipt-print-area {
-            width: 200mm !important;
-            max-width: 200mm !important;
-            display: block !important;
-            position: relative !important;
-            margin: 0 auto !important;
-          }
-          table {
-            border-collapse: collapse !important;
-            width: 100% !important;
-          }
-          th, td {
-            border: 1px solid black !important;
-            padding: 6px 8px !important;
-            color: black !important;
-          }
-          thead th {
-            background-color: #f2f2f2 !important;
-            color: black !important;
-            font-weight: 900 !important;
-          }
-        }
-      `}</style>
+    <div className="space-y-6">
 
-      {/* Form Container (Hidden on receipt printing) */}
-      <div className="no-print space-y-6 w-full">
+      {/* Main Registration Form Container */}
+      <div className="space-y-6">
         <div>
-          <h2 className="text-3xl font-heading text-slate-800 uppercase">PENDAFTARAN PERSONAL TRAINER</h2>
-          <p className="text-slate-500 text-sm mt-1 uppercase tracking-widest font-accent">
-            Pendaftaran & Transaksi Paket Latihan Mandiri dengan Pelatih
+          <h1 className="text-xl font-bold tracking-tight text-slate-800 uppercase font-heading">
+            Pendaftaran Personal Trainer
+          </h1>
+          <p className="text-xs text-slate-500 font-sans mt-0.5">
+            Pendaftaran &amp; Transaksi Paket Latihan Mandiri dengan Pelatih
           </p>
         </div>
 
@@ -324,36 +307,130 @@ export default function PTRegistrationPage() {
               <div className="space-y-5">
                 {/* Tanggal Transaksi */}
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-sm font-bold text-slate-700 text-left">Tanggal Transaksi</label>
-                  <input
-                    type="text"
-                    readOnly
-                    disabled
-                    value={todayFormatted}
-                    className="bg-slate-100 border border-slate-300 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-mono font-bold"
-                  />
+                  <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                    Tanggal Transaksi
+                    <FieldInfo text={canEditTransactionDate ? "Tanggal transaksi dapat disesuaikan (Akses Owner & Developer)." : "Tanggal transaksi otomatis disesuaikan hari ini (Hanya Owner & Developer yang dapat mengubah)."} />
+                  </label>
+                  <div className="w-full">
+                    <DatePicker
+                      value={transactionDate}
+                      onChange={(val) => {
+                        if (canEditTransactionDate) {
+                          setTransactionDate(val);
+                        }
+                      }}
+                      readOnly={!canEditTransactionDate}
+                      disabled={!canEditTransactionDate}
+                    />
+                  </div>
                 </div>
 
-                {/* Nama Anggota */}
-                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-sm font-bold text-slate-700 text-left">
-                    Nama Anggota *
+                {/* Nama Anggota (Searchable Combobox) */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-start max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center mt-2">
+                    Nama Anggota <span className="text-red-500 ml-1">*</span>
+                    <FieldInfo text="Ketik nama atau nomor anggota untuk mencari dan memilih member." />
                   </label>
-                  <div className="relative w-full">
-                    <select
-                      required
-                      disabled={loadingMembers}
-                      value={selectedMemberID}
-                      onChange={(e) => setSelectedMemberID(e.target.value)}
-                      className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full disabled:opacity-50"
-                    >
-                      <option value="">{loadingMembers ? 'Memuat data anggota...' : '-Pilih-'}</option>
-                      {members.map(m => (
-                        <option key={m.id} value={m.id}>
-                          {m.username} / {m.full_name}
-                        </option>
-                      ))}
-                    </select>
+
+                  <div className="w-full relative" ref={memberComboboxRef}>
+                    {selectedMemberObj ? (
+                      <div className="flex items-center justify-between p-3 bg-emerald-50/70 border border-emerald-300 rounded-lg shadow-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-sm uppercase shrink-0">
+                            {selectedMemberObj.full_name.charAt(0) || 'M'}
+                          </div>
+                          <div>
+                            <div className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                              <span>{selectedMemberObj.full_name}</span>
+                              <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-mono font-bold rounded">
+                                No. {selectedMemberObj.username}
+                              </span>
+                            </div>
+                            {selectedMemberObj.phone && (
+                              <p className="text-[11px] text-slate-500 font-mono">
+                                📞 {selectedMemberObj.phone}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedMemberID('');
+                            setMemberSearchQuery('');
+                            setIsMemberDropdownOpen(true);
+                          }}
+                          className="px-2.5 py-1 text-xs font-bold text-slate-600 hover:text-red-600 hover:bg-red-50 border border-slate-200 hover:border-red-200 rounded transition-colors cursor-pointer"
+                        >
+                          Ganti Anggota ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <div className="relative">
+                          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                          <input
+                            type="text"
+                            value={memberSearchQuery}
+                            onChange={(e) => {
+                              setMemberSearchQuery(e.target.value);
+                              setIsMemberDropdownOpen(true);
+                            }}
+                            onFocus={() => setIsMemberDropdownOpen(true)}
+                            placeholder={loadingMembers ? "Memuat data anggota..." : "Ketik nama atau nomor anggota untuk mencari..."}
+                            disabled={loadingMembers}
+                            className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 pl-9 pr-8 py-2.5 text-xs focus:outline-none rounded disabled:opacity-50"
+                          />
+                          {memberSearchQuery && (
+                            <button
+                              type="button"
+                              onClick={() => setMemberSearchQuery('')}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold px-1 cursor-pointer"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+
+                        {isMemberDropdownOpen && (
+                          <div className="absolute z-50 left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg divide-y divide-slate-100 animate-fadeIn">
+                            {loadingMembers ? (
+                              <div className="p-3 text-center text-xs text-slate-500">Memuat data anggota...</div>
+                            ) : filteredMembers.length === 0 ? (
+                              <div className="p-4 text-center text-xs text-slate-500">
+                                Tidak ada anggota ditemukan dengan kata kunci &quot;{memberSearchQuery}&quot;
+                              </div>
+                            ) : (
+                              filteredMembers.slice(0, 100).map((m) => (
+                                <button
+                                  key={m.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedMemberID(m.id);
+                                    setMemberSearchQuery('');
+                                    setIsMemberDropdownOpen(false);
+                                  }}
+                                  className="w-full text-left p-2.5 hover:bg-cyan-50/50 flex items-center justify-between transition-colors cursor-pointer group"
+                                >
+                                  <div>
+                                    <span className="text-xs font-bold text-slate-800 group-hover:text-brand-cyan block">
+                                      {m.full_name}
+                                    </span>
+                                    <div className="flex items-center gap-2 text-[10px] text-slate-500 font-mono">
+                                      <span>No: {m.username}</span>
+                                      {m.phone && <span>• 📞 {m.phone}</span>}
+                                    </div>
+                                  </div>
+                                  <span className="text-[10px] font-bold text-slate-400 group-hover:text-brand-cyan uppercase">
+                                    Pilih →
+                                  </span>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -370,7 +447,7 @@ export default function PTRegistrationPage() {
                       onChange={(e) => setSelectedTrainerID(e.target.value)}
                       className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full disabled:opacity-50"
                     >
-                      <option value="">{loadingTrainers ? 'Memuat data pelatih...' : '-Pilih-'}</option>
+                      <option value="">{loadingTrainers ? 'Memuat data pelatih...' : '-Pilih Pelatih-'}</option>
                       {trainers.map(t => (
                         <option key={t.id} value={t.id}>
                           {t.full_name}
@@ -381,24 +458,50 @@ export default function PTRegistrationPage() {
                 </div>
 
                 {/* Paket Latihan Anggota */}
-                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-start max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center mt-2">
                     Paket Latihan Anggota *
                     <FieldInfo text="Wajib memilih dari daftar paket Personal Trainer aktif." />
                   </label>
-                  <select
-                    required
-                    value={selectedPackage}
-                    onChange={(e) => setSelectedPackage(e.target.value)}
-                    className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full font-bold"
-                  >
-                    <option value="">-Pilih-</option>
-                    {ptPackagesList.map((pkg: any, idx: number) => (
-                      <option key={pkg.id || `${pkg.name}-${idx}`} value={pkg.name}>
-                        {pkg.name} {pkg.price > 0 ? `[Harga Rp. ${pkg.price.toLocaleString('id-ID')}]` : '(Free)'}
+                  <div className="space-y-2 w-full">
+                    <select
+                      required
+                      value={selectedPackage}
+                      onChange={(e) => setSelectedPackage(e.target.value)}
+                      disabled={loadingPackages || ptPackagesList.length === 0}
+                      className={`bg-slate-50 border ${
+                        packageFetchError ? 'border-red-400 bg-red-50/20' : 'border-slate-300'
+                      } text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full font-bold disabled:opacity-60 disabled:cursor-not-allowed`}
+                    >
+                      <option value="">
+                        {loadingPackages
+                          ? '⏳ Memuat daftar paket PT...'
+                          : ptPackagesList.length === 0
+                          ? '-- Tidak Ada Paket Tersedia --'
+                          : '-Pilih Paket PT-'}
                       </option>
-                    ))}
-                  </select>
+                      {ptPackagesList.map((pkg: any, idx: number) => (
+                        <option key={pkg.id || `${pkg.name}-${idx}`} value={pkg.name}>
+                          {pkg.name} {pkg.price > 0 ? `[Harga Rp. ${Number(pkg.price).toLocaleString('id-ID')}]` : '(Free)'} - {pkg.session_count || 1} Sesi
+                        </option>
+                      ))}
+                    </select>
+
+                    {packageFetchError && (
+                      <div className="flex items-center justify-between gap-2 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-xs animate-fadeIn">
+                        <span className="flex items-center gap-1.5 font-medium">
+                          ⚠️ {packageFetchError}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={fetchPtPackages}
+                          className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-[10px] font-bold uppercase transition-colors shrink-0 cursor-pointer"
+                        >
+                          Coba Lagi
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Conditional fields based on Package selection */}
@@ -500,8 +603,8 @@ export default function PTRegistrationPage() {
               <div className="flex items-center gap-3 justify-end pt-6 border-t border-slate-200/60">
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer disabled:opacity-50 transition-colors"
+                  disabled={loading || !selectedMemberID || !selectedTrainerID || !selectedPackage || !paymentMethod}
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Save className="w-4 h-4" />
                   <span>{loading ? 'MEMPROSES...' : 'Simpan Transaksi'}</span>

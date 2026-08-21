@@ -4,28 +4,13 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import { membersApi, packagesApi } from '@/core/api';
+import { Member } from '@/core/types';
 import { Search, UserPlus, Trash, ArrowLeft, Save, Printer, FileText, PlusCircle } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { exportToExcel } from '@/lib/excelExport';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
-
-interface Member {
-  id: string;
-  branch_id: string;
-  branch_name: string;
-  username: string;
-  full_name: string;
-  phone?: string;
-  email?: string;
-  address?: string;
-  date_of_birth?: string;
-  gender?: string;
-  membership_type: string;
-  membership_start: string;
-  membership_end: string;
-  is_active: boolean;
-  created_at: string;
-}
+import { DataTable, Column } from '@/components/core/DataTable';
 
 interface Transaction {
   id: string;
@@ -38,21 +23,6 @@ interface Transaction {
   notes?: string;
 }
 
-const PACKAGES = [
-  { name: '1 bulan', price: 250000, days: 30 },
-  { name: '1 bulan (daftar)', price: 200000, days: 30 },
-  { name: '1 bulan (perpanjang)', price: 250000, days: 30 },
-  { name: '3 bulan', price: 600000, days: 90 },
-  { name: '3 bulan - Promo Januari', price: 600000, days: 90 },
-  { name: '3 bulan (daftar) - Promo Januari', price: 555000, days: 90 },
-  { name: '6 bulan', price: 1200000, days: 180 },
-  { name: '6 bulan - Promo Januari', price: 1250000, days: 180 },
-  { name: '6 bulan (daftar) - Promo Januari', price: 1100000, days: 180 },
-  { name: '12 bulan', price: 2200000, days: 365 },
-  { name: '12 bulan - Promo Januari', price: 2270000, days: 365 },
-  { name: '12 bulan (daftar)', price: 1180000, days: 365 }
-];
-
 export default function MemberPaymentPage() {
   const { activeBranchID, user } = useAuth();
   const router = useRouter();
@@ -61,16 +31,23 @@ export default function MemberPaymentPage() {
   const [step, setStep] = useState<'list' | 'pay'>('list');
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
 
-  // Data lists
+  // Data lists & Pagination states
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(50);
+  const [total, setTotal] = useState(0);
+
+  // Dynamic Packages states
+  const [packages, setPackages] = useState<{ name: string; price: number; days: number }[]>([]);
+  const [loadingPackages, setLoadingPackages] = useState(true);
+  const [packageFetchError, setPackageFetchError] = useState<string | null>(null);
 
   // Filter & Search states
   const [searchQuery, setSearchQuery] = useState('');
   const [filterColumn, setFilterColumn] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 400);
   const [isTyping, setIsTyping] = useState(false);
-  const [selectedMemberFilter, setSelectedMemberFilter] = useState('Semua');
 
   // Form Fields
   const [selectedPackageName, setSelectedPackageName] = useState('');
@@ -94,39 +71,88 @@ export default function MemberPaymentPage() {
   } | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
 
+  // Reset page when search or branch changes
   useEffect(() => {
-    if (activeBranchID) {
-      fetchMembers();
+    setPage(1);
+  }, [debouncedSearch, activeBranchID]);
+
+  const fetchDbPackages = async () => {
+    setLoadingPackages(true);
+    setPackageFetchError(null);
+    try {
+      const res = await packagesApi.listMembershipPackages(activeBranchID || undefined);
+      if (res.success && res.data && res.data.length > 0) {
+        const mapped = res.data.map((p: any) => ({
+          name: p.name,
+          price: Number(p.price) || 0,
+          days: Number(p.duration_days) || 30,
+        }));
+        setPackages(mapped);
+      } else if (res.success && (!res.data || res.data.length === 0)) {
+        setPackages([]);
+        setPackageFetchError('Belum ada paket anggota yang aktif di sistem. Silakan tambahkan paket di menu Pengaturan Paket.');
+      } else {
+        setPackages([]);
+        setPackageFetchError(res.error || 'Gagal memuat daftar paket anggota dari database.');
+      }
+    } catch (err: any) {
+      console.error('Gagal mengambil data paket dari database:', err);
+      setPackages([]);
+      setPackageFetchError(err.message || 'Gagal terhubung ke database untuk memuat paket anggota.');
+    } finally {
+      setLoadingPackages(false);
     }
-  }, [activeBranchID]);
+  };
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && members.length > 0) {
+    fetchDbPackages();
+  }, [activeBranchID]);
+
+  // Fetch members reactively on branch, page, perPage, or search change
+  useEffect(() => {
+    if (activeBranchID) {
+      fetchMembers(debouncedSearch, page, perPage);
+    }
+  }, [activeBranchID, page, perPage, debouncedSearch]);
+
+  // Handle URL query parameter pay_member_id (e.g. from summary dashboard)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && activeBranchID) {
       const params = new URLSearchParams(window.location.search);
       const payMemberId = params.get('pay_member_id');
       if (payMemberId) {
-        const found = members.find(m => m.id === payMemberId);
-        if (found) {
-          // Temporarily bypass activeBranchID check if we came from summary
-          // but wait, handleOpenPayment already has activeBranchID check
-          // and members on summary page are already in activeBranchID, so it will pass.
-          handleOpenPayment(found);
-          const newUrl = window.location.pathname;
-          window.history.replaceState({}, '', newUrl);
-        }
+        membersApi.get(payMemberId).then((res) => {
+          if (res.success && res.data) {
+            handleOpenPayment(res.data);
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
+          }
+        }).catch(console.error);
       }
     }
-  }, [members]);
+  }, [activeBranchID]);
 
-  const fetchMembers = async () => {
+  const fetchMembers = async (search = debouncedSearch, pageNum = page, perPageNum = perPage) => {
+    if (!activeBranchID) return;
     setLoading(true);
     try {
-      const res = await api.get<any>(`/admin/members?branch_id=${activeBranchID}&per_page=200`);
+      const res = await membersApi.list({
+        branch_id: activeBranchID,
+        search: search || undefined,
+        page: pageNum,
+        per_page: perPageNum,
+      });
       if (res.success && res.data) {
         setMembers(res.data);
+        setTotal(res.meta?.total || (res.data ? res.data.length : 0));
+      } else {
+        setMembers([]);
+        setTotal(0);
       }
     } catch (err) {
       console.error(err);
+      setMembers([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
@@ -169,13 +195,13 @@ export default function MemberPaymentPage() {
       setNewEndDate('');
       return;
     }
-    const pkg = PACKAGES.find(p => p.name === selectedPackageName);
+    const pkg = packages.find(p => p.name === selectedPackageName);
     if (!pkg) return;
 
     const d = new Date(newStartDate);
     d.setDate(d.getDate() + pkg.days);
     setNewEndDate(d.toISOString().split('T')[0]);
-  }, [selectedPackageName, newStartDate]);
+  }, [selectedPackageName, newStartDate, packages]);
 
   const calculateDaysDiffLabel = (dateStr?: string) => {
     if (!dateStr) return '-';
@@ -217,11 +243,15 @@ export default function MemberPaymentPage() {
       setErrorMsg('Semua field wajib diisi!');
       return;
     }
+
+    const pkg = packages.find(p => p.name === selectedPackageName);
+    if (!pkg) {
+      setErrorMsg('Paket yang dipilih tidak valid atau belum tersedia!');
+      return;
+    }
+
     setSubmitting(true);
     setErrorMsg('');
-
-    const pkg = PACKAGES.find(p => p.name === selectedPackageName);
-    if (!pkg) return;
 
     // Step 1: Create transaction record (Kategori: Perpanjang)
     const txNotes = `Perpanjang Paket: ${selectedPackageName} - Metode: ${paymentMethod} (${clubType}). Catatan: ${notes}`;
@@ -283,15 +313,24 @@ export default function MemberPaymentPage() {
     }
   };
 
-  const handleDeleteMember = async (m: Member) => {
-    if (!confirm(`Apakah Anda yakin ingin menonaktifkan membership ${m.full_name}?`)) return;
+  const handleDeletePayment = async (m: Member) => {
+    if (
+      !confirm(
+        `Apakah Anda yakin ingin membatalkan dan menghapus data pembayaran terakhir untuk anggota:\n${m.full_name} (${m.username})?\n\nCatatan: Data akun anggota TIDAK akan terhapus, hanya riwayat transaksi pembayaran terakhir yang dibatalkan.`
+      )
+    ) {
+      return;
+    }
     try {
-      const res = await api.delete<any>(`/admin/members/${m.id}`);
+      const res = await api.delete<any>(`/admin/members/${m.id}/last-payment`);
       if (res.success) {
         fetchMembers();
+      } else {
+        alert(res.error || 'Gagal menghapus data pembayaran.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      alert(err.message || 'Terjadi kesalahan jaringan.');
     }
   };
 
@@ -304,38 +343,15 @@ export default function MemberPaymentPage() {
     }
   }, [searchQuery, debouncedSearch]);
 
-  const getFilteredMembers = () => {
-    if (!debouncedSearch.trim() && !filterColumn && selectedMemberFilter === 'Semua') return members;
-    const q = debouncedSearch.toLowerCase().trim();
-
-    return members.filter((m) => {
-      if (selectedMemberFilter !== 'Semua' && m.id !== selectedMemberFilter) {
-        return false;
-      }
-
-      if (filterColumn === 'username') return m.username.toLowerCase().includes(q);
-      if (filterColumn === 'full_name') return m.full_name.toLowerCase().includes(q);
-      if (filterColumn === 'phone') return (m.phone || '').toLowerCase().includes(q);
-      if (filterColumn === 'membership_type') return (m.membership_type || '').toLowerCase().includes(q);
-
-      return (
-        m.full_name.toLowerCase().includes(q) ||
-        m.username.toLowerCase().includes(q) ||
-        (m.phone && m.phone.toLowerCase().includes(q)) ||
-        (m.membership_type && m.membership_type.toLowerCase().includes(q))
-      );
-    });
-  };
-
   const handleResetSearch = () => {
     setSearchQuery('');
     setFilterColumn('');
-    setSelectedMemberFilter('Semua');
+    setPage(1);
   };
 
   const handleExportExcel = () => {
     const headers = ['No', 'Nomor Anggota', 'Nama Anggota', 'Masa Aktif Selesai', 'Kontak HP', 'Paket Fitnes', 'Status Anggota'];
-    const data = getFilteredMembers().map((m, index) => [
+    const data = members.map((m, index) => [
       index + 1,
       m.username,
       m.full_name,
@@ -354,6 +370,7 @@ export default function MemberPaymentPage() {
   };
 
   const columnOptions = [
+    { label: 'Semua Kolom', value: '' },
     { label: 'Nomor Anggota', value: 'username' },
     { label: 'Nama Anggota', value: 'full_name' },
     { label: 'Kontak HP', value: 'phone' },
@@ -371,6 +388,88 @@ export default function MemberPaymentPage() {
     month: '2-digit',
     year: 'numeric',
   });
+
+  const columns: Column<Member>[] = [
+    {
+      key: 'index',
+      header: 'No',
+      align: 'center',
+      className: 'w-12 text-center border-r border-slate-100',
+      render: (_, idx) => idx + 1,
+    },
+    {
+      key: 'membership_end',
+      header: 'Masa Aktif',
+      className: 'border-r border-slate-100 font-mono text-slate-600',
+      render: (m) => formatDateLabel(m.membership_end),
+    },
+    {
+      key: 'username',
+      header: 'Nomor Anggota',
+      className: 'border-r border-slate-100 font-mono text-slate-800',
+      render: (m) => m.username,
+    },
+    {
+      key: 'full_name',
+      header: 'Nama Anggota',
+      className: 'border-r border-slate-100 text-slate-800 font-bold',
+      render: (m) => m.full_name,
+    },
+    {
+      key: 'phone',
+      header: 'Kontak',
+      className: 'border-r border-slate-100 font-mono text-slate-600',
+      render: (m) => m.phone || '-',
+    },
+    {
+      key: 'membership_type',
+      header: 'Paket Fitnes',
+      className: 'border-r border-slate-100 text-slate-700 uppercase text-[10px]',
+      render: (m) => m.membership_type || '-',
+    },
+    {
+      key: 'status',
+      header: 'Status Anggota',
+      align: 'center',
+      className: 'border-r border-slate-100 text-center select-none',
+      render: (m) => {
+        const active = isMemberActive(m.membership_end);
+        return active ? (
+          <span className="inline-block px-2.5 py-1 bg-[#28A745] text-white text-[9px] font-accent uppercase tracking-wider rounded font-bold">
+            Aktif
+          </span>
+        ) : (
+          <span className="inline-block px-2.5 py-1 bg-[#DC3545] text-white text-[9px] font-accent uppercase tracking-wider rounded font-bold">
+            Tidak Aktif
+          </span>
+        );
+      },
+    },
+    {
+      key: 'actions',
+      header: 'Aksi',
+      align: 'center',
+      className: 'text-center select-none w-24',
+      render: (m) => (
+        <div className="flex gap-1.5 justify-center">
+          <button
+            onClick={() => handleOpenPayment(m)}
+            title="Proses Pembayaran / Perpanjangan"
+            className="p-2 bg-brand-cyan hover:bg-[#138496] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
+          >
+            <PlusCircle className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => handleDeletePayment(m)}
+            title="Hapus Data Pembayaran Terakhir (Akun Anggota Tidak Dihapus)"
+            className="p-2 bg-[#DC3545] hover:bg-[#C82333] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
+          >
+            <Trash className="w-4 h-4" />
+          </button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-8 font-sans">
@@ -428,93 +527,23 @@ export default function MemberPaymentPage() {
               onReset={handleResetSearch}
             />
 
-            {/* Table Container */}
-            {loading ? (
-              <div className="text-center py-20 text-slate-500 font-accent uppercase tracking-widest text-xs">
-                Loading data anggota...
-              </div>
-            ) : (
-              <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
-                <div className="bg-brand-cyan px-5 py-3 text-white font-bold select-none">
-                  <span className="text-sm uppercase tracking-wider font-heading">Pembayaran Anggota</span>
-                </div>
-
-                <div className="p-6 space-y-4">
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm text-slate-650 border border-slate-200">
-                      <thead className="bg-[#6C7A89] text-white text-[10px] uppercase tracking-wider font-bold select-none">
-                        <tr>
-                          <th className="py-3 px-4 border-r border-slate-350/40 w-12 text-center">No</th>
-                          <th className="py-3 px-4 border-r border-slate-350/40">Masa Aktif</th>
-                          <th className="py-3 px-4 border-r border-slate-350/40">Nomor Anggota</th>
-                          <th className="py-3 px-4 border-r border-slate-350/40">Nama Anggota</th>
-                          <th className="py-3 px-4 border-r border-slate-350/40">Kontak</th>
-                          <th className="py-3 px-4 border-r border-slate-350/40">Paket Fitnes</th>
-                          <th className="py-3 px-4 border-r border-slate-350/40 text-center">Status Anggota</th>
-                          <th className="py-3 px-4 text-center w-24">Aksi</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 text-slate-700 font-semibold text-xs">
-                        {getFilteredMembers().length > 0 ? (
-                          getFilteredMembers().map((m, idx) => {
-                            const active = isMemberActive(m.membership_end);
-                            return (
-                              <tr key={m.id} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="py-4 px-4 border-r border-slate-100 text-center">{idx + 1}</td>
-                                <td className="py-4 px-4 border-r border-slate-100 font-mono text-slate-600">
-                                  {formatDateLabel(m.membership_end)}
-                                </td>
-                                <td className="py-4 px-4 border-r border-slate-100 font-mono text-slate-800">{m.username}</td>
-                                <td className="py-4 px-4 border-r border-slate-100 text-slate-800 font-bold">{m.full_name}</td>
-                                <td className="py-4 px-4 border-r border-slate-100 font-mono text-slate-600">{m.phone || '-'}</td>
-                                <td className="py-4 px-4 border-r border-slate-100 text-slate-700 uppercase text-[10px]">{m.membership_type}</td>
-                                <td className="py-4 px-4 border-r border-slate-100 text-center select-none">
-                                  {active ? (
-                                    <span className="inline-block px-2.5 py-1 bg-[#28A745] text-white text-[9px] font-accent uppercase tracking-wider rounded font-bold">
-                                      Aktif
-                                    </span>
-                                  ) : (
-                                    <span className="inline-block px-2.5 py-1 bg-[#DC3545] text-white text-[9px] font-accent uppercase tracking-wider rounded font-bold">
-                                      Tidak Aktif
-                                    </span>
-                                  )}
-                                </td>
-                                <td className="py-4 px-4 text-center select-none">
-                                  <div className="flex gap-1.5 justify-center">
-                                    {/* Icon-Only Action Buttons with Tooltips */}
-                                    <button
-                                      onClick={() => handleOpenPayment(m)}
-                                      title="Proses Pembayaran / Perpanjangan"
-                                      className="p-2 bg-brand-cyan hover:bg-[#138496] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
-                                    >
-                                      <PlusCircle className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteMember(m)}
-                                      title="Hapus Data Anggota"
-                                      className="p-2 bg-[#DC3545] hover:bg-[#C82333] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
-                                    >
-                                      <Trash className="w-4 h-4" />
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })
-                        ) : (
-                          <tr>
-                            <td colSpan={8} className="py-8 text-center text-slate-400 font-semibold select-none uppercase">
-                              Tidak ada data anggota ditemukan.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Table Container with Server-side Pagination */}
+            <DataTable
+              title="Pembayaran Anggota"
+              columns={columns}
+              data={members}
+              loading={loading}
+              loadingMessage="Loading data anggota..."
+              emptyMessage="Tidak ada data anggota ditemukan."
+              currentPage={page}
+              totalItems={total}
+              itemsPerPage={perPage}
+              onPageChange={setPage}
+              onItemsPerPageChange={(val) => {
+                setPerPage(val);
+                setPage(1);
+              }}
+            />
           </div>
         )}
 
@@ -595,22 +624,51 @@ export default function MemberPaymentPage() {
                   />
                 </div>
 
-                {/* Paket Anggota (Dropdown same as registration) */}
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Paket Anggota *</label>
-                  <select
-                    required
-                    value={selectedPackageName}
-                    onChange={(e) => setSelectedPackageName(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full font-bold"
-                  >
-                    <option value="">-Pilih-</option>
-                    {PACKAGES.map(p => (
-                      <option key={p.name} value={p.name}>
-                        {p.name} [Harga {(p.price / 1000)}k]
+                {/* Paket Anggota (Dropdown from DB) */}
+                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-start max-sm:grid-cols-1">
+                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent mt-2">
+                    Paket Anggota *
+                  </label>
+                  <div className="space-y-2 w-full">
+                    <select
+                      required
+                      value={selectedPackageName}
+                      onChange={(e) => setSelectedPackageName(e.target.value)}
+                      disabled={loadingPackages || packages.length === 0}
+                      className={`bg-slate-50 border ${
+                        packageFetchError ? 'border-red-400 bg-red-50/20' : 'border-slate-200'
+                      } text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full font-bold disabled:opacity-60 disabled:cursor-not-allowed`}
+                    >
+                      <option value="">
+                        {loadingPackages
+                          ? '⏳ Memuat daftar paket anggota...'
+                          : packages.length === 0
+                          ? '-- Tidak Ada Paket Tersedia --'
+                          : '-Pilih Paket Anggota-'}
                       </option>
-                    ))}
-                  </select>
+                      {packages.map((p, idx) => (
+                        <option key={`${p.name}-${idx}`} value={p.name}>
+                          {p.name} (Rp. {p.price.toLocaleString('id-ID')}) - {p.days} Hari
+                        </option>
+                      ))}
+                    </select>
+
+                    {/* Error / info alert directly beneath the input */}
+                    {packageFetchError && (
+                      <div className="flex items-center justify-between gap-2 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-xs animate-fadeIn">
+                        <span className="flex items-center gap-1.5 font-medium">
+                          ⚠️ {packageFetchError}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={fetchDbPackages}
+                          className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-[10px] font-bold uppercase transition-colors shrink-0 cursor-pointer"
+                        >
+                          Coba Lagi
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Jenis Pembayaran */}
@@ -662,8 +720,8 @@ export default function MemberPaymentPage() {
                   <div className="flex gap-4">
                     <button
                       type="submit"
-                      disabled={submitting}
-                      className="inline-flex items-center gap-1.5 px-6 py-3 bg-[#28A745] hover:bg-[#218838] text-white text-xs font-accent font-bold uppercase tracking-widest rounded transition-colors shadow-sm cursor-pointer"
+                      disabled={submitting || loadingPackages || !selectedPackageName || packages.length === 0}
+                      className="inline-flex items-center gap-1.5 px-6 py-3 bg-[#28A745] hover:bg-[#218838] text-white text-xs font-accent font-bold uppercase tracking-widest rounded transition-colors shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Save className="w-4 h-4" />
                       <span>{submitting ? 'Menyimpan...' : 'Simpan'}</span>

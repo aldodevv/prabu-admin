@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import { permissions } from '@/lib/permissions';
 
 export interface AdminUser {
   id: string;
@@ -74,8 +75,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
         
-        // If cs, force their assigned branch ID
-        if (parsedUser.role === 'cs') {
+        // If non-switchable role (CS/karyawan), force their assigned branch ID
+        if (!permissions.canSwitchBranch(parsedUser.role) && parsedUser.branch_id) {
           handleSelectBranch(parsedUser.branch_id);
         }
       }
@@ -107,11 +108,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setBranches(branchRes.data);
         }
 
-        if (loggedUser.role === 'cs') {
+        if (!permissions.canSwitchBranch(loggedUser.role)) {
           handleSelectBranch(loggedUser.branch_id);
           router.push('/dashboard');
         } else {
-          // Owner needs to select a branch first
+          // Owner/developer/admin needs to select a branch first
           router.push('/branch-select');
         }
         return { success: true };
@@ -138,14 +139,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const handleSelectBranch = (branchID: string) => {
     // Karyawan / CS staff is strictly locked to their assigned branch_id
-    if (user && user.role === 'karyawan' && user.branch_id) {
+    if (user && !permissions.canSwitchBranch(user.role) && user.branch_id) {
       branchID = user.branch_id;
     } else if (!user) {
       const storedUser = localStorage.getItem('prabu_admin_user');
       if (storedUser) {
         try {
           const parsed = JSON.parse(storedUser);
-          if (parsed.role === 'karyawan' && parsed.branch_id) {
+          if (!permissions.canSwitchBranch(parsed.role) && parsed.branch_id) {
             branchID = parsed.branch_id;
           }
         } catch { }

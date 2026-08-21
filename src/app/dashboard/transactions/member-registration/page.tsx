@@ -25,24 +25,11 @@ interface SuccessData {
   price: number;
 }
 
-const DEFAULT_PACKAGES = [
-  { name: '1 bulan', price: 250000, days: 30 },
-  { name: '1 bulan (daftar)', price: 200000, days: 30 },
-  { name: '1 bulan (perpanjang)', price: 250000, days: 30 },
-  { name: '3 bulan', price: 600000, days: 90 },
-  { name: '3 bulan - Promo Januari', price: 600000, days: 90 },
-  { name: '3 bulan (daftar) - Promo Januari', price: 555000, days: 90 },
-  { name: '6 bulan', price: 1200000, days: 180 },
-  { name: '6 bulan - Promo Januari', price: 1250000, days: 180 },
-  { name: '6 bulan (daftar) - Promo Januari', price: 1100000, days: 180 },
-  { name: '12 bulan', price: 2200000, days: 365 },
-  { name: '12 bulan - Promo Januari', price: 2270000, days: 365 },
-  { name: '12 bulan (daftar)', price: 1180000, days: 365 }
-];
-
 export default function MemberRegistrationPage() {
   const { activeBranchID, user } = useAuth();
-  const [packages, setPackages] = useState<{ name: string; price: number; days: number }[]>(DEFAULT_PACKAGES);
+  const [packages, setPackages] = useState<{ name: string; price: number; days: number }[]>([]);
+  const [loadingPackages, setLoadingPackages] = useState(true);
+  const [packageFetchError, setPackageFetchError] = useState<string | null>(null);
 
   // Form Personal Data states
   const [fullName, setFullName] = useState('');
@@ -69,25 +56,36 @@ export default function MemberRegistrationPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [successData, setSuccessData] = useState<SuccessData | null>(null);
 
+  const fetchDbPackages = async () => {
+    setLoadingPackages(true);
+    setPackageFetchError(null);
+    try {
+      const res = await packagesApi.listMembershipPackages(activeBranchID || undefined);
+      if (res.success && res.data && res.data.length > 0) {
+        const mapped = res.data.map((p: any) => ({
+          name: p.name,
+          price: Number(p.price) || 0,
+          days: Number(p.duration_days) || 30,
+        }));
+        setPackages(mapped);
+      } else if (res.success && (!res.data || res.data.length === 0)) {
+        setPackages([]);
+        setPackageFetchError('Belum ada paket anggota yang aktif di sistem. Silakan tambahkan paket di menu Pengaturan Paket.');
+      } else {
+        setPackages([]);
+        setPackageFetchError(res.error || 'Gagal memuat daftar paket anggota dari database.');
+      }
+    } catch (err: any) {
+      console.error('Gagal mengambil data paket dari database:', err);
+      setPackages([]);
+      setPackageFetchError(err.message || 'Gagal terhubung ke database untuk memuat paket anggota.');
+    } finally {
+      setLoadingPackages(false);
+    }
+  };
+
   useEffect(() => {
     setStartDateInput(new Date().toISOString().split('T')[0]);
-
-    // Fetch dynamic packages from database
-    const fetchDbPackages = async () => {
-      try {
-        const res = await packagesApi.listMembershipPackages(activeBranchID || undefined);
-        if (res.data && res.data.length > 0) {
-          const mapped = res.data.map((p: any) => ({
-            name: p.name,
-            price: p.price,
-            days: p.duration_days
-          }));
-          setPackages(mapped);
-        }
-      } catch (err) {
-        console.error('Gagal mengambil data paket dari database, menggunakan default:', err);
-      }
-    };
     fetchDbPackages();
   }, [activeBranchID]);
 
@@ -115,8 +113,13 @@ export default function MemberRegistrationPage() {
     setErrorMsg('');
     setSuccessData(null);
 
-    if (!fullName || !gender || !packageName || !paymentMethod || !clubType) {
-      setErrorMsg('Harap lengkapi semua field bertanda wajib');
+    if (!packageName || packages.length === 0) {
+      setErrorMsg('Paket Anggota wajib dipilih dan tersedia sebelum mendaftarkan anggota!');
+      return;
+    }
+
+    if (!fullName || !gender || !paymentMethod || !clubType) {
+      setErrorMsg('Harap lengkapi semua field bertanda wajib (Nama, Jenis Kelamin, Paket, Jenis Pembayaran, Tipe Club)');
       return;
     }
 
@@ -589,24 +592,51 @@ export default function MemberRegistrationPage() {
                 </div>
 
                 {/* Paket Anggota */}
-                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1 pt-4 border-t border-slate-100">
-                  <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
-                    Paket Anggota *
-                    <FieldInfo text="Wajib pilih salah satu paket membership yang tersedia." />
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-start max-sm:grid-cols-1 pt-4 border-t border-slate-100">
+                  <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center mt-2">
+                    Paket Anggota <span className="text-red-500 ml-1">*</span>
+                    <FieldInfo text="Wajib pilih salah satu paket membership yang tersedia dari database." />
                   </label>
-                  <select
-                    required
-                    value={packageName}
-                    onChange={(e) => setPackageName(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-bold"
-                  >
-                    <option value="">-Pilih-</option>
-                    {packages.map((pkg, idx) => (
-                      <option key={`${pkg.name}-${idx}`} value={pkg.name}>
-                        {pkg.name} (Rp. {pkg.price.toLocaleString('id-ID')})
+                  <div className="space-y-2 w-full">
+                    <select
+                      required
+                      value={packageName}
+                      onChange={(e) => setPackageName(e.target.value)}
+                      disabled={loadingPackages || packages.length === 0}
+                      className={`w-full bg-slate-50 border ${
+                        packageFetchError ? 'border-red-400 bg-red-50/20' : 'border-slate-300'
+                      } focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-bold disabled:opacity-60 disabled:cursor-not-allowed`}
+                    >
+                      <option value="">
+                        {loadingPackages
+                          ? '⏳ Memuat daftar paket anggota...'
+                          : packages.length === 0
+                          ? '-- Tidak Ada Paket Tersedia --'
+                          : '-Pilih Paket Anggota-'}
                       </option>
-                    ))}
-                  </select>
+                      {packages.map((pkg, idx) => (
+                        <option key={`${pkg.name}-${idx}`} value={pkg.name}>
+                          {pkg.name} (Rp. {pkg.price.toLocaleString('id-ID')}) - {pkg.days} Hari
+                        </option>
+                      ))}
+                    </select>
+
+                    {/* Error / info alert directly beneath the input */}
+                    {packageFetchError && (
+                      <div className="flex items-center justify-between gap-2 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-xs animate-fadeIn">
+                        <span className="flex items-center gap-1.5 font-medium">
+                          ⚠️ {packageFetchError}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={fetchDbPackages}
+                          className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-[10px] font-bold uppercase transition-colors shrink-0 cursor-pointer"
+                        >
+                          Coba Lagi
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Jenis Pembayaran */}
@@ -705,8 +735,8 @@ export default function MemberRegistrationPage() {
               <div className="flex items-center gap-3 justify-end pt-6 border-t border-slate-200/60">
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer disabled:opacity-50 transition-colors"
+                  disabled={loading || loadingPackages || !packageName || packages.length === 0}
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Check className="w-4 h-4" />
                   <span>{loading ? (loadingText || 'Uploading Image & Menyimpan Transaksi...') : 'Simpan Transaksi'}</span>

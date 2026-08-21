@@ -49,7 +49,7 @@ export function MainModeProvider({ children }: { children: React.ReactNode }) {
       const isCmdOrCtrl = e.ctrlKey || e.metaKey;
       const isAlt = e.altKey;
       const isShift = e.shiftKey;
-      const isKeyP = e.code === 'KeyP' || e.key.toLowerCase() === 'p';
+      const isKeyP = e.code === 'KeyP' || (typeof e.key === 'string' && e.key.toLowerCase() === 'p');
 
       if (isCmdOrCtrl && isAlt && isShift && isKeyP) {
         e.preventDefault();

@@ -60,7 +60,6 @@ interface DashboardSummary {
   age_21_30: number;
   age_31_41: number;
   age_42_75: number;
-  expiring_members: Member[];
   revenue_analytics?: RevenueAnalytics;
 }
 
@@ -78,6 +77,7 @@ export default function SummaryPage() {
   const [loadingRevenue, setLoadingRevenue] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedTxType, setSelectedTxType] = useState<string>('all');
+  const isInitialRevenueRef = useRef(true);
 
   useEffect(() => {
     setExpiringPage(1);
@@ -92,6 +92,10 @@ export default function SummaryPage() {
 
   useEffect(() => {
     if (activeBranchID !== undefined) {
+      if (isInitialRevenueRef.current) {
+        isInitialRevenueRef.current = false;
+        if (selectedTxType === 'all') return;
+      }
       fetchRevenue(selectedTxType);
     }
   }, [selectedTxType, activeBranchID]);
@@ -142,7 +146,6 @@ export default function SummaryPage() {
           age_21_30: 0,
           age_31_41: 0,
           age_42_75: 0,
-          expiring_members: []
         });
       }
     } catch (err: any) {
@@ -164,7 +167,6 @@ export default function SummaryPage() {
         age_21_30: 0,
         age_31_41: 0,
         age_42_75: 0,
-        expiring_members: []
       });
     } finally {
       setLoadingSummary(false);
