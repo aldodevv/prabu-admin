@@ -23,10 +23,28 @@ const OfficialReceiptTemplate = dynamic(
   { ssr: false }
 );
 
+const OfficialPTReceiptTemplate = dynamic(
+  () => import('@/components/core/PrintTemplates').then((mod) => mod.OfficialPTReceiptTemplate),
+  { ssr: false }
+);
+
 const DigitalMemberCard = dynamic(
   () => import('@/components/core/DigitalMemberCard').then((mod) => mod.DigitalMemberCard),
   { ssr: false }
 );
+
+const isPtTransaction = (tx: Transaction) => {
+  const n = (tx.notes || '').toLowerCase();
+  return (
+    n.includes('personal trainer') ||
+    n.includes('pt ') ||
+    n.includes('pt:') ||
+    n.includes('pt -') ||
+    n.includes('latihan') ||
+    n.includes('workout') ||
+    n.includes('sesi')
+  );
+};
 
 export default function OneClubMembersPanel() {
   const { activeBranchID, user, loading: authLoading } = useAuth();
@@ -594,19 +612,6 @@ export default function OneClubMembersPanel() {
                   Loading history transaksi...
                 </div>
               ) : (() => {
-                const isPtTransaction = (tx: Transaction) => {
-                  const n = (tx.notes || '').toLowerCase();
-                  return (
-                    n.includes('personal trainer') ||
-                    n.includes('pt ') ||
-                    n.includes('pt:') ||
-                    n.includes('pt -') ||
-                    n.includes('latihan') ||
-                    n.includes('workout') ||
-                    n.includes('sesi')
-                  );
-                };
-
                 const anggotaTxs = memberTransactions.filter(tx => !isPtTransaction(tx));
                 const latihanTxs = memberTransactions.filter(tx => isPtTransaction(tx));
 
@@ -644,22 +649,10 @@ export default function OneClubMembersPanel() {
                                   <td className="py-2.5 px-3 border-r border-slate-100 text-slate-500 font-normal leading-relaxed">{tx.notes || '-'}</td>
                                   <td className="py-2.5 px-3 border-r border-slate-100 text-slate-600">{tx.admin_name}</td>
                                   <td className="py-2.5 px-3 text-center select-none no-print">
-                                    <div className="flex gap-1.5 justify-center">
-                                      <button
-                                        onClick={() => {
-                                          setReceiptTx(tx);
-                                          setTimeout(() => {
-                                            window.print();
-                                          }, 100);
-                                        }}
-                                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#007BFF] hover:bg-[#0069D9] text-white text-[9px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
-                                      >
-                                        <Printer className="w-3.5 h-3.5" />
-                                        Cetak
-                                      </button>
+                                    <div className="flex justify-center">
                                       <button
                                         onClick={() => setReceiptTx(tx)}
-                                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#6C7A89] hover:bg-[#5a6673] text-white text-[9px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
+                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#6C7A89] hover:bg-[#5a6673] text-white text-[10px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
                                       >
                                         <FileText className="w-3.5 h-3.5" />
                                         Document
@@ -706,22 +699,10 @@ export default function OneClubMembersPanel() {
                                 <td className="py-2.5 px-3 border-r border-slate-100 text-right text-slate-800 font-black">{formatIDR(tx.total_amount)}</td>
                                 <td className="py-2.5 px-3 border-r border-slate-100 text-slate-600">{tx.admin_name}</td>
                                 <td className="py-2.5 px-3 text-center select-none no-print">
-                                  <div className="flex gap-1.5 justify-center">
-                                    <button
-                                      onClick={() => {
-                                        setReceiptTx(tx);
-                                        setTimeout(() => {
-                                          window.print();
-                                        }, 100);
-                                      }}
-                                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#007BFF] hover:bg-[#0069D9] text-white text-[9px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
-                                    >
-                                      <Printer className="w-3.5 h-3.5" />
-                                      Cetak
-                                    </button>
+                                  <div className="flex justify-center">
                                     <button
                                       onClick={() => setReceiptTx(tx)}
-                                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#6C7A89] hover:bg-[#5a6673] text-white text-[9px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
+                                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#6C7A89] hover:bg-[#5a6673] text-white text-[10px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
                                     >
                                       <FileText className="w-3.5 h-3.5" />
                                       Document
@@ -1007,21 +988,40 @@ export default function OneClubMembersPanel() {
 
       {/* Reusable Print Official Receipt Overlay */}
       {receiptTx && selectedMember && (
-        <OfficialReceiptTemplate
-          onClose={() => setReceiptTx(null)}
-          data={{
-            transactionNumber: receiptTx.transaction_number,
-            transactionDate: receiptTx.transaction_date,
-            memberUsername: selectedMember.username,
-            memberName: selectedMember.full_name,
-            packageName: getMembershipTypeFromNotes(receiptTx.notes || ''),
-            membershipStart: selectedMember.membership_start,
-            membershipEnd: selectedMember.membership_end,
-            paymentMethod: getPaymentMethodFromNotes(receiptTx.notes || ''),
-            price: receiptTx.total_amount,
-            cashierName: user?.full_name || 'Kasir Prabu GYM'
-          }}
-        />
+        isPtTransaction(receiptTx) ? (
+          <OfficialPTReceiptTemplate
+            onClose={() => setReceiptTx(null)}
+            data={{
+              transactionNumber: receiptTx.transaction_number || '-',
+              transactionDate: receiptTx.transaction_date,
+              memberUsername: selectedMember.username,
+              memberName: selectedMember.full_name,
+              packageName: getMembershipTypeFromNotes(receiptTx.notes || '') || 'Personal Trainer',
+              sessionCount: 1,
+              membershipEnd: selectedMember.membership_end,
+              paymentMethod: getPaymentMethodFromNotes(receiptTx.notes || ''),
+              price: receiptTx.total_amount,
+              trainerName: 'Pelatih Prabu GYM',
+              cashierName: receiptTx.admin_name || user?.full_name || 'Kasir Prabu GYM',
+            }}
+          />
+        ) : (
+          <OfficialReceiptTemplate
+            onClose={() => setReceiptTx(null)}
+            data={{
+              transactionNumber: receiptTx.transaction_number,
+              transactionDate: receiptTx.transaction_date,
+              memberUsername: selectedMember.username,
+              memberName: selectedMember.full_name,
+              packageName: getMembershipTypeFromNotes(receiptTx.notes || ''),
+              membershipStart: selectedMember.membership_start,
+              membershipEnd: selectedMember.membership_end,
+              paymentMethod: getPaymentMethodFromNotes(receiptTx.notes || ''),
+              price: receiptTx.total_amount,
+              cashierName: receiptTx.admin_name || user?.full_name || 'Kasir Prabu GYM'
+            }}
+          />
+        )
       )}
 
       {/* Delete Confirmation Modal */}

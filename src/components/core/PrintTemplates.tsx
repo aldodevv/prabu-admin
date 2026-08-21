@@ -11,16 +11,19 @@ interface PrintContainerProps {
 
 const PrintContainer: React.FC<PrintContainerProps> = ({ onClose, title, children, maxWidthClass = 'max-w-4xl' }) => {
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:p-0 print:bg-white print:fixed print:inset-0 overflow-y-auto">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:p-0 print:bg-white print:static print:block overflow-y-auto">
       <style jsx global>{`
         @media print {
           @page {
             size: auto;
-            margin: 5mm;
+            margin: 8mm;
           }
-          header, aside, nav, .no-print, button {
+
+          /* Hide UI navigation, sidebar, and non-printable elements */
+          header, aside, nav, button, .no-print {
             display: none !important;
           }
+
           html, body {
             background: white !important;
             color: black !important;
@@ -33,49 +36,56 @@ const PrintContainer: React.FC<PrintContainerProps> = ({ onClose, title, childre
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          /* Hide outer dashboard layout containers during print to prevent blank extra pages in Safari */
-          body > *:not(.fixed) {
-            display: none !important;
+
+          /* Hide background UI when printing modal while keeping the print container visible */
+          body {
+            visibility: hidden !important;
           }
-          #print-area, #print-receipt-overlay, #print-session-receipt, #print-leave-receipt, #print-modal-root {
-            background: white !important;
-            color: black !important;
-            padding: 0 !important;
-            margin: 0 auto !important;
+
+          #print-modal-root,
+          #print-modal-root * {
+            visibility: visible !important;
+          }
+
+          #print-modal-root {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: white !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
           }
-          .fixed {
-            position: absolute !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: auto !important;
+
+          #print-area, #print-receipt-overlay, #print-session-receipt, #print-leave-receipt {
+            display: block !important;
+            visibility: visible !important;
             background: white !important;
-            inset: auto !important;
-            padding: 0 !important;
-            margin: 0 !important;
+            color: black !important;
             width: 100% !important;
             max-width: 100% !important;
-            box-shadow: none !important;
-            border: none !important;
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-            overflow: visible !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
+
           table {
             border-collapse: collapse !important;
             width: 100% !important;
             max-width: 100% !important;
           }
+
           tr, td, th {
             page-break-inside: avoid !important;
             break-inside: avoid !important;
           }
+
           * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
@@ -144,49 +154,51 @@ export const OfficialReceiptTemplate: React.FC<OfficialReceiptProps> = ({ onClos
     <PrintContainer onClose={onClose} title="Receipt">
       <div id="print-receipt-overlay" className="space-y-6">
         {/* Header Box */}
-        <div className="border border-black p-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+        <div className="grid grid-cols-[1.2fr_2fr] border border-black divide-x divide-black">
+          <div className="p-4 flex flex-col items-center justify-center text-center">
             <LogoIcon />
-            <div className="text-left leading-none">
-              <h1 className="text-2xl font-black tracking-widest font-heading">PRABU GYM</h1>
-              <span className="text-[9px] uppercase font-bold text-slate-600 tracking-wider">Gym & Fitness Center</span>
+            <div className="text-center leading-none mt-2">
+              <h1 className="text-xl font-bold tracking-widest font-heading text-black">PRABU GYM</h1>
+              <span className="text-[9px] uppercase font-bold text-black tracking-wider">Gym & Fitness Center</span>
             </div>
           </div>
-          <div className="text-right border-l border-black pl-8 pr-4">
-            <h2 className="text-2xl font-black uppercase tracking-widest text-slate-900">OFFICIAL RECEIPT</h2>
+          <div className="p-4 flex items-center justify-center text-center">
+            <h2 className="text-2xl print:text-3xl font-bold uppercase tracking-wider text-black">
+              PRABU OFFICIAL RECEIPT
+            </h2>
           </div>
         </div>
 
         {/* Metadata Summary Row - Bold & Prominent */}
-        <div className="border-t border-b border-black py-2.5 px-4 flex justify-between text-xs font-extrabold text-black uppercase tracking-wide">
+        <div className="border-t border-b border-black py-2.5 px-4 flex justify-between text-xs font-bold text-black uppercase tracking-wide">
           <span>Tanggal : {formatDateLabel(data.transactionDate)}</span>
           <span>Kategori : Pendaftaran</span>
           <span>No Invoice : {data.transactionNumber}</span>
         </div>
 
-        {/* Details Table - Bold Header Row */}
+        {/* Details Table - Bold Header & Body */}
         <div className="border border-black overflow-hidden rounded-xs">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-100 border-b border-black font-black uppercase text-[11px] text-black">
-                <th className="py-2.5 px-3 border-r border-black font-black">NOMOR ANGGOTA</th>
-                <th className="py-2.5 px-3 border-r border-black font-black">NAMA ANGGOTA</th>
-                <th className="py-2.5 px-3 border-r border-black font-black">PAKET ANGGOTA</th>
-                <th className="py-2.5 px-3 border-r border-black font-black">MASA AKTIF</th>
-                <th className="py-2.5 px-3 border-r border-black font-black">JENIS PEMBAYARAN</th>
-                <th className="py-2.5 px-3 font-black">HARGA PAKET</th>
+              <tr className="bg-slate-50 border-b border-black font-bold uppercase text-xs text-black">
+                <th className="py-2.5 px-3 border-r border-black font-bold">NOMOR ANGGOTA</th>
+                <th className="py-2.5 px-3 border-r border-black font-bold">NAMA ANGGOTA</th>
+                <th className="py-2.5 px-3 border-r border-black font-bold">PAKET ANGGOTA</th>
+                <th className="py-2.5 px-3 border-r border-black font-bold">MASA AKTIF</th>
+                <th className="py-2.5 px-3 border-r border-black font-bold">JENIS PEMBAYARAN</th>
+                <th className="py-2.5 px-3 font-bold">HARGA PAKET</th>
               </tr>
             </thead>
             <tbody>
-              <tr className="font-bold text-slate-900">
-                <td className="py-3 px-3 border-r border-black font-mono font-bold">{data.memberUsername}</td>
-                <td className="py-3 px-3 border-r border-black font-extrabold">{data.memberName}</td>
-                <td className="py-3 px-3 border-r border-black uppercase text-[10px] font-bold">{data.packageName}</td>
-                <td className="py-3 px-3 border-r border-black font-mono text-[10px] font-bold">
+              <tr className="font-bold text-black text-xs">
+                <td className="py-3 px-3 border-r border-black font-bold">{data.memberUsername}</td>
+                <td className="py-3 px-3 border-r border-black font-bold">{data.memberName}</td>
+                <td className="py-3 px-3 border-r border-black uppercase font-bold">{data.packageName}</td>
+                <td className="py-3 px-3 border-r border-black font-bold">
                   {formatDateLabel(data.membershipStart)} s/d {formatDateLabel(data.membershipEnd)}
                 </td>
                 <td className="py-3 px-3 border-r border-black uppercase font-bold">{data.paymentMethod}</td>
-                <td className="py-3 px-3 font-extrabold">{formatIDR(data.price)}</td>
+                <td className="py-3 px-3 font-bold">{formatIDR(data.price)}</td>
               </tr>
             </tbody>
           </table>
@@ -195,14 +207,14 @@ export const OfficialReceiptTemplate: React.FC<OfficialReceiptProps> = ({ onClos
         {/* Signature Box */}
         <div className="grid grid-cols-2 border border-black text-center text-xs font-bold divide-x divide-black">
           <div>
-            <div className="py-2 border-b border-black uppercase tracking-wider bg-slate-100 text-[10px] font-black text-black">Member</div>
+            <div className="py-2 border-b border-black uppercase tracking-wider bg-slate-50 text-xs font-bold text-black">MEMBER</div>
             <div className="h-28" />
-            <div className="py-2 border-t border-black uppercase font-black text-black">{data.memberName}</div>
+            <div className="py-2 border-t border-black uppercase font-bold text-black">{data.memberName}</div>
           </div>
           <div>
-            <div className="py-2 border-b border-black uppercase tracking-wider bg-slate-100 text-[10px] font-black text-black">Customer Service</div>
+            <div className="py-2 border-b border-black uppercase tracking-wider bg-slate-50 text-xs font-bold text-black">CUSTOMER SERVICE</div>
             <div className="h-28" />
-            <div className="py-2 border-t border-black uppercase font-black text-black">{data.cashierName}</div>
+            <div className="py-2 border-t border-black uppercase font-bold text-black">{data.cashierName}</div>
           </div>
         </div>
       </div>
@@ -237,45 +249,45 @@ export const OfficialPTReceiptTemplate: React.FC<OfficialPTReceiptProps> = ({ on
           <div className="p-4 flex flex-col items-center justify-center text-center">
             <LogoIcon />
             <div className="text-center leading-none mt-2">
-              <h1 className="text-xl font-black tracking-widest font-heading">PRABU GYM</h1>
-              <span className="text-[8px] uppercase font-bold text-slate-600 tracking-wider">Gym & Fitness Center</span>
+              <h1 className="text-xl font-bold tracking-widest font-heading text-black">PRABU GYM</h1>
+              <span className="text-[9px] uppercase font-bold text-black tracking-wider">Gym & Fitness Center</span>
             </div>
           </div>
           <div className="p-4 flex items-center justify-center text-center">
-            <h2 className="text-2xl print:text-3xl font-black uppercase tracking-widest text-slate-900">
+            <h2 className="text-2xl print:text-3xl font-bold uppercase tracking-wider text-black">
               PRABU OFFICIAL RECEIPT
             </h2>
           </div>
         </div>
 
         {/* Metadata Summary Row - Bold & Prominent */}
-        <div className="border-t border-b border-black py-2.5 px-4 flex justify-between text-xs font-extrabold text-black uppercase tracking-wide">
+        <div className="border-t border-b border-black py-2.5 px-4 flex justify-between text-xs font-bold text-black uppercase tracking-wide">
           <span>Tanggal : {formatDateLabel(data.transactionDate)}</span>
           <span>Kategori : Personal Trainer</span>
           <span>No Invoice : {data.transactionNumber}</span>
         </div>
 
-        {/* Details Table - Bold Header Row */}
+        {/* Details Table - All Bold & Uniform Font */}
         <div className="border border-black overflow-hidden rounded-xs">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-100 border-b border-black font-black uppercase text-[11px] text-black">
-                <th className="py-2.5 px-3 border-r border-black font-black">NOMOR ANGGOTA</th>
-                <th className="py-2.5 px-3 border-r border-black font-black">NAMA ANGGOTA</th>
-                <th className="py-2.5 px-3 border-r border-black font-black">PAKET ANGGOTA</th>
-                <th className="py-2.5 px-3 border-r border-black font-black text-center">JUMLAH SESI</th>
-                <th className="py-2.5 px-3 border-r border-black font-black">MASA AKTIF</th>
-                <th className="py-2.5 px-3 font-black">HARGA PAKET</th>
+              <tr className="bg-slate-50 border-b border-black font-bold uppercase text-xs text-black">
+                <th className="py-2.5 px-3 border-r border-black font-bold">NOMOR ANGGOTA</th>
+                <th className="py-2.5 px-3 border-r border-black font-bold">NAMA ANGGOTA</th>
+                <th className="py-2.5 px-3 border-r border-black font-bold">PAKET ANGGOTA</th>
+                <th className="py-2.5 px-3 border-r border-black font-bold text-center">JUMLAH SESI</th>
+                <th className="py-2.5 px-3 border-r border-black font-bold">MASA AKTIF</th>
+                <th className="py-2.5 px-3 font-bold">HARGA PAKET</th>
               </tr>
             </thead>
             <tbody>
-              <tr className="font-bold text-slate-900">
-                <td className="py-3 px-3 border-r border-black font-mono font-bold">{data.memberUsername}</td>
-                <td className="py-3 px-3 border-r border-black font-extrabold">{data.memberName}</td>
-                <td className="py-3 px-3 border-r border-black uppercase text-[10px] font-bold">{data.packageName}</td>
-                <td className="py-3 px-3 border-r border-black text-center font-extrabold">{data.sessionCount}</td>
-                <td className="py-3 px-3 border-r border-black font-mono text-[10px] font-bold">{formatDateLabel(data.membershipEnd)}</td>
-                <td className="py-3 px-3 font-extrabold">{formatIDR(data.price)}</td>
+              <tr className="font-bold text-black text-xs">
+                <td className="py-3 px-3 border-r border-black font-bold">{data.memberUsername}</td>
+                <td className="py-3 px-3 border-r border-black font-bold">{data.memberName}</td>
+                <td className="py-3 px-3 border-r border-black uppercase font-bold">{data.packageName}</td>
+                <td className="py-3 px-3 border-r border-black text-center font-bold">{data.sessionCount}</td>
+                <td className="py-3 px-3 border-r border-black font-bold">{formatDateLabel(data.membershipEnd)}</td>
+                <td className="py-3 px-3 font-bold">{formatIDR(data.price)}</td>
               </tr>
             </tbody>
           </table>
@@ -284,19 +296,19 @@ export const OfficialPTReceiptTemplate: React.FC<OfficialPTReceiptProps> = ({ on
         {/* Signature Box (Three signature columns: Member, PT, CS) */}
         <div className="grid grid-cols-3 border border-black text-center text-xs font-bold divide-x divide-black">
           <div>
-            <div className="py-2 border-b border-black uppercase tracking-wider bg-slate-100 text-[10px] font-black text-black">Member</div>
+            <div className="py-2 border-b border-black uppercase tracking-wider bg-slate-50 text-xs font-bold text-black">MEMBER</div>
             <div className="h-28" />
-            <div className="py-2 border-t border-black uppercase font-black text-black">{data.memberName}</div>
+            <div className="py-2 border-t border-black uppercase font-bold text-black">{data.memberName}</div>
           </div>
           <div>
-            <div className="py-2 border-b border-black uppercase tracking-wider bg-slate-100 text-[10px] font-black text-black">Personal Trainer</div>
+            <div className="py-2 border-b border-black uppercase tracking-wider bg-slate-50 text-xs font-bold text-black">PERSONAL TRAINER</div>
             <div className="h-28" />
-            <div className="py-2 border-t border-black uppercase font-black text-black">{data.trainerName}</div>
+            <div className="py-2 border-t border-black uppercase font-bold text-black">{data.trainerName}</div>
           </div>
           <div>
-            <div className="py-2 border-b border-black uppercase tracking-wider bg-slate-100 text-[10px] font-black text-black">Customer Service</div>
+            <div className="py-2 border-b border-black uppercase tracking-wider bg-slate-50 text-xs font-bold text-black">CUSTOMER SERVICE</div>
             <div className="h-28" />
-            <div className="py-2 border-t border-black uppercase font-black text-black">{data.cashierName}</div>
+            <div className="py-2 border-t border-black uppercase font-bold text-black">{data.cashierName}</div>
           </div>
         </div>
       </div>
