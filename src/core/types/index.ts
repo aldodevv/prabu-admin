@@ -201,7 +201,6 @@ export interface Distributor {
   id: string;
   branch_id?: string;
   name: string;
-  phone_hp?: string;
   phone_telp?: string;
   address?: string;
   created_at?: string;

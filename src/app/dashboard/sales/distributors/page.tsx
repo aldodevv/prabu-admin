@@ -19,7 +19,6 @@ export default function DistributorsPage() {
 
   // Form fields
   const [name, setName] = useState('');
-  const [phoneHP, setPhoneHP] = useState('');
   const [phoneTelp, setPhoneTelp] = useState('');
   const [address, setAddress] = useState('');
 
@@ -79,9 +78,6 @@ export default function DistributorsPage() {
       if (filterColumn === 'name') {
         return d.name.toLowerCase().includes(query);
       }
-      if (filterColumn === 'phone_hp') {
-        return (d.phone_hp || '').toLowerCase().includes(query);
-      }
       if (filterColumn === 'phone_telp') {
         return (d.phone_telp || '').toLowerCase().includes(query);
       }
@@ -92,7 +88,6 @@ export default function DistributorsPage() {
       // Default: match all columns
       return (
         d.name.toLowerCase().includes(query) ||
-        (d.phone_hp || '').toLowerCase().includes(query) ||
         (d.phone_telp || '').toLowerCase().includes(query) ||
         (d.address || '').toLowerCase().includes(query)
       );
@@ -108,11 +103,10 @@ export default function DistributorsPage() {
   };
 
   const handleExportExcel = () => {
-    const headers = ['No', 'Nama Distributor', 'Nomor HP', 'Nomor Telepon', 'Alamat'];
+    const headers = ['No', 'Nama Distributor', 'Telepon', 'Alamat'];
     const data = filteredDistributors.map((d, index) => [
       index + 1,
       d.name,
-      d.phone_hp || '-',
       d.phone_telp || '-',
       d.address || '-',
     ]);
@@ -127,7 +121,6 @@ export default function DistributorsPage() {
 
   const handleOpenAdd = () => {
     setName('');
-    setPhoneHP('');
     setPhoneTelp('');
     setAddress('');
     setErrorMsg('');
@@ -138,7 +131,6 @@ export default function DistributorsPage() {
   const handleOpenEdit = (dist: Distributor) => {
     setSelectedDistributor(dist);
     setName(dist.name);
-    setPhoneHP(dist.phone_hp || '');
     setPhoneTelp(dist.phone_telp || '');
     setAddress(dist.address || '');
     setErrorMsg('');
@@ -162,7 +154,6 @@ export default function DistributorsPage() {
         const res = await distributorsApi.create({
           branch_id: activeBranchID || undefined,
           name,
-          phone_hp: phoneHP,
           phone_telp: phoneTelp,
           address,
         });
@@ -176,7 +167,6 @@ export default function DistributorsPage() {
       } else if (view === 'edit' && selectedDistributor) {
         const res = await distributorsApi.update(selectedDistributor.id, {
           name,
-          phone_hp: phoneHP,
           phone_telp: phoneTelp,
           address,
         });
@@ -215,8 +205,7 @@ export default function DistributorsPage() {
 
   const columnOptions = [
     { label: 'Nama Distributor', value: 'name' },
-    { label: 'Nomor HP', value: 'phone_hp' },
-    { label: 'Nomor Telepon', value: 'phone_telp' },
+    { label: 'Telepon', value: 'phone_telp' },
     { label: 'Alamat', value: 'address' },
   ];
 
@@ -285,8 +274,7 @@ export default function DistributorsPage() {
                       <tr>
                         <th className="py-3 px-4 border-r border-slate-300 w-12 text-center">No</th>
                         <th className="py-3 px-4 border-r border-slate-300">Distributor</th>
-                        <th className="py-3 px-4 border-r border-slate-300">Nomor HP</th>
-                        <th className="py-3 px-4 border-r border-slate-300">Nomor Telepon</th>
+                        <th className="py-3 px-4 border-r border-slate-300">Telepon</th>
                         <th className="py-3 px-4 border-r border-slate-300">Alamat</th>
                         <th className="py-3 px-4 text-center w-24">Aksi</th>
                       </tr>
@@ -294,7 +282,7 @@ export default function DistributorsPage() {
                     <tbody className="divide-y divide-slate-200 text-slate-700 font-medium">
                       {filteredDistributors.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="py-8 text-center text-slate-400 font-accent uppercase tracking-wider text-xs">
+                          <td colSpan={5} className="py-8 text-center text-slate-400 font-accent uppercase tracking-wider text-xs">
                             Tidak ada data distributor
                           </td>
                         </tr>
@@ -303,7 +291,6 @@ export default function DistributorsPage() {
                           <tr key={d.id} className="hover:bg-slate-50 transition-colors">
                             <td className="py-3 px-4 border-r border-slate-100 text-center font-semibold text-slate-500">{index + 1}</td>
                             <td className="py-3 px-4 border-r border-slate-100 font-bold text-slate-800">{d.name}</td>
-                            <td className="py-3 px-4 border-r border-slate-100 font-mono text-slate-600">{d.phone_hp || '-'}</td>
                             <td className="py-3 px-4 border-r border-slate-100 font-mono text-slate-600">{d.phone_telp || '-'}</td>
                             <td className="py-3 px-4 border-r border-slate-100 text-xs text-slate-600">{d.address || '-'}</td>
                             <td className="py-3 px-4 text-center flex items-center justify-center gap-1.5">
@@ -371,30 +358,16 @@ export default function DistributorsPage() {
                   />
                 </div>
 
-                {/* Nomor HP */}
+                {/* Telepon */}
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left">
-                    Nomor HP
-                  </label>
-                  <input
-                    type="tel"
-                    value={phoneHP}
-                    onChange={(e) => setPhoneHP(e.target.value.replace(/[^0-9]/g, ''))}
-                    placeholder="Masukkan Nomor HP"
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono"
-                  />
-                </div>
-
-                {/* Nomor Telepon */}
-                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-sm font-bold text-slate-700 text-left">
-                    Nomor Telepon
+                    Telepon
                   </label>
                   <input
                     type="tel"
                     value={phoneTelp}
                     onChange={(e) => setPhoneTelp(e.target.value.replace(/[^0-9]/g, ''))}
-                    placeholder="Masukkan Nomor Telepon"
+                    placeholder="Masukkan Telepon"
                     className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono"
                   />
                 </div>

@@ -280,6 +280,20 @@ export const MembershipTab: React.FC<MembershipTabProps> = ({ onSuccess, onError
             </form>
           </div>
         </div>
+      ) : loading ? (
+        <div className="py-16 text-center text-slate-400 font-semibold text-sm">
+          Memuat data paket membership...
+        </div>
+      ) : membershipPlans.length === 0 ? (
+        <div className="py-16 text-center bg-white border border-slate-200 rounded-2xl p-8 space-y-3">
+          <p className="text-slate-500 font-medium text-sm">Belum ada paket membership yang tersedia.</p>
+          <button
+            onClick={() => fetchMembershipData()}
+            className="px-4 py-2 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold rounded-lg uppercase tracking-wider transition-colors cursor-pointer"
+          >
+            Muat Ulang Data
+          </button>
+        </div>
       ) : (
         /* CARDS LIST DISPLAY */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
