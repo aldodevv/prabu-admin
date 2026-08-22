@@ -10,7 +10,6 @@ import { PageHeader } from '@/components/core/PageHeader';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 import { DataTable, Column } from '@/components/core/DataTable';
 import { Search, Eye, Edit, Trash2, ArrowLeft, Save, Printer, FileText, FileSpreadsheet, RotateCcw, Download } from 'lucide-react';
-import { useDebounce } from '@/hooks/useDebounce';
 import { exportToExcel } from '@/lib/excelExport';
 import { compressImage } from '@/utils/imageCompressor';
 import { uploadToCloudflare } from '@/lib/cloudflare';
@@ -39,7 +38,6 @@ const isPtTransaction = (tx: Transaction) => {
 
 export default function OneClubMembersPanel() {
   const { activeBranchID, user, branches, loading: authLoading } = useAuth();
-  const lastFetchedBranchRef = useRef<string | null>(null);
 
   // Navigation states: 'list' | 'detail' | 'edit'
   const [step, setStep] = useState<'list' | 'detail' | 'edit'>('list');
@@ -68,7 +66,6 @@ export default function OneClubMembersPanel() {
   const [address, setAddress] = useState('');
   const [photoBase64, setPhotoBase64] = useState<string>('');
   const [photoUrl, setPhotoUrl] = useState<string>('');
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [editError, setEditError] = useState('');
   const [editSuccess, setEditSuccess] = useState('');
 
@@ -470,12 +467,6 @@ export default function OneClubMembersPanel() {
               title="Daftar Anggota"
               action={
                 <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setShowDigitalCard(true)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
-                  >
-                    <span>Kartu Member Digital</span>
-                  </button>
                   <button
                     onClick={() => setStep('list')}
                     className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#DC3545] hover:bg-[#c82333] text-white text-xs font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
@@ -1062,7 +1053,7 @@ export default function OneClubMembersPanel() {
                 </p>
               </div>
             </div>
-            
+
             <p className="text-xs text-slate-600 font-semibold leading-relaxed">
               {user?.role === 'developer' ? (
                 <>
