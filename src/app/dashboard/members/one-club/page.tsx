@@ -17,16 +17,7 @@ import { uploadToCloudflare } from '@/lib/cloudflare';
 import { formatPhotoUrl } from '@/lib/api';
 import { permissions } from '@/lib/permissions';
 import { FetchErrorAlert } from '@/components/core/FetchErrorAlert';
-
-const OfficialReceiptTemplate = dynamic(
-  () => import('@/components/core/PrintTemplates').then((mod) => mod.OfficialReceiptTemplate),
-  { ssr: false }
-);
-
-const OfficialPTReceiptTemplate = dynamic(
-  () => import('@/components/core/PrintTemplates').then((mod) => mod.OfficialPTReceiptTemplate),
-  { ssr: false }
-);
+import { OfficialReceiptTemplate, OfficialPTReceiptTemplate, ThermalReceiptTemplate } from '@/components/core/PrintTemplates';
 
 const DigitalMemberCard = dynamic(
   () => import('@/components/core/DigitalMemberCard').then((mod) => mod.DigitalMemberCard),
@@ -47,7 +38,7 @@ const isPtTransaction = (tx: Transaction) => {
 };
 
 export default function OneClubMembersPanel() {
-  const { activeBranchID, user, loading: authLoading } = useAuth();
+  const { activeBranchID, user, branches, loading: authLoading } = useAuth();
   const lastFetchedBranchRef = useRef<string | null>(null);
 
   // Navigation states: 'list' | 'detail' | 'edit'
@@ -108,6 +99,7 @@ export default function OneClubMembersPanel() {
   const [memberTransactions, setMemberTransactions] = useState<Transaction[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
   const [receiptTx, setReceiptTx] = useState<Transaction | null>(null);
+  const [thermalStrukTx, setThermalStrukTx] = useState<Transaction | null>(null);
 
   const initialSearchHandledRef = useRef(false);
 
@@ -824,23 +816,18 @@ export default function OneClubMembersPanel() {
 
                             <div className="flex items-center gap-2 w-full sm:w-auto">
                               <button
-                                onClick={() => {
-                                  setReceiptTx(tx);
-                                  setTimeout(() => {
-                                    window.print();
-                                  }, 100);
-                                }}
+                                onClick={() => setThermalStrukTx(tx)}
                                 className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-[#007BFF] hover:bg-[#0069D9] text-white text-xs font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
                               >
                                 <Printer className="w-3.5 h-3.5" />
-                                <span>Cetak</span>
+                                <span>Cetak Struk</span>
                               </button>
                               <button
                                 onClick={() => setReceiptTx(tx)}
                                 className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-[#6C7A89] hover:bg-[#5a6673] text-white text-xs font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
                               >
                                 <FileText className="w-3.5 h-3.5" />
-                                <span>Lihat Struk</span>
+                                <span>Lihat Receipt</span>
                               </button>
                             </div>
                           </div>
@@ -1036,6 +1023,26 @@ export default function OneClubMembersPanel() {
             }}
           />
         )
+      )}
+
+      {/* Reusable Print Thermal POS Struk Overlay */}
+      {thermalStrukTx && selectedMember && (
+        <ThermalReceiptTemplate
+          onClose={() => setThermalStrukTx(null)}
+          data={{
+            transactionNumber: thermalStrukTx.transaction_number || '-',
+            transactionDate: thermalStrukTx.transaction_date,
+            memberUsername: selectedMember.username,
+            memberName: selectedMember.full_name,
+            packageName: getMembershipTypeFromNotes(thermalStrukTx.notes || '') || 'Paket Keanggotaan',
+            paymentMethod: getPaymentMethodFromNotes(thermalStrukTx.notes || '') || thermalStrukTx.payment_method || 'Tunai',
+            totalAmount: thermalStrukTx.total_amount,
+            cashierName: thermalStrukTx.admin_name || user?.full_name || 'Kasir Prabu GYM',
+            branchName: branches.find(b => b.id === activeBranchID)?.name || 'Prabu Gym & Fitness Center',
+            branchAddress: (branches.find(b => b.id === activeBranchID) as any)?.address || '',
+            notes: thermalStrukTx.notes || ''
+          }}
+        />
       )}
 
       {/* Delete Confirmation Modal */}

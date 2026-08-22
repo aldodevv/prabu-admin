@@ -11,7 +11,7 @@ interface PrintContainerProps {
 
 const PrintContainer: React.FC<PrintContainerProps> = ({ onClose, title, children, maxWidthClass = 'max-w-4xl' }) => {
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:p-0 print:bg-white print:static print:block overflow-y-auto">
+    <div className="print-modal-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:p-0 print:bg-white print:static print:block overflow-y-auto">
       <style jsx global>{`
         @media print {
           @page {
@@ -19,8 +19,8 @@ const PrintContainer: React.FC<PrintContainerProps> = ({ onClose, title, childre
             margin: 5mm;
           }
 
-          /* Hide UI navigation, sidebar, and non-printable elements */
-          header, aside, nav, button, .no-print {
+          /* Hide UI navigation, sidebar, background pages, and all non-printable elements */
+          header, aside, nav, button, .no-print, [data-no-print] {
             display: none !important;
           }
 
@@ -37,9 +37,19 @@ const PrintContainer: React.FC<PrintContainerProps> = ({ onClose, title, childre
             print-color-adjust: exact !important;
           }
 
+          .print-modal-overlay {
+            position: static !important;
+            display: block !important;
+            background: transparent !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow: visible !important;
+          }
+
           #print-modal-root {
             position: static !important;
             display: block !important;
+            visibility: visible !important;
             width: 100% !important;
             max-width: 100% !important;
             margin: 0 !important;
@@ -956,7 +966,139 @@ export const WorkoutReportTemplate: React.FC<WorkoutReportProps> = ({ onClose, t
   );
 };
 
-export type PrintTemplateType = 'official-receipt' | 'session-receipt' | 'report' | 'leave-receipt' | 'class-commission' | 'workout-report';
+// 7. Thermal POS Receipt Template (Struk Kasir Thermal Panjang)
+export interface ThermalReceiptProps {
+  onClose: () => void;
+  data: {
+    transactionNumber: string;
+    transactionDate: string;
+    memberUsername?: string;
+    memberName?: string;
+    packageName: string;
+    paymentMethod: string;
+    totalAmount: number;
+    cashierName: string;
+    branchName?: string;
+    branchAddress?: string;
+    notes?: string;
+    items?: {
+      name: string;
+      qty: number;
+      price: number;
+      subtotal: number;
+    }[];
+  };
+}
+
+export const ThermalReceiptTemplate: React.FC<ThermalReceiptProps> = ({ onClose, data }) => {
+  return (
+    <PrintContainer onClose={onClose} title="Struk Pembayaran" maxWidthClass="max-w-sm">
+      <div id="receipt-print-area" className="text-black font-mono text-xs leading-relaxed mx-auto w-[280px] sm:w-[300px] p-2 bg-white font-bold">
+        {/* Logo & Header */}
+        <div className="flex flex-col items-center justify-center text-center space-y-1 mb-2">
+          <img
+            src="/logo-transparent.png"
+            alt="Prabu Gym Logo"
+            className="h-12 w-auto object-contain mb-1"
+          />
+          <h2 className="text-sm font-black tracking-widest font-heading text-black uppercase">
+            PRABU GYM
+          </h2>
+          <div className="text-[10px] text-center font-bold text-slate-700 whitespace-pre-line leading-tight uppercase">
+            {data.branchName || 'Gym & Fitness Center'}
+          </div>
+          {data.branchAddress && (
+            <div className="text-[9px] text-center text-slate-600 leading-tight">
+              {data.branchAddress}
+            </div>
+          )}
+        </div>
+
+        {/* Invoice details */}
+        <div className="text-[10px] space-y-0.5 border-t border-dashed border-black pt-2 mb-2 font-bold">
+          <div className="flex justify-between">
+            <span className="text-slate-700">No Struk :</span>
+            <span className="font-mono font-black">{data.transactionNumber}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-700">Tanggal  :</span>
+            <span>{formatDateLabel(data.transactionDate)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-700">Kasir    :</span>
+            <span className="uppercase">{data.cashierName || 'Staff CS'}</span>
+          </div>
+          {data.memberName && (
+            <div className="flex justify-between border-t border-dotted border-slate-300 pt-1 mt-1">
+              <span className="text-slate-700">Member   :</span>
+              <span className="font-bold truncate max-w-[170px]">{data.memberName}</span>
+            </div>
+          )}
+          {data.memberUsername && (
+            <div className="flex justify-between">
+              <span className="text-slate-700">No Anggota:</span>
+              <span className="font-mono">{data.memberUsername}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Itemized List */}
+        <div className="border-t border-dashed border-black py-2 space-y-2 font-bold">
+          {data.items && data.items.length > 0 ? (
+            data.items.map((item, idx) => (
+              <div key={idx} className="space-y-0.5 text-[10px]">
+                <div className="font-bold text-black uppercase">{item.name}</div>
+                <div className="flex justify-between pl-2 font-mono">
+                  <span className="text-slate-700">{item.qty} x {formatIDR(item.price)}</span>
+                  <span className="font-bold">{formatIDR(item.subtotal)}</span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="space-y-0.5 text-[10px]">
+              <div className="font-bold text-black uppercase">{data.packageName}</div>
+              <div className="flex justify-between pl-2 font-mono">
+                <span className="text-slate-700">1 x {formatIDR(data.totalAmount)}</span>
+                <span className="font-bold">{formatIDR(data.totalAmount)}</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Summary Totals */}
+        <div className="border-t border-dashed border-black py-2 text-[10px] space-y-1 font-bold">
+          <div className="flex justify-between text-xs font-black">
+            <span>TOTAL TAGIHAN</span>
+            <span className="font-mono text-[#DC3545]">{formatIDR(data.totalAmount)}</span>
+          </div>
+          <div className="flex justify-between text-[10px]">
+            <span className="text-slate-700">Metode Bayar</span>
+            <span className="uppercase">{data.paymentMethod || 'Tunai'}</span>
+          </div>
+          <div className="flex justify-between text-[10px]">
+            <span className="text-slate-700">Status</span>
+            <span className="uppercase text-emerald-700 font-black">LUNAS</span>
+          </div>
+        </div>
+
+        {data.notes && (
+          <div className="border-t border-dotted border-slate-300 py-1.5 text-[9px] text-slate-600 italic">
+            * {data.notes}
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="border-t border-dashed border-black pt-2 text-center text-[9px] uppercase font-bold tracking-wider space-y-0.5">
+          <div>TERIMA KASIH ATAS KUNJUNGAN ANDA</div>
+          <div className="text-[8px] text-slate-500 font-normal">SIMPAN STRUK INI SEBAGAI BUKTI PEMBAYARAN</div>
+          <div className="text-[8px] text-slate-400 font-mono pt-1">Prabu Gym Integrated System</div>
+        </div>
+      </div>
+    </PrintContainer>
+  );
+};
+
+export type PrintTemplateType = 'official-receipt' | 'session-receipt' | 'report' | 'leave-receipt' | 'class-commission' | 'workout-report' | 'thermal-receipt';
 
 interface DynamicPrintTemplateProps {
   template: PrintTemplateType;
@@ -979,6 +1121,8 @@ export function DynamicPrintTemplate({ template, title, data, onClose }: Dynamic
       return <ClassCommissionReportTemplate title={title || 'LAPORAN KOMISI KELAS INSTRUKTUR'} data={data} onClose={onClose} />;
     case 'workout-report':
       return <WorkoutReportTemplate title={title || 'LAPORAN PENDAFTARAN LATIHAN (PT)'} data={data} onClose={onClose} />;
+    case 'thermal-receipt':
+      return <ThermalReceiptTemplate data={data} onClose={onClose} />;
     default:
       return null;
   }

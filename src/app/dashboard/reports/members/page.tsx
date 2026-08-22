@@ -279,7 +279,7 @@ export default function MemberReportsPage() {
           </div>
         </div>
       ) : (
-        <div className="space-y-6 animate-fadeIn">
+        <div className="space-y-6 animate-fadeIn no-print">
           {/* Summary Table Card matching screenshot */}
           <div className="bg-white border border-slate-200 rounded shadow-xs overflow-hidden">
             <div className="bg-brand-cyan px-4 py-2.5 text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2">

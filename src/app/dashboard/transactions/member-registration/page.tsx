@@ -248,10 +248,10 @@ export default function MemberRegistrationPage() {
       <style jsx global>{`
         @media print {
           @page {
-            size: 210mm 148mm !important; /* A5 Landscape (210mm x 148mm) */
+            size: auto;
             margin: 5mm !important;
           }
-          header, aside, button, .no-print {
+          header, aside, nav, button, .no-print {
             display: none !important;
           }
           body, .min-h-screen, main, #receipt-print-area {
@@ -259,15 +259,17 @@ export default function MemberRegistrationPage() {
             color: black !important;
             padding: 0 !important;
             margin: 0 !important;
-            width: 200mm !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow: visible !important;
           }
           #receipt-print-area {
-            width: 200mm !important;
-            max-width: 200mm !important;
-            position: relative !important;
-            left: 0 !important;
-            top: 0 !important;
-            margin: 0 auto !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            position: static !important;
+            margin: 0 !important;
+            display: block !important;
+            visibility: visible !important;
           }
           table {
             border-collapse: collapse !important;
@@ -277,11 +279,15 @@ export default function MemberRegistrationPage() {
             border: 1px solid black !important;
             padding: 6px 8px !important;
             color: black !important;
+            font-weight: 700 !important;
           }
           thead th {
             background-color: #f2f2f2 !important;
             color: black !important;
             font-weight: 900 !important;
+          }
+          * {
+            font-weight: 700 !important;
           }
         }
       `}</style>
