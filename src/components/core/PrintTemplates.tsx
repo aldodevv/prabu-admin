@@ -16,7 +16,7 @@ const PrintContainer: React.FC<PrintContainerProps> = ({ onClose, title, childre
         @media print {
           @page {
             size: auto;
-            margin: 8mm;
+            margin: 5mm;
           }
 
           /* Hide UI navigation, sidebar, and non-printable elements */
@@ -37,20 +37,9 @@ const PrintContainer: React.FC<PrintContainerProps> = ({ onClose, title, childre
             print-color-adjust: exact !important;
           }
 
-          /* Hide background UI when printing modal while keeping the print container visible */
-          body {
-            visibility: hidden !important;
-          }
-
-          #print-modal-root,
-          #print-modal-root * {
-            visibility: visible !important;
-          }
-
           #print-modal-root {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
+            position: static !important;
+            display: block !important;
             width: 100% !important;
             max-width: 100% !important;
             margin: 0 !important;
@@ -62,7 +51,7 @@ const PrintContainer: React.FC<PrintContainerProps> = ({ onClose, title, childre
             break-inside: avoid !important;
           }
 
-          #print-area, #print-receipt-overlay, #print-session-receipt, #print-leave-receipt {
+          #print-area, #print-receipt-overlay, #print-session-receipt, #print-leave-receipt, #receipt-print-area {
             display: block !important;
             visibility: visible !important;
             background: white !important;
@@ -90,10 +79,11 @@ const PrintContainer: React.FC<PrintContainerProps> = ({ onClose, title, childre
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
             color-adjust: exact !important;
+            font-weight: 700 !important;
           }
         }
       `}</style>
-      <div id="print-modal-root" className={`w-full ${maxWidthClass} bg-white border border-slate-200 p-5 md:p-6 rounded-lg shadow-2xl relative text-black print:border-0 print:p-0 print:shadow-none print:max-w-none print:w-full`}>
+      <div id="print-modal-root" className={`w-full ${maxWidthClass} bg-white border border-slate-200 p-5 md:p-6 rounded-lg shadow-2xl relative text-black print:border-0 print:p-0 print:shadow-none print:max-w-none print:w-full print:bg-white`}>
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-slate-650 text-xl font-bold cursor-pointer no-print z-10"
@@ -459,6 +449,7 @@ interface ReportProps {
       transactionNumber: string;
       memberId?: string;
       memberName?: string;
+      memberUsername?: string;
       packageName: string;
       paymentMethod: string;
       totalAmount: number;
@@ -472,14 +463,14 @@ interface ReportProps {
 export const ReportTemplate: React.FC<ReportProps> = ({ onClose, title, data }) => {
   return (
     <PrintContainer onClose={onClose} title={title} maxWidthClass="max-w-6xl">
-      <div id="print-area" className="space-y-3.5 print:space-y-2.5 font-sans">
+      <div id="print-area" className="space-y-3.5 print:space-y-2.5 font-sans font-bold">
         {/* Header Box with Thin Border */}
         <div className="border border-slate-300 p-3 print:p-2.5 rounded-md flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <LogoIcon />
             <div className="text-left leading-none">
               <h1 className="text-xl print:text-lg font-black tracking-widest font-heading text-slate-900">PRABU GYM</h1>
-              <span className="text-[9px] print:text-[8px] uppercase font-bold text-slate-500 tracking-wider">Gym & Fitness Center</span>
+              <span className="text-[9px] print:text-[8px] uppercase font-bold text-slate-600 tracking-wider">Gym & Fitness Center</span>
             </div>
           </div>
           <div className="text-right border-l border-slate-300 pl-6 pr-3">
@@ -492,28 +483,28 @@ export const ReportTemplate: React.FC<ReportProps> = ({ onClose, title, data }) 
           <table className="w-full text-left text-xs print:text-[11px] border-collapse">
             <tbody>
               <tr className="border-b border-slate-300">
-                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 w-[35%] text-slate-700">Tanggal Transaksi</td>
-                <td className="py-1.5 px-3 font-mono font-semibold text-slate-900">{formatDateLabel(data.startDate)} s/d {formatDateLabel(data.endDate)}</td>
+                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 w-[35%] text-slate-800">Tanggal Transaksi</td>
+                <td className="py-1.5 px-3 font-mono font-bold text-slate-900">{formatDateLabel(data.startDate)} s/d {formatDateLabel(data.endDate)}</td>
               </tr>
               <tr className="border-b border-slate-300">
-                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-700">Jenis Transaksi</td>
-                <td className="py-1.5 px-3 uppercase font-semibold text-slate-900">{data.transactionType}</td>
+                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-800">Jenis Transaksi</td>
+                <td className="py-1.5 px-3 uppercase font-bold text-slate-900">{data.transactionType}</td>
               </tr>
               <tr className="border-b border-slate-300">
-                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-700">Total Pemasukan Transaksi</td>
+                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-800">Total Pemasukan Transaksi</td>
                 <td className="py-1.5 px-3 font-extrabold text-slate-900">{formatIDR(data.totalRevenue)}</td>
               </tr>
               <tr className="border-b border-slate-300">
-                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-700">Total PPN</td>
+                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-800">Total PPN</td>
                 <td className="py-1.5 px-3 font-extrabold text-slate-900">{formatIDR(data.totalPpn)}</td>
               </tr>
               <tr className="border-b border-slate-300">
-                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-700">Grand Total</td>
+                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-800">Grand Total</td>
                 <td className="py-1.5 px-3 font-black text-[#DC3545]">{formatIDR(data.grandTotal)}</td>
               </tr>
               <tr>
-                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-700">Nama Staff</td>
-                <td className="py-1.5 px-3 font-semibold text-slate-900">{data.cashierName}</td>
+                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-800">Nama Staff</td>
+                <td className="py-1.5 px-3 font-bold text-slate-900">{data.cashierName}</td>
               </tr>
             </tbody>
           </table>
@@ -543,16 +534,16 @@ export const ReportTemplate: React.FC<ReportProps> = ({ onClose, title, data }) 
             <tbody>
               {data.transactions.length > 0 ? (
                 data.transactions.map((tx, idx) => (
-                  <tr key={tx.id} className="border-b border-slate-200 last:border-0 text-[10px] print:text-[9px] text-slate-900 hover:bg-slate-50/50">
-                    <td className="py-1.5 px-1 border-r border-slate-200 text-center font-mono text-slate-600 font-normal">{idx + 1}</td>
-                    <td className="py-1.5 px-2 border-r border-slate-200 text-center font-mono font-normal break-words">{formatDateLabel(tx.transactionDate)}</td>
-                    <td className="py-1.5 px-2.5 border-r border-slate-200 font-mono font-normal text-[9px] print:text-[8.5px] break-all leading-snug">{tx.transactionNumber}</td>
-                    <td className="py-1.5 px-2.5 border-r border-slate-200 font-mono font-normal text-[9px] print:text-[8.5px] break-all leading-snug">{tx.memberId || '-'}</td>
-                    <td className="py-1.5 px-2.5 border-r border-slate-200 font-normal break-words leading-snug text-[9.5px] print:text-[9px]">{tx.memberName || '-'}</td>
-                    <td className="py-1.5 px-2 border-r border-slate-200 text-center uppercase text-[9px] font-normal break-words">{tx.paymentMethod}</td>
-                    <td className="py-1.5 px-2 border-r border-slate-200 text-right font-normal text-[9px] font-mono whitespace-nowrap">{tx.totalAmount.toLocaleString('id-ID')}</td>
-                    <td className="py-1.5 px-2 border-r border-slate-200 text-right text-slate-600 font-normal text-[9px] font-mono whitespace-nowrap">{tx.ppn.toLocaleString('id-ID')}</td>
-                    <td className="py-1.5 px-2 text-right font-normal text-[9px] font-mono whitespace-nowrap">{tx.subtotal.toLocaleString('id-ID')}</td>
+                  <tr key={tx.id} className="border-b border-slate-200 last:border-0 text-[10px] print:text-[9px] text-slate-900 font-bold hover:bg-slate-50/50">
+                    <td className="py-1.5 px-1 border-r border-slate-200 text-center font-mono font-bold text-slate-700">{idx + 1}</td>
+                    <td className="py-1.5 px-2 border-r border-slate-200 text-center font-mono font-bold break-words">{formatDateLabel(tx.transactionDate)}</td>
+                    <td className="py-1.5 px-2.5 border-r border-slate-200 font-mono font-bold text-[9px] print:text-[8.5px] break-all leading-snug">{tx.transactionNumber}</td>
+                    <td className="py-1.5 px-2.5 border-r border-slate-200 font-mono font-bold text-[9px] print:text-[8.5px] break-all leading-snug">{tx.memberUsername || tx.memberId || '-'}</td>
+                    <td className="py-1.5 px-2.5 border-r border-slate-200 font-bold break-words leading-snug text-[9.5px] print:text-[9px]">{tx.memberName || '-'}</td>
+                    <td className="py-1.5 px-2 border-r border-slate-200 text-center uppercase text-[9px] font-bold break-words">{tx.paymentMethod}</td>
+                    <td className="py-1.5 px-2 border-r border-slate-200 text-right font-bold text-[9px] font-mono whitespace-nowrap">{tx.totalAmount.toLocaleString('id-ID')}</td>
+                    <td className="py-1.5 px-2 border-r border-slate-200 text-right text-slate-700 font-bold text-[9px] font-mono whitespace-nowrap">{tx.ppn.toLocaleString('id-ID')}</td>
+                    <td className="py-1.5 px-2 text-right font-bold text-[9px] font-mono whitespace-nowrap">{tx.subtotal.toLocaleString('id-ID')}</td>
                   </tr>
                 ))
               ) : (
@@ -576,11 +567,11 @@ export const ReportTemplate: React.FC<ReportProps> = ({ onClose, title, data }) 
 
         {/* Staff / Admin Info Footer Below Table */}
         <div className="flex justify-between items-center pt-2 text-xs text-slate-700 font-sans border-t border-slate-200">
-          <div className="text-slate-400 text-[9px] italic">
+          <div className="text-slate-400 text-[9px] italic font-bold">
             * Laporan dibuat otomatis oleh sistem Prabu Gym.
           </div>
           <div className="flex items-center text-right gap-1.5">
-            <span className="text-slate-500 font-bold uppercase tracking-wider text-[9px]">Petugas / CS Kasir:</span>
+            <span className="text-slate-600 font-bold uppercase tracking-wider text-[9px]">Petugas / CS Kasir:</span>
             <span className="font-extrabold text-slate-900 text-[10px]">{data.cashierName || 'Staff Prabu Gym'}</span>
           </div>
         </div>
@@ -732,29 +723,29 @@ export const ClassCommissionReportTemplate: React.FC<ClassCommissionReportProps>
 
         {/* Summary Table with Thin Border */}
         <div className="border border-slate-300 rounded-md overflow-hidden">
-          <table className="w-full text-left text-xs print:text-[11px] border-collapse">
+          <table className="w-full text-left text-xs print:text-[11px] border-collapse font-bold">
             <tbody>
               <tr className="border-b border-slate-300">
-                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 w-[35%] text-slate-700">Periode Transaksi / Tanggal</td>
-                <td className="py-1.5 px-3 font-mono font-semibold text-slate-900">
+                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 w-[35%] text-slate-800">Periode Transaksi / Tanggal</td>
+                <td className="py-1.5 px-3 font-mono font-bold text-slate-900">
                   {data.startDate ? formatDateLabel(data.startDate) : 'Awal'} s/d {data.endDate ? formatDateLabel(data.endDate) : 'Sekarang'}
                 </td>
               </tr>
               <tr className="border-b border-slate-300">
-                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-700">Total Instruktur</td>
-                <td className="py-1.5 px-3 uppercase font-semibold text-slate-900">{data.totalInstructors} Instruktur</td>
+                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-800">Total Instruktur</td>
+                <td className="py-1.5 px-3 uppercase font-bold text-slate-900">{data.totalInstructors} Instruktur</td>
               </tr>
               <tr className="border-b border-slate-300">
-                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-700">Total Sesi Kelas</td>
-                <td className="py-1.5 px-3 font-semibold text-slate-900">{data.grandTotalClasses} Sesi Kelas</td>
+                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-800">Total Sesi Kelas</td>
+                <td className="py-1.5 px-3 font-bold text-slate-900">{data.grandTotalClasses} Sesi Kelas</td>
               </tr>
               <tr className="border-b border-slate-300">
-                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-700">Grand Total Komisi</td>
+                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-800">Grand Total Komisi</td>
                 <td className="py-1.5 px-3 font-black text-[#DC3545]">{formatIDR(data.grandTotalCommission)}</td>
               </tr>
               <tr>
-                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-700">Nama Petugas / CS Kasir</td>
-                <td className="py-1.5 px-3 font-semibold text-slate-900">{data.cashierName || 'Staff Prabu Gym'}</td>
+                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-800">Nama Petugas / CS Kasir</td>
+                <td className="py-1.5 px-3 font-bold text-slate-900">{data.cashierName || 'Staff Prabu Gym'}</td>
               </tr>
             </tbody>
           </table>
@@ -766,7 +757,7 @@ export const ClassCommissionReportTemplate: React.FC<ClassCommissionReportProps>
         </h3>
 
         {/* Main Table with Thin Borders */}
-        <div className="border border-slate-300 rounded-md overflow-x-auto print:overflow-visible">
+        <div className="border border-slate-300 rounded-md overflow-x-auto print:overflow-visible font-bold">
           <table className="w-full text-left text-xs print:text-[10px] border-collapse table-auto print:table-fixed">
             <thead>
               <tr className="bg-slate-100 border-b border-slate-300 font-extrabold uppercase text-[10px] print:text-[9px] tracking-wider text-slate-800">
@@ -780,12 +771,12 @@ export const ClassCommissionReportTemplate: React.FC<ClassCommissionReportProps>
             <tbody>
               {data.reports.length > 0 ? (
                 data.reports.map((r, idx) => (
-                  <tr key={idx} className="border-b border-slate-200 last:border-0 text-[10px] print:text-[9px] text-slate-900 hover:bg-slate-50/50">
-                    <td className="py-1.5 px-2 border-r border-slate-200 text-center font-mono text-slate-600 font-normal">{idx + 1}</td>
-                    <td className="py-1.5 px-3 border-r border-slate-200 font-normal text-slate-900">{r.instructor_name}</td>
-                    <td className="py-1.5 px-3 border-r border-slate-200 text-center font-normal text-slate-900">{r.total_classes} Sesi Kelas</td>
-                    <td className="py-1.5 px-3 border-r border-slate-200 text-right font-mono font-normal text-slate-700">{formatIDR(r.rate_per_class)}</td>
-                    <td className="py-1.5 px-3 text-right font-mono font-normal text-emerald-700">{formatIDR(r.total_commission)}</td>
+                  <tr key={idx} className="border-b border-slate-200 last:border-0 text-[10px] print:text-[9px] text-slate-900 font-bold hover:bg-slate-50/50">
+                    <td className="py-1.5 px-2 border-r border-slate-200 text-center font-mono text-slate-700 font-bold">{idx + 1}</td>
+                    <td className="py-1.5 px-3 border-r border-slate-200 font-bold text-slate-900">{r.instructor_name}</td>
+                    <td className="py-1.5 px-3 border-r border-slate-200 text-center font-bold text-slate-900">{r.total_classes} Sesi Kelas</td>
+                    <td className="py-1.5 px-3 border-r border-slate-200 text-right font-mono font-bold text-slate-800">{formatIDR(r.rate_per_class)}</td>
+                    <td className="py-1.5 px-3 text-right font-mono font-bold text-emerald-700">{formatIDR(r.total_commission)}</td>
                   </tr>
                 ))
               ) : (
@@ -808,13 +799,13 @@ export const ClassCommissionReportTemplate: React.FC<ClassCommissionReportProps>
         </div>
 
         {/* Footer Admin Signature Info */}
-        <div className="pt-2 flex justify-between items-center text-[10px] text-slate-600 border-t border-slate-200 print:pt-2">
+        <div className="pt-2 flex justify-between items-center text-[10px] text-slate-600 border-t border-slate-200 print:pt-2 font-bold">
           <div className="flex items-center gap-1.5">
-            <span className="text-slate-500 font-bold uppercase tracking-wider text-[9px]">Petugas / CS Kasir:</span>
+            <span className="text-slate-600 font-bold uppercase tracking-wider text-[9px]">Petugas / CS Kasir:</span>
             <span className="font-extrabold text-slate-900 text-[10px]">{data.cashierName || 'Staff Prabu Gym'}</span>
           </div>
           <div className="text-right">
-            <span className="text-slate-400 font-mono text-[9px]">Prabu Gym Integrated System</span>
+            <span className="text-slate-500 font-mono text-[9px] font-bold">Prabu Gym Integrated System</span>
           </div>
         </div>
       </div>
@@ -849,14 +840,14 @@ interface WorkoutReportProps {
 export const WorkoutReportTemplate: React.FC<WorkoutReportProps> = ({ onClose, title, data }) => {
   return (
     <PrintContainer onClose={onClose} title={title} maxWidthClass="max-w-5xl">
-      <div id="print-area" className="space-y-3.5 print:space-y-2.5 font-sans">
+      <div id="print-area" className="space-y-3.5 print:space-y-2.5 font-sans font-bold">
         {/* Header Box with Thin Border */}
         <div className="border border-slate-300 p-3 print:p-2.5 rounded-md flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <LogoIcon />
             <div className="text-left leading-none">
               <h1 className="text-xl print:text-lg font-black tracking-widest font-heading text-slate-900">PRABU GYM</h1>
-              <span className="text-[9px] print:text-[8px] uppercase font-bold text-slate-500 tracking-wider">Gym & Fitness Center</span>
+              <span className="text-[9px] print:text-[8px] uppercase font-bold text-slate-600 tracking-wider">Gym & Fitness Center</span>
             </div>
           </div>
           <div className="text-right border-l border-slate-300 pl-6 pr-3">
@@ -865,26 +856,26 @@ export const WorkoutReportTemplate: React.FC<WorkoutReportProps> = ({ onClose, t
         </div>
 
         {/* Summary Table with Thin Border */}
-        <div className="border border-slate-300 rounded-md overflow-hidden">
+        <div className="border border-slate-300 rounded-md overflow-hidden font-bold">
           <table className="w-full text-left text-xs print:text-[11px] border-collapse">
             <tbody>
               <tr className="border-b border-slate-300">
-                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 w-[35%] text-slate-700">Periode Transaksi / Tanggal</td>
-                <td className="py-1.5 px-3 font-mono font-semibold text-slate-900">
+                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 w-[35%] text-slate-800">Periode Transaksi / Tanggal</td>
+                <td className="py-1.5 px-3 font-mono font-bold text-slate-900">
                   {data.startDate ? formatDateLabel(data.startDate) : 'Awal'} s/d {data.endDate ? formatDateLabel(data.endDate) : 'Sekarang'}
                 </td>
               </tr>
               <tr className="border-b border-slate-300">
-                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-700">Total Transaksi</td>
-                <td className="py-1.5 px-3 uppercase font-semibold text-slate-900">{data.totalTransactions} Transaksi</td>
+                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-800">Total Transaksi</td>
+                <td className="py-1.5 px-3 uppercase font-bold text-slate-900">{data.totalTransactions} Transaksi</td>
               </tr>
               <tr className="border-b border-slate-300">
-                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-700">Grand Total Pendapatan</td>
+                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-800">Grand Total Pendapatan</td>
                 <td className="py-1.5 px-3 font-black text-[#DC3545]">{formatIDR(data.grandTotal)}</td>
               </tr>
               <tr>
-                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-700">Nama Petugas / CS Kasir</td>
-                <td className="py-1.5 px-3 font-semibold text-slate-900">{data.cashierName || 'Staff Prabu Gym'}</td>
+                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-800">Nama Petugas / CS Kasir</td>
+                <td className="py-1.5 px-3 font-bold text-slate-900">{data.cashierName || 'Staff Prabu Gym'}</td>
               </tr>
             </tbody>
           </table>
@@ -893,11 +884,11 @@ export const WorkoutReportTemplate: React.FC<WorkoutReportProps> = ({ onClose, t
         {/* Sub Header Title Banner */}
         <div className="bg-slate-800 text-white px-3 py-1.5 rounded-t font-bold text-xs uppercase tracking-wider select-none flex justify-between items-center print:bg-slate-800 print:text-white">
           <span>RANGKUMAN PENDAFTARAN LATIHAN PERSONAL TRAINER</span>
-          <span className="font-mono text-[10px]">TOTAL: {data.totalTransactions} TRANSAKSI</span>
+          <span className="font-mono text-[10px] font-bold">TOTAL: {data.totalTransactions} TRANSAKSI</span>
         </div>
 
         {/* Main Table with Thin Borders */}
-        <div className="border border-slate-300 rounded-md overflow-x-auto print:overflow-visible">
+        <div className="border border-slate-300 rounded-md overflow-x-auto print:overflow-visible font-bold">
           <table className="w-full text-left text-xs print:text-[10px] border-collapse table-auto print:table-fixed">
             <thead>
               <tr className="bg-slate-100 border-b border-slate-300 font-extrabold uppercase text-[10px] print:text-[9px] tracking-wider text-slate-800">
@@ -911,35 +902,35 @@ export const WorkoutReportTemplate: React.FC<WorkoutReportProps> = ({ onClose, t
                 <th className="py-1.5 px-2.5 text-right font-bold">Total Biaya</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 text-slate-900 font-normal">
+            <tbody className="divide-y divide-slate-200 text-slate-900 font-bold">
               {data.registrations.length > 0 ? (
                 data.registrations.map((r, idx) => (
                   <tr key={r.id} className="hover:bg-slate-50/50">
-                    <td className="py-1.5 px-2 text-center border-r border-slate-200 font-mono text-slate-600">{idx + 1}</td>
-                    <td className="py-1.5 px-2 border-r border-slate-200 text-center font-mono">{formatDateLabel(r.created_at)}</td>
-                    <td className="py-1.5 px-2.5 border-r border-slate-200 font-mono font-normal text-slate-800">
+                    <td className="py-1.5 px-2 text-center border-r border-slate-200 font-mono text-slate-700 font-bold">{idx + 1}</td>
+                    <td className="py-1.5 px-2 border-r border-slate-200 text-center font-mono font-bold">{formatDateLabel(r.created_at)}</td>
+                    <td className="py-1.5 px-2.5 border-r border-slate-200 font-mono font-bold text-slate-900">
                       {r.transaction_number || `PRABU-PT-${r.id.substring(0, 7).toUpperCase()}`}
                     </td>
-                    <td className="py-1.5 px-2.5 border-r border-slate-200 font-normal text-slate-800">
-                      {r.member_name} {r.member_username ? <span className="font-mono text-slate-400 font-normal">(@{r.member_username})</span> : ''}
+                    <td className="py-1.5 px-2.5 border-r border-slate-200 font-bold text-slate-900">
+                      {r.member_name} {r.member_username ? <span className="font-mono text-slate-600 font-bold">(@{r.member_username})</span> : ''}
                     </td>
-                    <td className="py-1.5 px-2.5 border-r border-slate-200 font-normal uppercase">{r.package_name}</td>
-                    <td className="py-1.5 px-2.5 border-r border-slate-200 font-normal text-slate-800">{r.trainer_name}</td>
-                    <td className="py-1.5 px-2 border-r border-slate-200 text-center uppercase font-normal">{r.payment_method}</td>
-                    <td className="py-1.5 px-2.5 text-right font-mono font-normal text-slate-900">
+                    <td className="py-1.5 px-2.5 border-r border-slate-200 font-bold uppercase">{r.package_name}</td>
+                    <td className="py-1.5 px-2.5 border-r border-slate-200 font-bold text-slate-900">{r.trainer_name}</td>
+                    <td className="py-1.5 px-2 border-r border-slate-200 text-center uppercase font-bold">{r.payment_method}</td>
+                    <td className="py-1.5 px-2.5 text-right font-mono font-bold text-slate-900">
                       Rp. {r.total_amount.toLocaleString('id-ID')}
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={8} className="py-6 text-center text-slate-400 italic">
+                  <td colSpan={8} className="py-6 text-center text-slate-400 font-bold uppercase tracking-wider text-xs">
                     Tidak ada transaksi pendaftaran latihan.
                   </td>
                 </tr>
               )}
               <tr className="bg-slate-100 font-bold border-t-2 border-slate-300">
-                <td colSpan={7} className="py-2 px-3 text-right uppercase tracking-wider text-xs text-slate-800">
+                <td colSpan={7} className="py-2 px-3 text-right uppercase tracking-wider text-xs text-slate-800 font-bold">
                   Grand Total
                 </td>
                 <td className="py-2 px-3 text-right font-mono font-black text-sm text-[#DC3545]">
@@ -951,12 +942,12 @@ export const WorkoutReportTemplate: React.FC<WorkoutReportProps> = ({ onClose, t
         </div>
 
         {/* Staff Footer */}
-        <div className="flex justify-between items-center pt-2 text-xs text-slate-700 font-sans border-t border-slate-200">
-          <div className="text-slate-400 text-[9px] italic">
+        <div className="flex justify-between items-center pt-2 text-xs text-slate-700 font-sans border-t border-slate-200 font-bold">
+          <div className="text-slate-400 text-[9px] italic font-bold">
             * Laporan dibuat otomatis oleh sistem Prabu Gym.
           </div>
           <div className="flex items-center text-right gap-1.5">
-            <span className="text-slate-500 font-bold uppercase tracking-wider text-[9px]">Petugas / CS Kasir:</span>
+            <span className="text-slate-600 font-bold uppercase tracking-wider text-[9px]">Petugas / CS Kasir:</span>
             <span className="font-extrabold text-slate-900 text-[10px]">{data.cashierName || 'Staff Prabu Gym'}</span>
           </div>
         </div>

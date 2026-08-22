@@ -28,7 +28,6 @@ export default function PTPackagesPage() {
   const [durationDays, setDurationDays] = useState(30);
   const [sessionCount, setSessionCount] = useState(1);
   const [price, setPrice] = useState<number>(0);
-  const [description, setDescription] = useState('');
 
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(50);
@@ -63,7 +62,6 @@ export default function PTPackagesPage() {
     setDurationDays(30);
     setSessionCount(1);
     setPrice(0);
-    setDescription('');
     setError(null);
     setSuccess(null);
     setStep('create');
@@ -75,7 +73,6 @@ export default function PTPackagesPage() {
     setDurationDays(pkg.duration_days);
     setSessionCount(pkg.session_count);
     setPrice(pkg.price);
-    setDescription(pkg.description || '');
     setError(null);
     setSuccess(null);
     setStep('edit');
@@ -92,7 +89,6 @@ export default function PTPackagesPage() {
         duration_days: Number(durationDays),
         session_count: Number(sessionCount),
         price: Number(price),
-        description,
         created_by_name: user?.full_name || 'Prabu GYM Admin'
       };
 
@@ -121,8 +117,7 @@ export default function PTPackagesPage() {
   };
 
   const filteredPackages = packages.filter((pkg) => {
-    return pkg.name.toLowerCase().includes(search.toLowerCase()) ||
-      (pkg.description || '').toLowerCase().includes(search.toLowerCase());
+    return pkg.name.toLowerCase().includes(search.toLowerCase());
   });
 
   const columns: Column<PTPackage>[] = [
@@ -131,7 +126,6 @@ export default function PTPackagesPage() {
     { key: 'duration_days', header: 'Jumlah Hari', render: (row) => `${row.duration_days}`, className: 'font-mono text-center' },
     { key: 'session_count', header: 'Jumlah Sesi', render: (row) => <span className="font-mono font-bold text-slate-800">{row.session_count}</span>, className: 'text-center' },
     { key: 'price', header: 'Harga Paket', render: (row) => <span className="font-bold text-slate-800">{formatIDR(row.price)}</span> },
-    { key: 'description', header: 'Keterangan Paket', render: (row) => row.description || '-', className: 'text-slate-600' },
     { key: 'created_by_name', header: 'Nama Petugas', render: (row) => row.created_by_name || 'Prabu GYM Admin', className: 'text-slate-700' },
     {
       key: 'actions',
@@ -140,19 +134,21 @@ export default function PTPackagesPage() {
         <div className="flex gap-1.5 justify-center">
           <button
             onClick={() => handleOpenEdit(row)}
-            className="px-2 py-0.5 border border-emerald-500 text-emerald-600 hover:bg-emerald-50 text-[11px] font-bold rounded flex items-center gap-1 cursor-pointer"
+            title="Ubah Data Paket"
+            className="p-2 bg-brand-cyan hover:bg-[#138496] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
           >
-            ✏ Ubah
+            <Edit className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => handleDelete(row.id, row.name)}
-            className="px-2 py-0.5 border border-red-500 text-red-600 hover:bg-red-50 text-[11px] font-bold rounded flex items-center gap-1 cursor-pointer"
+            title="Hapus Paket"
+            className="p-2 bg-[#DC3545] hover:bg-[#c82333] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
           >
-            🗑 Hapus
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       ),
-      className: 'text-center'
+      className: 'text-center w-28'
     }
   ];
 
@@ -162,13 +158,13 @@ export default function PTPackagesPage() {
 
       {error && (
         <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-bold uppercase tracking-wider">
-          ⚠️ {error}
+          {error}
         </div>
       )}
 
       {success && (
         <div className="p-4 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-700 text-xs font-bold uppercase tracking-wider">
-          ✓ {success}
+          {success}
         </div>
       )}
 
@@ -298,17 +294,6 @@ export default function PTPackagesPage() {
                 onChange={(e) => setPrice(Number(e.target.value))}
                 className="w-full bg-slate-50 border border-slate-300 p-2.5 rounded font-mono font-bold"
                 required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="font-bold text-slate-800 block">Keterangan Paket</label>
-              <textarea
-                rows={3}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 p-2.5 rounded"
-                placeholder="Contoh: Paket PT 12 sesi selama 30 hari (100.000 per-sesi)"
               />
             </div>
 

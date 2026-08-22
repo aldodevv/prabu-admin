@@ -138,6 +138,8 @@ export interface Transaction {
   transaction_number: string;
   member_id?: string;
   member_name?: string;
+  member_username?: string;
+  payment_method?: string;
   admin_id: string;
   admin_name: string;
   transaction_date: string;

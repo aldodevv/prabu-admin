@@ -15,11 +15,12 @@ import {
 
 // Structured fetch system wrapping api calls with proper TypeScript typing
 export const membersApi = {
-  list: (params: { branch_id?: string; page?: number; search?: string; per_page?: number }) => {
+  list: (params: { branch_id?: string; page?: number; search?: string; search_by?: string; per_page?: number }) => {
     const q = new URLSearchParams();
     if (params.branch_id) q.append('branch_id', params.branch_id);
     if (params.page) q.append('page', String(params.page));
     if (params.search) q.append('search', params.search);
+    if (params.search_by) q.append('search_by', params.search_by);
     if (params.per_page) q.append('per_page', String(params.per_page));
     return api.get<Member[]>(`/admin/members?${q.toString()}`);
   },
@@ -59,10 +60,11 @@ export const ptRegistrationsApi = {
 };
 
 export const transactionsApi = {
-  list: (params: { branch_id?: string; member_id?: string; date_from?: string; date_to?: string; notes?: string; page?: number; per_page?: number }) => {
+  list: (params: { branch_id?: string; member_id?: string; member_only?: boolean; date_from?: string; date_to?: string; notes?: string; page?: number; per_page?: number }) => {
     const q = new URLSearchParams();
     if (params.branch_id) q.append('branch_id', params.branch_id);
     if (params.member_id) q.append('member_id', params.member_id);
+    if (params.member_only) q.append('member_only', 'true');
     if (params.date_from) q.append('date_from', params.date_from);
     if (params.date_to) q.append('date_to', params.date_to);
     if (params.notes) q.append('notes', params.notes);

@@ -297,7 +297,7 @@ export default function MemberRegistrationPage() {
 
       {errorMsg && (
         <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-bold uppercase tracking-wider animate-fadeIn no-print">
-          ⚠️ {errorMsg}
+          {errorMsg}
         </div>
       )}
 
@@ -443,7 +443,7 @@ export default function MemberRegistrationPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Tanggal Transaksi
-                    <FieldInfo text="Tanggal pendaftaran transaksi otomatis disesuaikan hari ini." />
+                    <FieldInfo text="Default hari ini dan akses penggantian tanggal hanya bisa di lakukan oleh owner." />
                   </label>
                   <DatePicker
                     value={startDateInput}

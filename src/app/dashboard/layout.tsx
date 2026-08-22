@@ -213,13 +213,6 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             <MenuIcon className="w-6 h-6" />
           </button>
 
-          {/* Active Club Tag */}
-          {activeBranchID && branches.length > 0 && (
-            <div className="hidden sm:inline-flex ml-2 sm:ml-4 px-2.5 sm:px-3.5 py-1 sm:py-1.5 border border-red-500 text-red-500 font-extrabold text-[10px] sm:text-xs rounded-full uppercase tracking-wider bg-red-50/50 select-none no-print shrink-0">
-              Club {(branches.find(b => b.id === activeBranchID)?.name || '').replace('Prabu Gym ', '').toUpperCase()}
-            </div>
-          )}
-
           {/* Easter Egg Mode Main Badge */}
           {isPajakMode && (
             <div className="inline-flex items-center gap-1.5 ml-2 px-2.5 sm:px-3 py-1 border border-amber-500 bg-amber-50 text-amber-700 font-extrabold text-[10px] sm:text-xs rounded-full uppercase tracking-wider select-none no-print shrink-0 animate-pulse shadow-xs">
@@ -237,30 +230,25 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           )}
 
           <div className="flex items-center gap-2 sm:gap-4 lg:gap-6 ml-auto shrink-0">
-            {/* Branch Selector Dropdown / Locked Badge for CS */}
+            {/* Branch Selector Dropdown */}
             {branches.length > 0 && (
               <div className="relative">
-                <div className={`flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-bold text-slate-650 bg-slate-50 border border-slate-200 px-2 sm:px-3.5 py-1.5 sm:py-2 rounded-lg shadow-sm ${!permissions.canSwitchBranch(user?.role) ? 'bg-slate-100/80 cursor-not-allowed select-none' : ''}`}>
+                <div className={`flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-bold text-slate-650 bg-slate-50 border border-slate-200 px-2 sm:px-3.5 py-1.5 sm:py-2 rounded-lg shadow-sm ${!permissions.canSwitchBranch(user?.role) ? 'bg-slate-100 opacity-80 cursor-not-allowed select-none' : ''}`}>
                   <BuildingIcon className="w-3.5 h-3.5 text-brand-red shrink-0" />
                   <span className="uppercase tracking-wider hidden sm:inline">Cabang:</span>
-                  {!permissions.canSwitchBranch(user?.role) ? (
-                    <span className="uppercase text-slate-800 font-extrabold flex items-center gap-1.5 px-0.5" title="Akses cabang terkunci khusus untuk CS/Karyawan">
-                      {(branches.find(b => b.id === (user?.branch_id || activeBranchID))?.name || '').replace('Prabu Gym ', '')}
-                      <Icons.Lock className="w-3 h-3 text-slate-400 shrink-0" />
-                    </span>
-                  ) : (
-                    <select
-                      value={activeBranchID || ''}
-                      onChange={(e) => selectBranch(e.target.value)}
-                      className="bg-transparent focus:outline-none cursor-pointer uppercase text-slate-800 font-extrabold pr-1 max-w-[120px] sm:max-w-none truncate"
-                    >
-                      {branches.map((b) => (
-                        <option key={b.id} value={b.id}>
-                          {b.name.replace('Prabu Gym ', '')}
-                        </option>
-                      ))}
-                    </select>
-                  )}
+                  <select
+                    value={activeBranchID || ''}
+                    disabled={!permissions.canSwitchBranch(user?.role)}
+                    onChange={(e) => selectBranch(e.target.value)}
+                    className="bg-transparent focus:outline-none uppercase text-slate-800 font-extrabold pr-1 max-w-[120px] sm:max-w-none truncate cursor-pointer disabled:cursor-not-allowed disabled:opacity-75"
+                    title={!permissions.canSwitchBranch(user?.role) ? "Cabang dedicated khusus untuk CS / Karyawan" : "Pilih Cabang Operasional"}
+                  >
+                    {branches.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name.replace('Prabu Gym ', '')}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             )}

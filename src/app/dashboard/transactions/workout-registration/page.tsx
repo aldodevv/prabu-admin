@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
-import { Save, Printer, ArrowLeft, UserCheck, Search, Check, X } from 'lucide-react';
+import { Save, Printer, ArrowLeft, UserCheck, Search, Check, X, Phone } from 'lucide-react';
 
 import { packagesApi } from '@/core/api';
+import { useDebounce } from '@/hooks/useDebounce';
 import { DatePicker } from '@/components/core/DatePicker';
 import FieldInfo from '@/components/core/FieldInfo';
 import { OfficialPTReceiptTemplate } from '@/components/core/PrintTemplates';
@@ -47,6 +48,7 @@ export default function PTRegistrationPage() {
 
   // Members & Trainers & Dynamic Packages
   const [members, setMembers] = useState<Member[]>([]);
+  const [selectedMemberObj, setSelectedMemberObj] = useState<Member | null>(null);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [ptPackagesList, setPtPackagesList] = useState<any[]>([]);
   const [loadingPackages, setLoadingPackages] = useState(true);
@@ -61,8 +63,9 @@ export default function PTRegistrationPage() {
   const [startDate, setStartDate] = useState('');
   const [notes, setNotes] = useState('');
 
-  // Member Search State
+  // Member Search State with Debounce (Min 4 chars)
   const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const debouncedMemberSearch = useDebounce(memberSearchQuery, 400);
   const [isMemberDropdownOpen, setIsMemberDropdownOpen] = useState(false);
   const memberComboboxRef = useRef<HTMLDivElement>(null);
 
@@ -98,11 +101,38 @@ export default function PTRegistrationPage() {
     setStartDate(today);
 
     if (activeBranchID) {
-      fetchMembers();
       fetchTrainers();
       fetchPtPackages();
     }
   }, [activeBranchID]);
+
+  // Debounced search for members: only hits API when length >= 4
+  useEffect(() => {
+    if (!activeBranchID) return;
+    const q = debouncedMemberSearch.trim();
+    if (q.length >= 4) {
+      searchMembers(q);
+    } else {
+      setMembers([]);
+    }
+  }, [debouncedMemberSearch, activeBranchID]);
+
+  const searchMembers = async (query: string) => {
+    setLoadingMembers(true);
+    setFetchError('');
+    try {
+      const res = await api.get<any>(`/admin/members?branch_id=${activeBranchID}&search=${encodeURIComponent(query)}&per_page=50`);
+      if (res.success && res.data) {
+        setMembers(res.data);
+      } else {
+        setMembers([]);
+      }
+    } catch (err: any) {
+      setMembers([]);
+    } finally {
+      setLoadingMembers(false);
+    }
+  };
 
   const fetchPtPackages = async () => {
     setLoadingPackages(true);
@@ -124,23 +154,6 @@ export default function PTRegistrationPage() {
       setPackageFetchError(err.message || 'Gagal terhubung ke server untuk memuat paket PT.');
     } finally {
       setLoadingPackages(false);
-    }
-  };
-
-  const fetchMembers = async () => {
-    setLoadingMembers(true);
-    setFetchError('');
-    try {
-      const res = await api.get<any>(`/admin/members?branch_id=${activeBranchID}&per_page=500`);
-      if (res.success && res.data) {
-        setMembers(res.data);
-      } else {
-        setFetchError(res.error || 'Gagal mengambil data anggota');
-      }
-    } catch (err: any) {
-      setFetchError(err.message || 'Terjadi kesalahan jaringan saat mengambil data anggota');
-    } finally {
-      setLoadingMembers(false);
     }
   };
 
@@ -170,8 +183,6 @@ export default function PTRegistrationPage() {
       m.phone?.toLowerCase().includes(q)
     );
   });
-
-  const selectedMemberObj = members.find((m) => m.id === selectedMemberID);
 
   // Recalculate sessions and prices based on selected package
   useEffect(() => {
@@ -309,7 +320,7 @@ export default function PTRegistrationPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Tanggal Transaksi
-                    <FieldInfo text={canEditTransactionDate ? "Tanggal transaksi dapat disesuaikan (Akses Owner & Developer)." : "Tanggal transaksi otomatis disesuaikan hari ini (Hanya Owner & Developer yang dapat mengubah)."} />
+                    <FieldInfo text="Default hari ini dan akses penggantian tanggal hanya bisa di lakukan oleh owner." />
                   </label>
                   <div className="w-full">
                     <DatePicker
@@ -329,7 +340,7 @@ export default function PTRegistrationPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-start max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center mt-2">
                     Nama Anggota <span className="text-red-500 ml-1">*</span>
-                    <FieldInfo text="Ketik nama atau nomor anggota untuk mencari dan memilih member." />
+                    <FieldInfo text="Ketik minimal 4 karakter (nama atau nomor anggota) untuk mencari data member." />
                   </label>
 
                   <div className="w-full relative" ref={memberComboboxRef}>
@@ -347,8 +358,9 @@ export default function PTRegistrationPage() {
                               </span>
                             </div>
                             {selectedMemberObj.phone && (
-                              <p className="text-[11px] text-slate-500 font-mono">
-                                📞 {selectedMemberObj.phone}
+                              <p className="text-[11px] text-slate-500 font-mono flex items-center gap-1 mt-0.5">
+                                <Phone className="w-3 h-3 text-slate-400" />
+                                <span>{selectedMemberObj.phone}</span>
                               </p>
                             )}
                           </div>
@@ -357,6 +369,7 @@ export default function PTRegistrationPage() {
                           type="button"
                           onClick={() => {
                             setSelectedMemberID('');
+                            setSelectedMemberObj(null);
                             setMemberSearchQuery('');
                             setIsMemberDropdownOpen(true);
                           }}
@@ -377,14 +390,16 @@ export default function PTRegistrationPage() {
                               setIsMemberDropdownOpen(true);
                             }}
                             onFocus={() => setIsMemberDropdownOpen(true)}
-                            placeholder={loadingMembers ? "Memuat data anggota..." : "Ketik nama atau nomor anggota untuk mencari..."}
-                            disabled={loadingMembers}
-                            className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 pl-9 pr-8 py-2.5 text-xs focus:outline-none rounded disabled:opacity-50"
+                            placeholder={loadingMembers ? "Mencari data anggota..." : "Ketik minimal 4 karakter (nama / nomor anggota)..."}
+                            className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 pl-9 pr-8 py-2.5 text-xs focus:outline-none rounded"
                           />
                           {memberSearchQuery && (
                             <button
                               type="button"
-                              onClick={() => setMemberSearchQuery('')}
+                              onClick={() => {
+                                setMemberSearchQuery('');
+                                setMembers([]);
+                              }}
                               className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold px-1 cursor-pointer"
                             >
                               ✕
@@ -394,19 +409,24 @@ export default function PTRegistrationPage() {
 
                         {isMemberDropdownOpen && (
                           <div className="absolute z-50 left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg divide-y divide-slate-100 animate-fadeIn">
-                            {loadingMembers ? (
-                              <div className="p-3 text-center text-xs text-slate-500">Memuat data anggota...</div>
-                            ) : filteredMembers.length === 0 ? (
+                            {memberSearchQuery.trim().length < 4 ? (
+                              <div className="p-3 text-center text-xs text-slate-400">
+                                Ketik minimal 4 karakter (nama atau nomor) untuk mencari anggota...
+                              </div>
+                            ) : loadingMembers ? (
+                              <div className="p-3 text-center text-xs text-slate-500">Mencari data anggota...</div>
+                            ) : members.length === 0 ? (
                               <div className="p-4 text-center text-xs text-slate-500">
                                 Tidak ada anggota ditemukan dengan kata kunci &quot;{memberSearchQuery}&quot;
                               </div>
                             ) : (
-                              filteredMembers.slice(0, 100).map((m) => (
+                              members.map((m) => (
                                 <button
                                   key={m.id}
                                   type="button"
                                   onClick={() => {
                                     setSelectedMemberID(m.id);
+                                    setSelectedMemberObj(m);
                                     setMemberSearchQuery('');
                                     setIsMemberDropdownOpen(false);
                                   }}
@@ -418,7 +438,7 @@ export default function PTRegistrationPage() {
                                     </span>
                                     <div className="flex items-center gap-2 text-[10px] text-slate-500 font-mono">
                                       <span>No: {m.username}</span>
-                                      {m.phone && <span>• 📞 {m.phone}</span>}
+                                      {m.phone && <span>• {m.phone}</span>}
                                     </div>
                                   </div>
                                   <span className="text-[10px] font-bold text-slate-400 group-hover:text-brand-cyan uppercase">

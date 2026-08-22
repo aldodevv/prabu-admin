@@ -28,7 +28,7 @@ export const FieldInfo: React.FC<FieldInfoProps> = ({ text, className = '' }) =>
       {show && (
         <div className="absolute bottom-full left-0 mb-1.5 w-64 p-3 bg-slate-900 text-white text-xs rounded-lg shadow-2xl border border-slate-700 z-[9999] pointer-events-none animate-in fade-in zoom-in-95">
           <div className="font-sans leading-relaxed text-[11px] font-normal text-slate-200">
-            <span className="font-semibold text-cyan-400 block mb-1">🛡️ Aturan:</span>
+            <span className="font-semibold text-cyan-400 block mb-1">Aturan Pengisian:</span>
             {text}
           </div>
           <div className="absolute top-full left-2.5 -mt-1 border-4 border-transparent border-t-slate-900" />

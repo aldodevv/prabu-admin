@@ -14,6 +14,7 @@ interface SearchFilterBarProps {
   columnOptions?: ColumnOption[];
   selectedColumn?: string;
   onColumnChange?: (col: string) => void;
+  hideAllColumnOption?: boolean;
   isTyping?: boolean;
   onExportExcel?: () => void;
   onReset?: () => void;
@@ -28,6 +29,7 @@ export const SearchFilterBar: React.FC<SearchFilterBarProps> = ({
   columnOptions,
   selectedColumn,
   onColumnChange,
+  hideAllColumnOption = false,
   isTyping = false,
   onExportExcel,
   onReset,
@@ -45,9 +47,9 @@ export const SearchFilterBar: React.FC<SearchFilterBarProps> = ({
             <select
               value={selectedColumn || ''}
               onChange={(e) => onColumnChange?.(e.target.value)}
-              className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded font-medium"
+              className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded font-medium cursor-pointer"
             >
-              <option value="">- Semua Kolom -</option>
+              {!hideAllColumnOption && <option value="">- Semua Kolom -</option>}
               {columnOptions.map((col) => (
                 <option key={col.value} value={col.value}>
                   {col.label}
@@ -64,7 +66,7 @@ export const SearchFilterBar: React.FC<SearchFilterBarProps> = ({
               <label className="font-bold text-slate-500 uppercase tracking-wider">Pencarian</label>
               {isTyping && (
                 <span className="text-[#17A2B8] font-bold tracking-wider animate-pulse text-[10px]">
-                  ✍️ Sedang mengetik...
+                  Sedang mengetik...
                 </span>
               )}
             </div>

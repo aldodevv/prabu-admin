@@ -159,21 +159,22 @@
 }
 
 /* ============================================
-   A5 Landscape Print Settings for Invoices & Receipts
+   A5 / Standard Print Settings for Invoices & Receipts
    ============================================ */
 @media print {
   @page {
-    size: 210mm 148mm !important; /* A5 Landscape exact dimensions */
+    size: auto;
     margin: 5mm !important;
   }
 
-  body, html, main, #receipt-print-area, #pt-receipt-print-area, #print-renewal-receipt, #print-receipt-overlay, #print-session-receipt, #print-area {
+  body, html, main, #receipt-print-area, #pt-receipt-print-area, #print-renewal-receipt, #print-receipt-overlay, #print-session-receipt, #print-area, #print-modal-root {
     background: white !important;
     color: black !important;
     padding: 0 !important;
     margin: 0 !important;
-    width: 200mm !important;
-    max-width: 200mm !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
   }
 
   header, nav, aside, button, .no-print {

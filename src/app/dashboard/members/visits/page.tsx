@@ -3,13 +3,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { checkinsApi } from '@/core/api';
-import { formatDateLabel, formatDateLong } from '@/core/constants';
+import { formatDateLong } from '@/core/constants';
 import { Checkin } from '@/core/types';
 import { PageHeader } from '@/components/core/PageHeader';
-import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 import { DataTable, Column } from '@/components/core/DataTable';
-import { UserCheck, Clock, Search, RotateCcw } from 'lucide-react';
-import { useDebounce } from '@/hooks/useDebounce';
+import { UserCheck, Search, RotateCcw, AlertCircle } from 'lucide-react';
 
 export default function CheckinsPage() {
   const { activeBranchID, loading: authLoading } = useAuth();
@@ -21,16 +19,17 @@ export default function CheckinsPage() {
   const [dateTo, setDateTo] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // Search member state for visit tracking
-  const [searchQuery, setSearchQuery] = useState('');
-  const debouncedSearch = useDebounce(searchQuery, 300);
+  // Manual search member state for visit tracking
+  const [searchInput, setSearchInput] = useState('');
+  const [activeSearch, setActiveSearch] = useState('');
+  const [searchError, setSearchError] = useState('');
 
   const [perPage, setPerPage] = useState(50);
 
   // Reset page when branch, search, or date filter changes
   useEffect(() => {
     setPage(1);
-  }, [activeBranchID, debouncedSearch, dateFrom, dateTo]);
+  }, [activeBranchID, activeSearch, dateFrom, dateTo]);
 
   useEffect(() => {
     if (!authLoading && activeBranchID) {
@@ -59,16 +58,38 @@ export default function CheckinsPage() {
     }
   };
 
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const query = searchInput.trim();
+    if (!query) {
+      setActiveSearch('');
+      setSearchError('');
+      setPage(1);
+      return;
+    }
+
+    if (query.length < 4) {
+      setSearchError('Minimal 4 karakter (nomor atau nama anggota) untuk mencari.');
+      return;
+    }
+
+    setSearchError('');
+    setActiveSearch(query);
+    setPage(1);
+  };
+
   const handleResetFilters = () => {
     setDateFrom('');
     setDateTo('');
-    setSearchQuery('');
+    setSearchInput('');
+    setActiveSearch('');
+    setSearchError('');
     setPage(1);
   };
 
   const getFilteredCheckins = () => {
-    if (!debouncedSearch.trim()) return checkins;
-    const q = debouncedSearch.toLowerCase().trim();
+    if (!activeSearch.trim()) return checkins;
+    const q = activeSearch.toLowerCase().trim();
     return checkins.filter(c =>
       (c.member_name && c.member_name.toLowerCase().includes(q)) ||
       ((c as any).member_username && (c as any).member_username.toLowerCase().includes(q))
@@ -76,7 +97,7 @@ export default function CheckinsPage() {
   };
 
   const filteredCheckins = getFilteredCheckins();
-  const searchedMemberName = debouncedSearch.trim() ? (filteredCheckins[0]?.member_name || debouncedSearch) : null;
+  const searchedMemberName = activeSearch.trim() ? (filteredCheckins[0]?.member_name || activeSearch) : null;
   const totalMemberVisits = filteredCheckins.length;
   const totalCompletedVisits = filteredCheckins.filter(c => c.status !== 'active').length;
 
@@ -149,22 +170,40 @@ export default function CheckinsPage() {
 
       {/* Member Search & Date Filter Bar */}
       <div className="bg-white border border-slate-200 p-5 rounded shadow-sm space-y-4">
-        <div className="flex flex-wrap gap-4 items-end justify-between">
+        <form onSubmit={handleSearchSubmit} className="flex flex-wrap gap-4 items-end justify-between">
           {/* Member Search Input */}
           <div className="flex-1 min-w-[280px]">
             <label className="block text-slate-500 text-[10px] uppercase tracking-wider font-accent mb-1.5 font-bold">
-              Cari Nama / Nomor Anggota (Tracking Total Kunjungan)
+              Cari Nama / Nomor Anggota (Min 4 Karakter)
             </label>
-            <div className="relative">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Ketik nama atau nomor anggota untuk tracking..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 focus:border-brand-cyan focus:outline-none text-slate-800 pl-9 pr-3 py-2.5 text-xs rounded font-body"
-              />
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Ketik minimal 4 karakter nomor / nama anggota..."
+                  value={searchInput}
+                  onChange={(e) => {
+                    setSearchInput(e.target.value);
+                    if (searchError) setSearchError('');
+                  }}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-brand-cyan focus:outline-none text-slate-800 pl-9 pr-3 py-2 text-xs rounded font-body h-[38px]"
+                />
+              </div>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-brand-cyan hover:bg-[#138496] text-white font-accent text-xs font-bold uppercase tracking-wider transition-all rounded cursor-pointer flex items-center gap-1.5 h-[38px] shadow-sm"
+              >
+                <Search className="w-3.5 h-3.5" />
+                <span>Cari</span>
+              </button>
             </div>
+            {searchError && (
+              <p className="text-[#DC3545] text-xs font-semibold mt-1.5 flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5" />
+                {searchError}
+              </p>
+            )}
           </div>
 
           {/* Date Range Inputs */}
@@ -180,7 +219,7 @@ export default function CheckinsPage() {
                   setDateFrom(e.target.value);
                   setPage(1);
                 }}
-                className="bg-slate-50 border border-slate-200 focus:border-brand-cyan focus:outline-none text-slate-800 px-3 py-2 text-xs rounded font-mono cursor-pointer"
+                className="bg-slate-50 border border-slate-200 focus:border-brand-cyan focus:outline-none text-slate-800 px-3 py-2 text-xs rounded font-mono cursor-pointer h-[38px]"
               />
             </div>
             <div>
@@ -194,18 +233,19 @@ export default function CheckinsPage() {
                   setDateTo(e.target.value);
                   setPage(1);
                 }}
-                className="bg-slate-50 border border-slate-200 focus:border-brand-cyan focus:outline-none text-slate-800 px-3 py-2 text-xs rounded font-mono cursor-pointer"
+                className="bg-slate-50 border border-slate-200 focus:border-brand-cyan focus:outline-none text-slate-800 px-3 py-2 text-xs rounded font-mono cursor-pointer h-[38px]"
               />
             </div>
             <button
+              type="button"
               onClick={handleResetFilters}
-              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-accent text-xs uppercase tracking-wider transition-all rounded cursor-pointer flex items-center gap-1 h-[38px]"
+              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-accent text-xs font-bold uppercase tracking-wider transition-all rounded cursor-pointer flex items-center gap-1 h-[38px]"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reset</span>
             </button>
           </div>
-        </div>
+        </form>
 
         {/* Member Visit Tracking Summary Panel */}
         {searchedMemberName && (

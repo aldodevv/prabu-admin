@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 import { FetchErrorAlert } from '@/components/core/FetchErrorAlert';
-import { WorkoutReportTemplate } from '@/components/core/PrintTemplates';
+import { WorkoutReportTemplate, OfficialPTReceiptTemplate } from '@/components/core/PrintTemplates';
 import { formatDateLabel, formatIDR } from '@/core/constants';
 import { Printer, Dumbbell } from 'lucide-react';
 import { exportToExcel } from '@/lib/excelExport';
@@ -24,6 +24,7 @@ interface PTRegistrationReportItem {
   notes?: string;
   created_at: string;
   admin_name?: string;
+  sessions_count?: number;
 }
 
 export default function WorkoutReportsPage() {
@@ -33,6 +34,7 @@ export default function WorkoutReportsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isPrintOpen, setIsPrintOpen] = useState(false);
+  const [selectedReceiptItem, setSelectedReceiptItem] = useState<PTRegistrationReportItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -143,14 +145,14 @@ export default function WorkoutReportsPage() {
               type="date"
               value={dateFrom}
               onChange={e => setDateFrom(e.target.value)}
-              className="bg-slate-50 border border-slate-300 text-slate-700 px-3 py-2 text-xs rounded font-mono"
+              className="bg-slate-50 border border-slate-300 text-slate-700 px-3 py-2 text-xs rounded font-mono font-bold"
             />
             <span className="text-slate-400 text-xs font-bold">s/d</span>
             <input
               type="date"
               value={dateTo}
               onChange={e => setDateTo(e.target.value)}
-              className="bg-slate-50 border border-slate-300 text-slate-700 px-3 py-2 text-xs rounded font-mono"
+              className="bg-slate-50 border border-slate-300 text-slate-700 px-3 py-2 text-xs rounded font-mono font-bold"
             />
           </div>
         </SearchFilterBar>
@@ -163,12 +165,12 @@ export default function WorkoutReportsPage() {
               <Dumbbell className="w-4 h-4" />
               <span>Daftar Transaksi Pendaftaran Latihan</span>
             </span>
-            <span className="text-xs font-mono">Total: {filteredList.length} Transaksi</span>
+            <span className="text-xs font-mono font-bold">Total: {filteredList.length} Transaksi</span>
           </div>
 
           <div className="p-6 space-y-4">
             <div className="overflow-x-auto border border-slate-200 rounded">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full text-left text-xs border-collapse font-bold">
                 <thead>
                   <tr className="bg-[#6C7A89] text-white text-[10px] uppercase tracking-wider font-bold select-none">
                     <th className="py-2.5 px-3 border-r border-slate-350 w-10 text-center">No</th>
@@ -184,26 +186,31 @@ export default function WorkoutReportsPage() {
                 <tbody className="divide-y divide-slate-100 text-slate-700">
                   {filteredList.length > 0 ? (
                     filteredList.map((r, idx) => (
-                      <tr key={r.id} className="hover:bg-slate-50/50">
-                        <td className="py-2.5 px-3 text-center border-r border-slate-100 font-mono">{idx + 1}</td>
+                      <tr
+                        key={r.id}
+                        onClick={() => setSelectedReceiptItem(r)}
+                        title="Klik untuk melihat kwitansi transaksi PT"
+                        className="hover:bg-cyan-50/60 cursor-pointer transition-colors"
+                      >
+                        <td className="py-2.5 px-3 text-center border-r border-slate-100 font-mono text-slate-600">{idx + 1}</td>
                         <td className="py-2.5 px-3 border-r border-slate-100 font-mono">{formatDateLabel(r.created_at)}</td>
                         <td className="py-2.5 px-3 border-r border-slate-100 font-mono font-bold text-slate-800">
                           {r.transaction_number || `PRABU-PT-${r.id.substring(0, 7).toUpperCase()}`}
                         </td>
                         <td className="py-2.5 px-3 border-r border-slate-100 font-bold text-slate-800">
-                          {r.member_name} {r.member_username ? <span className="font-mono text-slate-400 font-normal">(@{r.member_username})</span> : ''}
+                          {r.member_name} {r.member_username ? <span className="font-mono text-slate-500 font-bold">(@{r.member_username})</span> : ''}
                         </td>
-                        <td className="py-2.5 px-3 border-r border-slate-100 font-semibold uppercase">{r.package_name}</td>
+                        <td className="py-2.5 px-3 border-r border-slate-100 font-bold uppercase">{r.package_name}</td>
                         <td className="py-2.5 px-3 border-r border-slate-100 text-slate-800">{r.trainer_name}</td>
-                        <td className="py-2.5 px-3 border-r border-slate-100 font-semibold">{r.payment_method}</td>
-                        <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
-                          Rp. {r.total_amount.toLocaleString('id-ID')}
+                        <td className="py-2.5 px-3 border-r border-slate-100 font-bold">{r.payment_method}</td>
+                        <td className="py-2.5 px-3 text-right font-mono font-bold text-emerald-700">
+                          {formatIDR(r.total_amount)}
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={8} className="py-8 text-center text-slate-400 italic">
+                      <td colSpan={8} className="py-8 text-center text-slate-400 font-bold uppercase tracking-wider text-xs">
                         Tidak ada transaksi pendaftaran latihan.
                       </td>
                     </tr>
@@ -213,7 +220,7 @@ export default function WorkoutReportsPage() {
                       Grand Total
                     </td>
                     <td className="py-3 px-4 text-right font-mono font-black text-sm text-[#DC3545]">
-                      Rp. {grandTotal.toLocaleString('id-ID')}
+                      {formatIDR(grandTotal)}
                     </td>
                   </tr>
                 </tbody>
@@ -234,6 +241,25 @@ export default function WorkoutReportsPage() {
             grandTotal,
             cashierName: user?.full_name || 'Staff Prabu Gym',
             registrations: filteredList,
+          }}
+        />
+      )}
+
+      {selectedReceiptItem && (
+        <OfficialPTReceiptTemplate
+          onClose={() => setSelectedReceiptItem(null)}
+          data={{
+            transactionNumber: selectedReceiptItem.transaction_number || `PRABU-PT-${selectedReceiptItem.id.substring(0, 7).toUpperCase()}`,
+            transactionDate: selectedReceiptItem.created_at,
+            memberUsername: selectedReceiptItem.member_username || '-',
+            memberName: selectedReceiptItem.member_name,
+            packageName: selectedReceiptItem.package_name,
+            sessionCount: selectedReceiptItem.sessions_count || 10,
+            membershipEnd: selectedReceiptItem.created_at,
+            paymentMethod: selectedReceiptItem.payment_method,
+            price: selectedReceiptItem.total_amount,
+            trainerName: selectedReceiptItem.trainer_name,
+            cashierName: selectedReceiptItem.admin_name || user?.full_name || 'Staff Prabu Gym'
           }}
         />
       )}

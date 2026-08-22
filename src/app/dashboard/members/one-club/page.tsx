@@ -63,9 +63,7 @@ export default function OneClubMembersPanel() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [filterColumn, setFilterColumn] = useState('');
-  const debouncedSearch = useDebounce(search, 400);
-  const [isTyping, setIsTyping] = useState(false);
+  const [filterColumn, setFilterColumn] = useState('username');
 
   // Filters matching Search Box
   const [statusFilter, setStatusFilter] = useState('Semua');
@@ -120,29 +118,27 @@ export default function OneClubMembersPanel() {
       const urlSearch = params.get('search') || params.get('no-anggota') || params.get('one-club');
       if (urlSearch) {
         setSearch(urlSearch);
+        fetchMembers(urlSearch, 'username', 1, perPage);
+        return;
       }
     }
   }, []);
 
-  // Reset page to 1 when search or branch or status filter changes
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch, activeBranchID, statusFilter]);
-
-  // Fetch members whenever branch, page, perPage, or debouncedSearch changes
+  // Fetch members whenever branch, page, perPage, or statusFilter changes
   useEffect(() => {
     if (!authLoading && activeBranchID) {
-      fetchMembers(debouncedSearch, page, perPage);
+      fetchMembers(search, filterColumn, page, perPage);
     }
-  }, [activeBranchID, page, perPage, debouncedSearch, authLoading]);
+  }, [activeBranchID, page, perPage, statusFilter, authLoading]);
 
-  const fetchMembers = async (searchQuery = debouncedSearch, pageNum = page, perPageNum = perPage) => {
+  const fetchMembers = async (searchQuery = search, col = filterColumn, pageNum = page, perPageNum = perPage) => {
     setLoading(true);
     setFetchError(null);
     try {
       const res = await membersApi.list({
         branch_id: activeBranchID || undefined,
         search: searchQuery || undefined,
+        search_by: searchQuery ? col : undefined,
         page: pageNum,
         per_page: perPageNum
       });
@@ -173,15 +169,32 @@ export default function OneClubMembersPanel() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
-    fetchMembers(search, 1, perPage);
+    fetchMembers(search, filterColumn, 1, perPage);
   };
 
   const handleResetSearch = () => {
     setSearch('');
-    setFilterColumn('');
+    setFilterColumn('username');
     setStatusFilter('Semua');
     setPage(1);
-    fetchMembers('');
+    fetchMembers('', 'username', 1, perPage);
+  };
+
+  const getSearchPlaceholder = () => {
+    switch (filterColumn) {
+      case 'username':
+        return 'Ketik nomor anggota...';
+      case 'full_name':
+        return 'Ketik nama anggota...';
+      case 'phone':
+        return 'Ketik nomor HP...';
+      case 'email':
+        return 'Ketik email...';
+      case 'membership_type':
+        return 'Ketik paket anggota...';
+      default:
+        return 'Ketik nomor anggota...';
+    }
   };
 
   const handleExportExcel = () => {
@@ -414,11 +427,12 @@ export default function OneClubMembersPanel() {
             <SearchFilterBar
               searchQuery={search}
               onSearchChange={setSearch}
-              searchPlaceholder="Ketik nama, nomor HP, email..."
+              onSearchSubmit={handleSearchSubmit}
+              searchPlaceholder={getSearchPlaceholder()}
               columnOptions={columnOptions}
               selectedColumn={filterColumn}
               onColumnChange={setFilterColumn}
-              isTyping={isTyping}
+              hideAllColumnOption={true}
               onExportExcel={handleExportExcel}
               onReset={handleResetSearch}
             >
@@ -468,7 +482,7 @@ export default function OneClubMembersPanel() {
                     onClick={() => setShowDigitalCard(true)}
                     className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
                   >
-                    <span>🪪 Kartu Member Digital</span>
+                    <span>Kartu Member Digital</span>
                   </button>
                   <button
                     onClick={() => setStep('list')}
