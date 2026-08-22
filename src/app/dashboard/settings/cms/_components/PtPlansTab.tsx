@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import api from '@/lib/api';
-import { Edit, X, Link as LinkIcon, Type } from 'lucide-react';
+import { Edit, X, Link as LinkIcon, Type, Sparkles } from 'lucide-react';
 import { PTPlanItem } from './types';
 
 interface PtPlansTabProps {
@@ -369,8 +369,9 @@ export const PtPlansTab: React.FC<PtPlansTabProps> = ({ onSuccess, onError }) =>
                 }`}
             >
               {plan.popular && (
-                <div className="absolute -top-3 left-6 bg-brand-cyan text-white text-[10px] font-bold uppercase tracking-wider px-3 py-0.5 rounded-full shadow-sm">
-                  🔥 SEDANG PROMO
+                <div className="absolute -top-3 left-6 bg-brand-cyan text-white text-[10px] font-bold uppercase tracking-wider px-3 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+                  <Sparkles size={11} className="text-yellow-300" />
+                  <span>SEDANG PROMO</span>
                 </div>
               )}
 
