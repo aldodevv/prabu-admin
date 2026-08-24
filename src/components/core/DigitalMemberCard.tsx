@@ -125,26 +125,37 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
   };
 
   // Pre-filled Email Template matching the official PRABU GYM specification
-  const emailSubject = encodeURIComponent(`Kartu Keanggotaan Digital Prabu Gym - ${member.full_name}`);
+  const rawSubject = `Kartu Keanggotaan Digital Prabu Gym - ${member.full_name}`;
+  const emailSubject = encodeURIComponent(rawSubject);
   const emailBodyRaw =
-    `Halo ${member.full_name},\r\n\r\n` +
-    `Selamat bergabung di PRABU GYM! Berikut adalah rincian keanggotaan digital Anda:\r\n\r\n` +
-    `• Nama Lengkap: ${member.full_name}\r\n` +
-    `• Nomor Anggota: ${member.username}\r\n` +
-    `• Cabang Gym: ${displayBranch}\r\n` +
-    `• Paket Membership: ${member.membership_type || 'Membership'}\r\n` +
-    `• Masa Aktif: ${member.membership_start || '-'} s/d ${member.membership_end || '-'}\r\n\r\n` +
-    `Alamat Cabang:\r\n` +
-    `${address}\r\n\r\n` +
-    `*Catatan: kartu member digital ini digunakan untuk mendapatkan kunci akses dan loker gym, kami sudah tidak lagi menggunakan kartu fisik, kini semua member menggunakan kartu digital. Kartu ini berlaku selamanya dan nantinya digunakan untuk:\r\n\r\n` +
-    `✅ Check-in & Check-out GYM\r\n\r\n` +
-    `✅ Akses All Club – Bisa digunakan di semua cabang tanpa beli membership lagi\r\n\r\n` +
-    `✅ Praktis! Cukup scan QR code di depan kasir secara mandiri\r\n\r\n` +
-    `Kalau ada pertanyaan lainnya, boleh langsung ditanyakan 🫡\r\n\r\n` +
-    `Salam Sehat,\r\n` +
+    `Halo ${member.full_name},\n\n` +
+    `Selamat bergabung di PRABU GYM! Berikut adalah rincian keanggotaan digital Anda:\n\n` +
+    `• Nama Lengkap: ${member.full_name}\n` +
+    `• Nomor Anggota: ${member.username}\n` +
+    `• Cabang Gym: ${displayBranch}\n` +
+    `• Paket Membership: ${member.membership_type || 'Membership'}\n` +
+    `• Masa Aktif: ${member.membership_start || '-'} s/d ${member.membership_end || '-'}\n\n` +
+    `Alamat Cabang:\n` +
+    `${address}\n\n` +
+    `*Catatan: kartu member digital ini digunakan untuk mendapatkan kunci akses dan loker gym, kami sudah tidak lagi menggunakan kartu fisik, kini semua member menggunakan kartu digital. Kartu ini berlaku selamanya dan nantinya digunakan untuk:\n\n` +
+    `• Check-in & Check-out GYM\n` +
+    `• Akses All Club – Bisa digunakan di semua cabang tanpa beli membership lagi\n` +
+    `• Praktis! Cukup scan QR code di depan kasir secara mandiri\n\n` +
+    `Kalau ada pertanyaan lainnya, silakan langsung hubungi customer service kami.\n\n` +
+    `Salam Sehat,\n` +
     `PRABU GYM Official`;
 
   const mailtoUrl = `mailto:${member.email || ''}?subject=${emailSubject}&body=${encodeURIComponent(emailBodyRaw)}`;
+  const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(member.email || '')}&su=${emailSubject}&body=${encodeURIComponent(emailBodyRaw)}`;
+
+  const handleOpenMailto = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigator.clipboard.writeText(emailBodyRaw);
+    setCopiedTemplate(true);
+    setTimeout(() => setCopiedTemplate(false), 2000);
+    // Direct in-place navigation avoids opening about:blank
+    window.location.href = mailtoUrl;
+  };
 
   const handleCopyTemplate = () => {
     navigator.clipboard.writeText(emailBodyRaw);
@@ -288,9 +299,10 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
           <span>{downloading ? 'Mengunduh Gambar...' : 'Download Kartu Member (PNG)'}</span>
         </button>
 
-        <a
-          href={mailtoUrl}
-          onClick={handleCopyTemplate}
+        {/* Kirim via Aplikasi Email Desktop / HP (Apple Mail, Outlook, dsb) */}
+        <button
+          type="button"
+          onClick={handleOpenMailto}
           className="w-full py-2.5 px-4 bg-[#6C7A89] hover:bg-[#5a6673] text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2 text-center"
         >
           {copiedTemplate ? <Check className="w-4 h-4 text-emerald-400" /> : <Mail className="w-4 h-4" />}
@@ -301,6 +313,22 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
               ? `Kirim Email (${member.email})`
               : 'Kirim Email Template'}
           </span>
+        </button>
+
+        {/* Kirim via Webmail Gmail */}
+        <a
+          href={gmailUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => {
+            navigator.clipboard.writeText(emailBodyRaw);
+            setCopiedTemplate(true);
+            setTimeout(() => setCopiedTemplate(false), 2000);
+          }}
+          className="w-full py-2.5 px-4 bg-[#DC3545] hover:bg-[#c82333] text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2 text-center"
+        >
+          <Mail className="w-4 h-4" />
+          <span>Buka di Gmail Web</span>
         </a>
       </div>
     </div>
