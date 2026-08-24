@@ -288,26 +288,20 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
           <span>{downloading ? 'Mengunduh Gambar...' : 'Download Kartu Member (PNG)'}</span>
         </button>
 
-        {member.email && (
-          <a
-            href={mailtoUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full py-2.5 px-4 bg-[#6C7A89] hover:bg-[#5a6673] text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2 text-center"
-          >
-            <Mail className="w-4 h-4" />
-            <span>Kirim Email ({member.email})</span>
-          </a>
-        )}
-
-        <button
-          type="button"
+        <a
+          href={mailtoUrl}
           onClick={handleCopyTemplate}
-          className="w-full py-2.5 px-4 bg-slate-600 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2"
+          className="w-full py-2.5 px-4 bg-[#6C7A89] hover:bg-[#5a6673] text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2 text-center"
         >
-          {copiedTemplate ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-          <span>{copiedTemplate ? 'Teks Email Tersalin!' : 'Salin Template Teks Email'}</span>
-        </button>
+          {copiedTemplate ? <Check className="w-4 h-4 text-emerald-400" /> : <Mail className="w-4 h-4" />}
+          <span>
+            {copiedTemplate
+              ? 'Membuka Email & Teks Tersalin!'
+              : member.email
+              ? `Kirim Email (${member.email})`
+              : 'Kirim Email Template'}
+          </span>
+        </a>
       </div>
     </div>
   );
