@@ -5,6 +5,7 @@ export {
   formatInvoiceNumber,
   getPaymentMethodFromNotes,
   getMembershipTypeFromNotes,
+  getPTDetailsFromNotes,
   getBranchAddress,
   getBranchCode,
   calculateExpiryDate,
@@ -15,7 +16,7 @@ export {
   toDataURL,
 } from '@/utils';
 
-export type { GymPackage, PTPackage } from '@/utils';
+export type { GymPackage, PTPackage, PTDetails } from '@/utils';
 
 /**
  * Route paths mapping

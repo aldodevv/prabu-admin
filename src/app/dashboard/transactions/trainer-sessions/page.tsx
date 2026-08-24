@@ -15,7 +15,9 @@ import { PageHeader } from '@/components/core/PageHeader';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 import { DataTable, Column } from '@/components/core/DataTable';
 import { SessionReceiptTemplate } from '@/components/core/PrintTemplates';
-import { Search, Edit, Printer, List, ArrowLeft, Plus, Minus, Save, FileText } from 'lucide-react';
+import { DatePicker } from '@/components/core/DatePicker';
+import FieldInfo from '@/components/core/FieldInfo';
+import { Search, Edit, Printer, List, ArrowLeft, Plus, Minus, Save, FileText, ClipboardCheck, AlertCircle, CheckCircle2, User, Dumbbell, Calendar, Clock } from 'lucide-react';
 
 interface SessionLog {
   date: string;
@@ -343,7 +345,7 @@ export default function TrainerSessionsPage() {
 
         {/* Step 2: Rekap Sesi Form */}
         {step === 'rekap' && selectedReg && (
-          <div className="space-y-6 animate-fadeIn max-w-3xl mx-auto">
+          <div className="space-y-6 animate-fadeIn max-w-4xl mx-auto">
             <PageHeader
               title="Rekap Kehadiran Sesi Pelatih"
               action={
@@ -352,119 +354,172 @@ export default function TrainerSessionsPage() {
                   className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#DC3545] hover:bg-[#c82333] text-white text-xs font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  <span>Batal</span>
+                  <span>Kembali</span>
                 </button>
               }
             />
 
             {formError && (
-              <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-bold uppercase tracking-wider">
-                ⚠️ {formError}
+              <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+                <span>{formError}</span>
               </div>
             )}
 
             {formSuccess && (
-              <div className="p-4 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-700 text-xs font-bold uppercase tracking-wider">
-                ✓ {formSuccess}
+              <div className="p-4 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-700 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
+                <span>{formSuccess}</span>
               </div>
             )}
 
-            <div className="bg-white border border-slate-200 rounded shadow-sm p-8 space-y-6 text-sm text-slate-700">
-              <h3 className="font-heading text-lg font-bold border-b border-slate-100 pb-2 text-slate-800">
-                Informasi Sesi
-              </h3>
-
-              <div className="grid grid-cols-2 gap-4 text-xs font-semibold max-sm:grid-cols-1">
-                <div className="p-4 bg-slate-50 border border-slate-200 rounded">
-                  <div className="text-slate-400 font-accent uppercase text-[9px] mb-1">Nama Anggota</div>
-                  <div className="text-sm font-bold text-slate-800">{selectedReg.member_name}</div>
+            <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
+              {/* Cyan Header Bar */}
+              <div className="bg-brand-cyan px-5 py-3 text-white font-bold select-none flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ClipboardCheck className="w-4 h-4" />
+                  <span className="text-sm uppercase tracking-wider font-heading">Informasi Sesi Latihan</span>
                 </div>
-                <div className="p-4 bg-slate-50 border border-slate-200 rounded">
-                  <div className="text-slate-400 font-accent uppercase text-[9px] mb-1">Paket Latihan</div>
-                  <div className="text-sm font-bold text-slate-800 uppercase">{selectedReg.package_name}</div>
-                </div>
+                <span className="text-[11px] font-semibold opacity-90">Personal Trainer</span>
               </div>
 
-              <form onSubmit={handleSaveRekap} className="space-y-5 pt-4 border-t border-slate-100">
-                <div className="grid grid-cols-[1.5fr_3fr] gap-4 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Tanggal</label>
-                  <input
-                    type="date"
-                    required
-                    value={rekapDate}
-                    onChange={(e) => setRekapDate(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full font-mono cursor-pointer"
-                    onClick={(e) => { try { e.currentTarget.showPicker(); } catch { } }}
-                  />
-                </div>
-
-                <div className="grid grid-cols-[1.5fr_3fr] gap-4 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Waktu</label>
-                  <input
-                    type="text"
-                    readOnly
-                    disabled
-                    value={rekapTime || new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB'}
-                    className="bg-slate-100 border border-slate-300 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-mono font-bold cursor-not-allowed select-none"
-                  />
-                </div>
-
-                <div className="grid grid-cols-[1.5fr_3fr] gap-4 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Nama Pelatih / Trainer</label>
-                  <input
-                    type="text"
-                    required
-                    value={rekapTrainerName}
-                    onChange={(e) => setRekapTrainerName(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full"
-                  />
-                </div>
-
-                <div className="grid grid-cols-[1.5fr_3fr] gap-4 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Sesi Terpakai</label>
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setRekapUsedCount(prev => Math.max(1, prev - 1))}
-                      className="w-10 h-10 bg-slate-100 hover:bg-slate-200 rounded flex items-center justify-center font-bold text-slate-700 select-none cursor-pointer"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </button>
-                    <span className="w-12 text-center text-lg font-black font-mono text-slate-800">
-                      {rekapUsedCount}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setRekapUsedCount(prev => prev + 1)}
-                      className="w-10 h-10 bg-slate-100 hover:bg-slate-200 rounded flex items-center justify-center font-bold text-slate-700 select-none cursor-pointer"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
+              <div className="p-6 space-y-6 text-sm text-slate-700">
+                {/* Member Summary Box */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-semibold p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                  <div>
+                    <div className="text-slate-400 font-accent uppercase text-[9px] mb-1">Nama Anggota</div>
+                    <div className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-brand-cyan shrink-0" />
+                      <span>{selectedReg.member_name}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-slate-400 font-accent uppercase text-[9px] mb-1">Paket Latihan</div>
+                    <div className="text-sm font-bold text-slate-800 uppercase flex items-center gap-1.5">
+                      <Dumbbell className="w-3.5 h-3.5 text-brand-cyan shrink-0" />
+                      <span>{selectedReg.package_name}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-slate-400 font-accent uppercase text-[9px] mb-1">Masa Berlaku Sesi</div>
+                    <div className="text-xs font-mono font-bold text-slate-700 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span>{formatDateLabel(calculateExpiryDate(selectedReg.registration_date))}</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-[1.5fr_3fr] gap-4 items-start max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent mt-2">Keterangan / Notes</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Contoh: Latihan Chest & Triceps..."
-                    value={rekapNotes}
-                    onChange={(e) => setRekapNotes(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full resize-none font-body"
-                  />
-                </div>
+                <form onSubmit={handleSaveRekap} className="space-y-6 pt-2">
+                  {/* Tanggal Sesi */}
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                      Tanggal Sesi
+                      <FieldInfo text="Pilih atau ketik tanggal kehadiran sesi latihan personal trainer (DD/MM/YYYY)." />
+                    </label>
+                    <DatePicker
+                      value={rekapDate}
+                      onChange={(val) => setRekapDate(val)}
+                      placeholder="dd/mm/yyyy"
+                    />
+                  </div>
 
-                <div className="flex justify-end pt-4 border-t border-slate-100">
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-[#DC3545] hover:bg-[#c82333] text-white text-xs font-accent font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm disabled:opacity-50"
-                  >
-                    <Save className="w-4 h-4" />
-                    <span>{submitting ? 'Menyimpan...' : 'Simpan Rekap'}</span>
-                  </button>
-                </div>
-              </form>
+                  {/* Waktu Sesi */}
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                      Waktu Kehadiran
+                      <FieldInfo text="Waktu otomatis pencatatan sesi latihan." />
+                    </label>
+                    <input
+                      type="text"
+                      readOnly
+                      disabled
+                      value={rekapTime || new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB'}
+                      className="bg-slate-100 border border-slate-300 text-slate-600 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-mono font-bold cursor-not-allowed select-none"
+                    />
+                  </div>
+
+                  {/* Nama Pelatih */}
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                      Nama Pelatih / Trainer <span className="text-red-500 ml-1">*</span>
+                      <FieldInfo text="Nama pelatih yang mendampingi sesi latihan anggota." />
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={rekapTrainerName}
+                      onChange={(e) => setRekapTrainerName(e.target.value)}
+                      placeholder="Masukkan nama pelatih..."
+                      className="bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-semibold"
+                    />
+                  </div>
+
+                  {/* Sesi Terpakai */}
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                      Sesi Terpakai
+                      <FieldInfo text="Jumlah sesi yang dikurangi untuk latihan ini." />
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setRekapUsedCount(prev => Math.max(1, prev - 1))}
+                        className="w-10 h-10 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded flex items-center justify-center font-bold text-slate-700 select-none cursor-pointer transition-colors"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <span className="w-12 text-center text-lg font-black font-mono text-slate-800 bg-slate-50 py-1.5 border border-slate-200 rounded">
+                        {rekapUsedCount}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setRekapUsedCount(prev => prev + 1)}
+                        className="w-10 h-10 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded flex items-center justify-center font-bold text-slate-700 select-none cursor-pointer transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                      <span className="text-xs text-slate-500 font-semibold">Sesi</span>
+                    </div>
+                  </div>
+
+                  {/* Keterangan */}
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-start max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center mt-2">
+                      Keterangan / Notes
+                      <FieldInfo text="Catatan materi atau fokus latihan anggota (contoh: Chest & Triceps, Leg Day, Kardio)." />
+                    </label>
+                    <textarea
+                      rows={3}
+                      placeholder="Contoh: Latihan Chest & Triceps, target 4 set..."
+                      value={rekapNotes}
+                      onChange={(e) => setRekapNotes(e.target.value)}
+                      className="bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full resize-none font-body leading-relaxed"
+                    />
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1 pt-4 border-t border-slate-100">
+                    <div />
+                    <div className="flex gap-3">
+                      <button
+                        type="submit"
+                        disabled={submitting}
+                        className="inline-flex items-center gap-1.5 px-6 py-3 bg-[#DC3545] hover:bg-[#c82333] text-white text-xs font-accent font-bold uppercase tracking-widest rounded transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+                      >
+                        <Save className="w-4 h-4" />
+                        <span>{submitting ? 'Menyimpan...' : 'Simpan Rekap'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setStep('list')}
+                        className="inline-flex items-center gap-1.5 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-accent font-bold uppercase tracking-widest rounded transition-colors cursor-pointer border border-slate-300"
+                      >
+                        <span>Batal</span>
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
         )}

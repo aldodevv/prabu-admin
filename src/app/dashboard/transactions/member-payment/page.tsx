@@ -52,7 +52,7 @@ export default function MemberPaymentPage() {
   // Form Fields
   const [selectedPackageName, setSelectedPackageName] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
-  const [clubType, setClubType] = useState('');
+  const [clubType, setClubType] = useState('One Club');
   const [notes, setNotes] = useState('');
 
   // Date calculations
@@ -172,7 +172,7 @@ export default function MemberPaymentPage() {
     setSelectedMember(m);
     setSelectedPackageName('');
     setPaymentMethod('');
-    setClubType('');
+    setClubType('One Club');
     setNotes('');
     setErrorMsg('');
     setSuccessTx(null);
@@ -696,9 +696,7 @@ export default function MemberPaymentPage() {
                     onChange={(e) => setClubType(e.target.value)}
                     className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full"
                   >
-                    <option value="">-Pilih-</option>
                     <option value="One Club">One Club</option>
-                    <option value="All Club">All Club</option>
                   </select>
                 </div>
 

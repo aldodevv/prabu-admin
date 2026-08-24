@@ -27,19 +27,68 @@ const MONTH_SHORT = [
 
 const DAY_NAMES = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
+// Convert ISO 'YYYY-MM-DD' to 'DD/MM/YYYY'
+function isoToDmy(iso: string): string {
+  if (!iso) return '';
+  const parts = iso.split('-');
+  if (parts.length === 3 && parts[0].length === 4) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  return iso;
+}
+
+// Parse string ('DD/MM/YYYY', 'DD-MM-YYYY', 'YYYY-MM-DD', 'DDMMYYYY') to ISO 'YYYY-MM-DD'
+function parseToIso(input: string): string | null {
+  if (!input) return null;
+  const clean = input.trim();
+
+  // 1. Check YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) {
+    const [y, m, d] = clean.split('-').map(Number);
+    if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+      return clean;
+    }
+  }
+
+  // 2. Check DD/MM/YYYY or DD-MM-YYYY
+  const dmyMatch = clean.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (dmyMatch) {
+    const day = Number(dmyMatch[1]);
+    const month = Number(dmyMatch[2]);
+    const year = Number(dmyMatch[3]);
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31 && year >= 1900 && year <= 2100) {
+      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+  }
+
+  // 3. Check 8-digit DDMMYYYY
+  if (/^\d{8}$/.test(clean)) {
+    const day = Number(clean.substring(0, 2));
+    const month = Number(clean.substring(2, 4));
+    const year = Number(clean.substring(4, 8));
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31 && year >= 1900 && year <= 2100) {
+      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+  }
+
+  return null;
+}
+
 export const DatePicker: React.FC<DatePickerProps> = ({
   value,
   onChange,
-  placeholder = 'Pilih Tanggal',
+  placeholder = 'dd/mm/yyyy',
   disabled = false,
   readOnly = false,
   required = false,
   className = '',
-  minYear = 1950,
+  minYear = 1940,
   maxYear = 2050
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [inputText, setInputText] = useState(() => isoToDmy(value));
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Parse initial view date
   const initialDate = value ? new Date(value + 'T00:00:00') : new Date();
@@ -50,8 +99,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     isNaN(initialDate.getMonth()) ? new Date().getMonth() : initialDate.getMonth()
   );
 
-  // Sync view date when value changes externally
+  // Sync internal text and view date when value changes externally
   useEffect(() => {
+    setInputText(isoToDmy(value));
     if (value) {
       const d = new Date(value + 'T00:00:00');
       if (!isNaN(d.getTime())) {
@@ -71,17 +121,6 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  // Format date display (e.g. 24 Jul 2026)
-  const formatDisplay = (val: string) => {
-    if (!val) return '';
-    const d = new Date(val + 'T00:00:00');
-    if (isNaN(d.getTime())) return val;
-    const day = d.getDate().toString().padStart(2, '0');
-    const month = MONTH_SHORT[d.getMonth()];
-    const year = d.getFullYear();
-    return `${day} ${month} ${year}`;
-  };
 
   // Days in month calculation
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
@@ -110,6 +149,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     const formattedMonth = (viewMonth + 1).toString().padStart(2, '0');
     const formattedDay = day.toString().padStart(2, '0');
     const selectedIso = `${viewYear}-${formattedMonth}-${formattedDay}`;
+    setInputText(`${formattedDay}/${formattedMonth}/${viewYear}`);
     onChange?.(selectedIso);
     setIsOpen(false);
   };
@@ -122,6 +162,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     const todayIso = `${today.getFullYear()}-${formattedMonth}-${formattedDay}`;
     setViewYear(today.getFullYear());
     setViewMonth(today.getMonth());
+    setInputText(`${formattedDay}/${formattedMonth}/${today.getFullYear()}`);
     onChange?.(todayIso);
     setIsOpen(false);
   };
@@ -129,7 +170,42 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (disabled || readOnly) return;
+    setInputText('');
     onChange?.('');
+  };
+
+  // Handle typing & copy-paste
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    setInputText(raw);
+
+    const parsedIso = parseToIso(raw);
+    if (parsedIso) {
+      const d = new Date(parsedIso + 'T00:00:00');
+      if (!isNaN(d.getTime())) {
+        setViewYear(d.getFullYear());
+        setViewMonth(d.getMonth());
+      }
+      onChange?.(parsedIso);
+    } else if (raw === '') {
+      onChange?.('');
+    }
+  };
+
+  // On blur, format if valid or revert if invalid
+  const handleInputBlur = () => {
+    if (!inputText.trim()) {
+      onChange?.('');
+      return;
+    }
+    const parsedIso = parseToIso(inputText);
+    if (parsedIso) {
+      setInputText(isoToDmy(parsedIso));
+      onChange?.(parsedIso);
+    } else if (value) {
+      // Revert to current valid value
+      setInputText(isoToDmy(value));
+    }
   };
 
   // Build year options
@@ -150,29 +226,50 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
   return (
     <div ref={containerRef} className="relative inline-block w-full text-slate-800 font-sans">
-      {/* Input Trigger Button */}
+      {/* Input Field Container */}
       <div
-        onClick={() => !disabled && !readOnly && setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded cursor-pointer select-none transition-all ${isOpen ? 'ring-2 ring-[#17A2B8] border-[#17A2B8] bg-white' : 'hover:border-slate-400'
-          } ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-100' : ''} ${readOnly ? 'bg-slate-100 cursor-default' : ''} ${className}`}
+        className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded transition-all ${
+          isOpen ? 'ring-2 ring-[#17A2B8] border-[#17A2B8] bg-white' : 'hover:border-slate-400'
+        } ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-100' : ''} ${
+          readOnly ? 'bg-slate-100 cursor-default' : ''
+        } ${className}`}
       >
-        <div className="flex items-center gap-2 overflow-hidden text-xs">
-          <CalendarIcon className="w-4 h-4 text-[#17A2B8] shrink-0" />
-          <span className={`truncate font-mono ${value ? 'font-bold text-slate-900' : 'text-slate-400'}`}>
-            {value ? formatDisplay(value) : placeholder}
-          </span>
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <input
+            ref={inputRef}
+            type="text"
+            required={required}
+            disabled={disabled}
+            readOnly={readOnly}
+            value={inputText}
+            onChange={handleInputChange}
+            onBlur={handleInputBlur}
+            placeholder={placeholder}
+            className="w-full bg-transparent text-xs font-mono font-semibold text-slate-800 placeholder-slate-400 focus:outline-none"
+          />
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
-          {value && !readOnly && !disabled && (
+          {inputText && !readOnly && !disabled && (
             <button
               type="button"
               onClick={handleClear}
-              className="p-0.5 hover:bg-slate-200 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
+              className="p-1 hover:bg-slate-200 rounded-full text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+              title="Hapus tanggal"
             >
               <X className="w-3.5 h-3.5" />
             </button>
           )}
+
+          <button
+            type="button"
+            disabled={disabled || readOnly}
+            onClick={() => !disabled && !readOnly && setIsOpen(!isOpen)}
+            className="p-1 hover:bg-slate-200 rounded text-[#17A2B8] hover:text-[#138496] transition-colors cursor-pointer disabled:cursor-not-allowed"
+            title="Buka Kalender"
+          >
+            <CalendarIcon className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
@@ -250,12 +347,13 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                   key={dayNum}
                   type="button"
                   onClick={() => handleSelectDay(dayNum)}
-                  className={`h-8 w-8 mx-auto flex items-center justify-center rounded-lg font-mono text-xs transition-all cursor-pointer ${selected
+                  className={`h-8 w-8 mx-auto flex items-center justify-center rounded-lg font-mono text-xs transition-all cursor-pointer ${
+                    selected
                       ? 'bg-brand-cyan text-white font-bold shadow-sm scale-105'
                       : today
                         ? 'border-2 border-[#17A2B8] text-[#17A2B8] font-bold bg-cyan-50/50'
                         : 'hover:bg-slate-100 text-slate-700 font-medium'
-                    }`}
+                  }`}
                 >
                   {dayNum}
                 </button>

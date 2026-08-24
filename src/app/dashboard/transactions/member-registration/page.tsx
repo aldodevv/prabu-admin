@@ -529,12 +529,12 @@ export default function MemberRegistrationPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Tanggal Lahir
-                    <FieldInfo text="Pilih tanggal lahir anggota dari kalender." />
+                    <FieldInfo text="Ketik manual / paste format DD/MM/YYYY atau pilih tanggal dari kalender." />
                   </label>
                   <DatePicker
                     value={dob}
                     onChange={(val) => setDob(val)}
-                    placeholder="Pilih Tanggal Lahir"
+                    placeholder="dd/mm/yyyy"
                   />
                 </div>
 

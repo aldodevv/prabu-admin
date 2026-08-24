@@ -156,7 +156,71 @@ export function getPaymentMethodFromNotes(notes: string = ''): string {
  * Parse membership package name from transaction notes
  */
 export function getMembershipTypeFromNotes(notes: string = ''): string {
-  const match = notes.match(/Paket:\s*([^\-,.]+)/i) || notes.match(/Pendaftaran Anggota:.*-\s*([^\-,.]+)/i);
-  if (match && match[1]) return match[1].trim();
+  if (!notes) return '1 Bulan (Daftar)';
+  const n = notes.trim();
+
+  // 1. PT Registration: "Pendaftaran Personal Trainer: PT 12 Sesi - Metode: ..."
+  const ptMatch = n.match(/Pendaftaran Personal Trainer:\s*([^\-]+)/i) || n.match(/Paket PT:\s*([^\-]+)/i);
+  if (ptMatch && ptMatch[1]) return ptMatch[1].trim();
+
+  // 2. Member Registration / Renewal: "Pendaftaran Anggota: ... - 1 Bulan (Daftar)" or "Perpanjang Paket: 12 Bulan"
+  const memMatch = n.match(/Perpanjang Paket:\s*([^\-]+)/i) ||
+    n.match(/Pendaftaran Anggota:\s*([^\-]+)/i) ||
+    n.match(/Paket:\s*([^\-,.]+)/i);
+  if (memMatch && memMatch[1]) return memMatch[1].trim();
+
+  // 3. Check for specific known package keywords
+  for (const pkg of GYM_PACKAGES) {
+    if (n.toLowerCase().includes(pkg.name.toLowerCase())) {
+      return pkg.name;
+    }
+  }
+  for (const pkg of PT_PACKAGES) {
+    if (n.toLowerCase().includes(pkg.name.toLowerCase())) {
+      return pkg.name;
+    }
+  }
+
   return '1 Bulan (Daftar)';
+}
+
+export interface PTDetails {
+  packageName: string;
+  sessionCount: number;
+  trainerName: string;
+}
+
+/**
+ * Extract PT package name, session count, and trainer name from transaction notes
+ */
+export function getPTDetailsFromNotes(notes: string = ''): PTDetails {
+  const n = notes.trim();
+  let packageName = 'PT 12 Sesi';
+  let trainerName = 'Pelatih Prabu GYM';
+
+  // 1. Extract package name
+  const ptMatch = n.match(/Pendaftaran Personal Trainer:\s*([^\-]+)/i) ||
+    n.match(/Paket PT:\s*([^\-]+)/i) ||
+    n.match(/Paket Latihan:\s*([^\-]+)/i);
+  if (ptMatch && ptMatch[1]) {
+    packageName = ptMatch[1].trim();
+  } else {
+    for (const p of PT_PACKAGES) {
+      if (n.toLowerCase().includes(p.name.toLowerCase())) {
+        packageName = p.name;
+        break;
+      }
+    }
+  }
+
+  // 2. Derive session count
+  const sessionCount = getSessionCountFromPackage(packageName) || getSessionCountFromPackage(n) || 1;
+
+  // 3. Extract trainer name if in notes
+  const trMatch = n.match(/Trainer:\s*([^\-),]+)/i) || n.match(/Pelatih:\s*([^\-),]+)/i);
+  if (trMatch && trMatch[1]) {
+    trainerName = trMatch[1].trim();
+  }
+
+  return { packageName, sessionCount, trainerName };
 }

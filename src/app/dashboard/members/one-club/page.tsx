@@ -4,12 +4,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/context/AuthContext';
 import { membersApi, transactionsApi } from '@/core/api';
-import { formatDateLabel, formatIDR, getMembershipTypeFromNotes, getPaymentMethodFromNotes } from '@/core/constants';
+import { formatDateLabel, formatIDR, getMembershipTypeFromNotes, getPaymentMethodFromNotes, getPTDetailsFromNotes } from '@/core/constants';
 import { Member, Transaction } from '@/core/types';
 import { PageHeader } from '@/components/core/PageHeader';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 import { DataTable, Column } from '@/components/core/DataTable';
-import { Search, Eye, Edit, Trash2, ArrowLeft, Save, Printer, FileText, FileSpreadsheet, RotateCcw, Download } from 'lucide-react';
+import { Search, Eye, Edit, Trash2, ArrowLeft, Save, Printer, FileText, FileSpreadsheet, RotateCcw, Download, CreditCard } from 'lucide-react';
 import { exportToExcel } from '@/lib/excelExport';
 import { compressImage } from '@/utils/imageCompressor';
 import { uploadToCloudflare } from '@/lib/cloudflare';
@@ -328,7 +328,7 @@ export default function OneClubMembersPanel() {
       header: 'No',
       align: 'center',
       className: 'w-12',
-      render: (_, idx) => idx + 1
+      render: (_, idx) => (page - 1) * perPage + idx + 1
     },
     {
       key: 'photo',
@@ -646,13 +646,22 @@ export default function OneClubMembersPanel() {
                                   <td className="py-2.5 px-3 border-r border-slate-100 text-slate-500 font-normal leading-relaxed">{tx.notes || '-'}</td>
                                   <td className="py-2.5 px-3 border-r border-slate-100 text-slate-600">{tx.admin_name}</td>
                                   <td className="py-2.5 px-3 text-center select-none no-print">
-                                    <div className="flex justify-center">
+                                    <div className="flex items-center justify-center gap-1.5">
+                                      <button
+                                        onClick={() => setThermalStrukTx(tx)}
+                                        title="Cetak Struk Thermal (POS)"
+                                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#007BFF] hover:bg-[#0069D9] text-white text-[10px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
+                                      >
+                                        <Printer className="w-3.5 h-3.5" />
+                                        <span>Struk</span>
+                                      </button>
                                       <button
                                         onClick={() => setReceiptTx(tx)}
-                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#6C7A89] hover:bg-[#5a6673] text-white text-[10px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
+                                        title="Lihat Kwitansi Resmi (Official Receipt)"
+                                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#6C7A89] hover:bg-[#5a6673] text-white text-[10px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
                                       >
                                         <FileText className="w-3.5 h-3.5" />
-                                        Document
+                                        <span>Receipt</span>
                                       </button>
                                     </div>
                                   </td>
@@ -696,13 +705,22 @@ export default function OneClubMembersPanel() {
                                 <td className="py-2.5 px-3 border-r border-slate-100 text-right text-slate-800 font-black">{formatIDR(tx.total_amount)}</td>
                                 <td className="py-2.5 px-3 border-r border-slate-100 text-slate-600">{tx.admin_name}</td>
                                 <td className="py-2.5 px-3 text-center select-none no-print">
-                                  <div className="flex justify-center">
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    <button
+                                      onClick={() => setThermalStrukTx(tx)}
+                                      title="Cetak Struk Thermal (POS)"
+                                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#007BFF] hover:bg-[#0069D9] text-white text-[10px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
+                                    >
+                                      <Printer className="w-3.5 h-3.5" />
+                                      <span>Struk</span>
+                                    </button>
                                     <button
                                       onClick={() => setReceiptTx(tx)}
-                                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#6C7A89] hover:bg-[#5a6673] text-white text-[10px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
+                                      title="Lihat Kwitansi Resmi (Official Receipt)"
+                                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#6C7A89] hover:bg-[#5a6673] text-white text-[10px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
                                     >
                                       <FileText className="w-3.5 h-3.5" />
-                                      Document
+                                      <span>Receipt</span>
                                     </button>
                                   </div>
                                 </td>
@@ -723,26 +741,26 @@ export default function OneClubMembersPanel() {
               })()}
             </div>
 
-            {/* Re-download Section: Kartu Member Digital & Struk Pembayaran */}
+            {/* Re-download Section: Kartu Member Digital */}
             <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden p-6 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-3 gap-2">
                 <div className="flex items-center gap-2">
                   <Download className="w-5 h-5 text-[#17A2B8]" />
                   <h3 className="font-heading text-lg font-bold text-slate-800">
-                    Re-Download Dokumen & Kartu Anggota
+                    Unduh Kartu Anggota Digital
                   </h3>
                 </div>
                 <span className="text-xs font-semibold text-slate-500">
-                  Unduh ulang Kartu Member Digital (PNG) & Struk Pembayaran (PDF)
+                  Format PNG resolusi tinggi untuk kartu fisik atau digital member
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                {/* Digital Member Card Box */}
-                <div className="flex flex-col items-center bg-slate-50 p-6 rounded-xl border border-slate-200/80 space-y-4">
+              <div className="flex justify-center items-center py-2">
+                <div className="w-full max-w-xl flex flex-col items-center bg-slate-50 p-6 rounded-xl border border-slate-200/80 space-y-4">
                   <div className="w-full flex items-center justify-between border-b border-slate-200 pb-2">
-                    <span className="text-xs font-black uppercase text-slate-700 tracking-wider">
-                      🪪 Kartu Member Digital
+                    <span className="text-xs font-black uppercase text-slate-700 tracking-wider flex items-center gap-1.5">
+                      <CreditCard className="w-4 h-4 text-[#17A2B8]" />
+                      Kartu Member Digital
                     </span>
                     <span className="text-[10px] font-bold text-slate-400">
                       Format PNG
@@ -761,78 +779,6 @@ export default function OneClubMembersPanel() {
                     }}
                     branchName={selectedMember.branch_name}
                   />
-                </div>
-
-                {/* Struk / Receipt Re-download Box */}
-                <div className="flex flex-col bg-slate-50 p-6 rounded-xl border border-slate-200/80 space-y-4">
-                  <div className="w-full flex items-center justify-between border-b border-slate-200 pb-2">
-                    <span className="text-xs font-black uppercase text-slate-700 tracking-wider">
-                      🧾 Struk / Receipt Pembayaran
-                    </span>
-                    <span className="text-[10px] font-bold text-slate-400">
-                      Official Receipt
-                    </span>
-                  </div>
-
-                  {memberTransactions.length > 0 ? (
-                    <div className="space-y-4">
-                      <p className="text-xs text-slate-600 font-semibold leading-relaxed">
-                        Pilih transaksi di bawah ini untuk melihat, mencetak, atau mengunduh ulang Struk Pembayaran Resmi:
-                      </p>
-
-                      <div className="space-y-3 max-h-[580px] overflow-y-auto pr-1">
-                        {memberTransactions.map((tx) => (
-                          <div
-                            key={tx.id}
-                            className="bg-white p-4 rounded-lg border border-slate-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
-                          >
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-bold bg-[#007BFF]/10 text-[#007BFF] px-2 py-0.5 rounded font-mono">
-                                  #{tx.transaction_number}
-                                </span>
-                                <span className="text-xs font-bold text-slate-800">
-                                  {formatIDR(tx.total_amount)}
-                                </span>
-                              </div>
-                              <p className="text-[11px] text-slate-500 font-semibold">
-                                📅 {formatDateLabel(tx.transaction_date)} • {getMembershipTypeFromNotes(tx.notes || '')}
-                              </p>
-                              {tx.admin_name && (
-                                <p className="text-[10px] text-slate-400">
-                                  Kasir: {tx.admin_name}
-                                </p>
-                              )}
-                            </div>
-
-                            <div className="flex items-center gap-2 w-full sm:w-auto">
-                              <button
-                                onClick={() => setThermalStrukTx(tx)}
-                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-[#007BFF] hover:bg-[#0069D9] text-white text-xs font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
-                              >
-                                <Printer className="w-3.5 h-3.5" />
-                                <span>Cetak Struk</span>
-                              </button>
-                              <button
-                                onClick={() => setReceiptTx(tx)}
-                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-[#6C7A89] hover:bg-[#5a6673] text-white text-xs font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
-                              >
-                                <FileText className="w-3.5 h-3.5" />
-                                <span>Lihat Receipt</span>
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="py-16 text-center text-slate-400 space-y-2">
-                      <FileText className="w-8 h-8 mx-auto text-slate-300" />
-                      <p className="text-xs font-bold uppercase tracking-wider">
-                        Belum ada riwayat transaksi pembayaran untuk anggota ini.
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -988,12 +934,12 @@ export default function OneClubMembersPanel() {
               transactionDate: receiptTx.transaction_date,
               memberUsername: selectedMember.username,
               memberName: selectedMember.full_name,
-              packageName: getMembershipTypeFromNotes(receiptTx.notes || '') || 'Personal Trainer',
-              sessionCount: 1,
+              packageName: getPTDetailsFromNotes(receiptTx.notes || '').packageName || getMembershipTypeFromNotes(receiptTx.notes || '') || 'Personal Trainer',
+              sessionCount: getPTDetailsFromNotes(receiptTx.notes || '').sessionCount,
               membershipEnd: selectedMember.membership_end,
               paymentMethod: getPaymentMethodFromNotes(receiptTx.notes || ''),
               price: receiptTx.total_amount,
-              trainerName: 'Pelatih Prabu GYM',
+              trainerName: getPTDetailsFromNotes(receiptTx.notes || '').trainerName,
               cashierName: receiptTx.admin_name || user?.full_name || 'Kasir Prabu GYM',
             }}
           />
