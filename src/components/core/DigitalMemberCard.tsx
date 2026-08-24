@@ -145,17 +145,7 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
     `Salam Sehat,\n` +
     `PRABU GYM Official`;
 
-  const mailtoUrl = `mailto:${member.email || ''}?subject=${emailSubject}&body=${encodeURIComponent(emailBodyRaw)}`;
   const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(member.email || '')}&su=${emailSubject}&body=${encodeURIComponent(emailBodyRaw)}`;
-
-  const handleOpenMailto = (e: React.MouseEvent) => {
-    e.preventDefault();
-    navigator.clipboard.writeText(emailBodyRaw);
-    setCopiedTemplate(true);
-    setTimeout(() => setCopiedTemplate(false), 2000);
-    // Direct in-place navigation avoids opening about:blank
-    window.location.href = mailtoUrl;
-  };
 
   const handleCopyTemplate = () => {
     navigator.clipboard.writeText(emailBodyRaw);
@@ -299,20 +289,14 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
           <span>{downloading ? 'Mengunduh Gambar...' : 'Download Kartu Member (PNG)'}</span>
         </button>
 
-        {/* Kirim via Aplikasi Email Desktop / HP (Apple Mail, Outlook, dsb) */}
+        {/* Salin Template Teks Email */}
         <button
           type="button"
-          onClick={handleOpenMailto}
+          onClick={handleCopyTemplate}
           className="w-full py-2.5 px-4 bg-[#6C7A89] hover:bg-[#5a6673] text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2 text-center"
         >
-          {copiedTemplate ? <Check className="w-4 h-4 text-emerald-400" /> : <Mail className="w-4 h-4" />}
-          <span>
-            {copiedTemplate
-              ? 'Membuka Email & Teks Tersalin!'
-              : member.email
-              ? `Kirim Email (${member.email})`
-              : 'Kirim Email Template'}
-          </span>
+          {copiedTemplate ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+          <span>{copiedTemplate ? 'Teks Email Tersalin!' : 'Salin Template Teks Email'}</span>
         </button>
 
         {/* Kirim via Webmail Gmail */}
