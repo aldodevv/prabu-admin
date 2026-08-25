@@ -166,98 +166,98 @@ export default function ClassCommissionReportsPage() {
     <div className="space-y-6 font-sans">
       <div className="no-print space-y-6">
         <div className="flex justify-between items-start">
-        <div>
-          <h2 className="text-3xl font-heading text-slate-800 uppercase tracking-tight">LAPORAN KOMISI KELAS</h2>
-          <p className="text-slate-500 text-xs mt-1 uppercase tracking-widest font-accent">
-            Rangkuman Honorarium & Komisi Mengajar Instruktur Kelas Aerobik / Zumba / Yoga
-          </p>
+          <div>
+            <h2 className="text-3xl font-heading text-slate-800 uppercase tracking-tight">LAPORAN KOMISI KELAS</h2>
+            <p className="text-slate-500 text-xs mt-1 uppercase tracking-widest font-accent">
+              Rangkuman Honorarium & Komisi Mengajar Instruktur Kelas Aerobik / Zumba / Yoga
+            </p>
+          </div>
+          <button
+            onClick={() => setIsPrintOpen(true)}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer"
+          >
+            <Printer className="w-4 h-4" />
+            <span>Cetak Laporan</span>
+          </button>
         </div>
-        <button
-          onClick={() => setIsPrintOpen(true)}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer"
+
+        <SearchFilterBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Cari nama instruktur kelas..."
+          onExportExcel={handleExportExcel}
         >
-          <Printer className="w-4 h-4" />
-          <span>Cetak Laporan</span>
-        </button>
-      </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={e => setDateFrom(e.target.value)}
+              className="bg-slate-50 border border-slate-300 text-slate-700 px-3 py-2 text-xs rounded font-mono"
+            />
+            <span className="text-slate-400 text-xs font-bold">s/d</span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={e => setDateTo(e.target.value)}
+              className="bg-slate-50 border border-slate-300 text-slate-700 px-3 py-2 text-xs rounded font-mono"
+            />
+          </div>
+        </SearchFilterBar>
 
-      <SearchFilterBar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        searchPlaceholder="Cari nama instruktur kelas..."
-        onExportExcel={handleExportExcel}
-      >
-        <div className="flex items-center gap-2">
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={e => setDateFrom(e.target.value)}
-            className="bg-slate-50 border border-slate-300 text-slate-700 px-3 py-2 text-xs rounded font-mono"
-          />
-          <span className="text-slate-400 text-xs font-bold">s/d</span>
-          <input
-            type="date"
-            value={dateTo}
-            onChange={e => setDateTo(e.target.value)}
-            className="bg-slate-50 border border-slate-300 text-slate-700 px-3 py-2 text-xs rounded font-mono"
-          />
-        </div>
-      </SearchFilterBar>
+        <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
+          <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex items-center justify-between select-none">
+            <span className="text-sm uppercase tracking-wider font-heading flex items-center gap-2">
+              <Award className="w-4 h-4" />
+              <span>Rekapitulasi Insentif Mengajar Instruktur</span>
+            </span>
+            <span className="text-xs font-mono">Total Instruktur: {filtered.length}</span>
+          </div>
 
-      <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
-        <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex items-center justify-between select-none">
-          <span className="text-sm uppercase tracking-wider font-heading flex items-center gap-2">
-            <Award className="w-4 h-4" />
-            <span>Rekapitulasi Insentif Mengajar Instruktur</span>
-          </span>
-          <span className="text-xs font-mono">Total Instruktur: {filtered.length}</span>
-        </div>
-
-        <div className="p-6 space-y-4">
-          <div className="overflow-x-auto border border-slate-200 rounded">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-[#6C7A89] text-white text-[10px] uppercase tracking-wider font-bold select-none">
-                  <th className="py-2.5 px-4 border-r border-slate-350 w-12 text-center">No</th>
-                  <th className="py-2.5 px-4 border-r border-slate-350">Nama Instruktur</th>
-                  <th className="py-2.5 px-4 border-r border-slate-350 text-center">Jumlah Sesi Kelas</th>
-                  <th className="py-2.5 px-4 border-r border-slate-350 text-right">Fee Per Kelas</th>
-                  <th className="py-2.5 px-4 text-right">Total Komisi Diterima</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700 font-semibold">
-                {filtered.length > 0 ? (
-                  filtered.map((r, idx) => (
-                    <tr key={r.instructor_name} className="hover:bg-slate-50/50">
-                      <td className="py-3 px-4 text-center border-r border-slate-100 font-mono">{idx + 1}</td>
-                      <td className="py-3 px-4 font-bold text-slate-800 border-r border-slate-100">{r.instructor_name}</td>
-                      <td className="py-3 px-4 border-r border-slate-100 text-center font-bold text-slate-800">{r.total_classes} Sesi Kelas</td>
-                      <td className="py-3 px-4 border-r border-slate-100 text-right font-mono text-slate-600">Rp. {r.rate_per_class.toLocaleString('id-ID')}</td>
-                      <td className="py-3 px-4 text-right font-mono font-bold text-emerald-700 text-sm">Rp. {r.total_commission.toLocaleString('id-ID')}</td>
+          <div className="p-6 space-y-4">
+            <div className="overflow-x-auto border border-slate-200 rounded">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-[#6C7A89] text-white text-[10px] uppercase tracking-wider font-bold select-none">
+                    <th className="py-2.5 px-4 border-r border-slate-350 w-12 text-center">No</th>
+                    <th className="py-2.5 px-4 border-r border-slate-350">Nama Instruktur</th>
+                    <th className="py-2.5 px-4 border-r border-slate-350 text-center">Jumlah Sesi Kelas</th>
+                    <th className="py-2.5 px-4 border-r border-slate-350 text-right">Fee Per Kelas</th>
+                    <th className="py-2.5 px-4 text-right">Total Komisi Diterima</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-700 font-semibold">
+                  {filtered.length > 0 ? (
+                    filtered.map((r, idx) => (
+                      <tr key={r.instructor_name} className="hover:bg-slate-50/50">
+                        <td className="py-3 px-4 text-center border-r border-slate-100 font-mono">{idx + 1}</td>
+                        <td className="py-3 px-4 font-bold text-slate-800 border-r border-slate-100">{r.instructor_name}</td>
+                        <td className="py-3 px-4 border-r border-slate-100 text-center font-bold text-slate-800">{r.total_classes} Sesi Kelas</td>
+                        <td className="py-3 px-4 border-r border-slate-100 text-right font-mono text-slate-600">Rp. {r.rate_per_class.toLocaleString('id-ID')}</td>
+                        <td className="py-3 px-4 text-right font-mono font-bold text-emerald-700 text-sm">Rp. {r.total_commission.toLocaleString('id-ID')}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-slate-400 italic">
+                        Tidak ada data komisi kelas.
+                      </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-400 italic">
-                      Tidak ada data komisi kelas.
+                  )}
+                  <tr className="bg-slate-100 font-bold border-t-2 border-slate-300">
+                    <td colSpan={2} className="py-3 px-4 text-right uppercase tracking-wider text-xs text-slate-700">
+                      Grand Total Komisi
+                    </td>
+                    <td className="py-3 px-4 text-center font-mono font-bold text-slate-800">{grandTotalClasses} Kelas</td>
+                    <td className="py-3 px-4"></td>
+                    <td className="py-3 px-4 text-right font-mono font-black text-sm text-[#DC3545]">
+                      Rp. {grandTotalCommission.toLocaleString('id-ID')}
                     </td>
                   </tr>
-                )}
-                <tr className="bg-slate-100 font-bold border-t-2 border-slate-300">
-                  <td colSpan={2} className="py-3 px-4 text-right uppercase tracking-wider text-xs text-slate-700">
-                    Grand Total Komisi
-                  </td>
-                  <td className="py-3 px-4 text-center font-mono font-bold text-slate-800">{grandTotalClasses} Kelas</td>
-                  <td className="py-3 px-4"></td>
-                  <td className="py-3 px-4 text-right font-mono font-black text-sm text-[#DC3545]">
-                    Rp. {grandTotalCommission.toLocaleString('id-ID')}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
       </div>
 
       {isPrintOpen && (
@@ -270,7 +270,7 @@ export default function ClassCommissionReportsPage() {
             totalInstructors: filtered.length,
             grandTotalClasses,
             grandTotalCommission,
-            cashierName: user?.full_name || 'Staff Prabu Gym',
+            cashierName: user?.full_name || 'Staff PRABU GYM',
             reports: filtered,
           }}
         />

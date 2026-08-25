@@ -137,7 +137,7 @@ export default function ScanBarcodePage() {
     setLeaveModal({
       isOpen: true,
       title: isLeave ? 'MEMBERSHIP CUTI / DIBEKUKAN' : 'PERINGATAN PRESENSI',
-      memberName: member?.full_name || result?.data?.full_name || 'Anggota Prabu Gym',
+      memberName: member?.full_name || result?.data?.full_name || 'Anggota PRABU GYM',
       memberCode: member?.username || (result?.data as MemberData)?.username || '-',
       startDate,
       endDate,

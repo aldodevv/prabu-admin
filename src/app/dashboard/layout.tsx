@@ -96,11 +96,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-brand-bg flex font-sans text-slate-800">
 
       {/* 1. Main Sidebar - Compact Desktop (110px width) */}
-      <aside className={`w-27.5 bg-brand-dark flex flex-col justify-between max-lg:hidden fixed h-screen z-40 select-none shadow-md transition-transform duration-300 ${
-        isSidebarHidden ? '-translate-x-full' : 'translate-x-0'
-      }`}>
+      <aside className={`w-27.5 bg-brand-dark flex flex-col justify-between max-lg:hidden fixed h-screen z-40 select-none shadow-md transition-transform duration-300 ${isSidebarHidden ? '-translate-x-full' : 'translate-x-0'
+        }`}>
         <div className="flex flex-col h-full">
-          {/* Prabu Gym Brand Banner with Toggle */}
+          {/* PRABU GYM Brand Banner with Toggle */}
           <div className="h-16 bg-brand-red flex items-center justify-between px-3 text-white flex-shrink-0">
             <span className="font-heading text-base tracking-widest font-extrabold text-center leading-tight pl-1">
               PRABU
@@ -162,9 +161,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       {/* 2. Secondary Sidebar Drawer - Desktop (Sub-items) */}
       {!isSidebarHidden && hasSubmenu && activeGroupConfig && (
         <aside
-          className={`w-64 bg-[#2A2F35] text-slate-300 fixed left-[110px] top-0 bottom-0 z-30 flex flex-col shadow-lg border-r border-slate-800 max-lg:hidden select-none transition-all duration-300 ${
-            isSubmenuHidden ? '-translate-x-full opacity-0 pointer-events-none' : 'translate-x-0 opacity-100'
-          }`}
+          className={`w-64 bg-[#2A2F35] text-slate-300 fixed left-[110px] top-0 bottom-0 z-30 flex flex-col shadow-lg border-r border-slate-800 max-lg:hidden select-none transition-all duration-300 ${isSubmenuHidden ? '-translate-x-full opacity-0 pointer-events-none' : 'translate-x-0 opacity-100'
+            }`}
         >
           {/* Top header to align with primary header */}
           <div className="h-16 border-b border-slate-800 flex items-center justify-between px-5 flex-shrink-0 bg-slate-900/10">
@@ -228,13 +226,12 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
       {/* 3. Main Content Wrapper */}
       <div
-        className={`flex-1 flex flex-col min-h-screen w-full max-w-full overflow-x-hidden transition-all duration-300 ${
-          isSidebarHidden
+        className={`flex-1 flex flex-col min-h-screen w-full max-w-full overflow-x-hidden transition-all duration-300 ${isSidebarHidden
             ? 'lg:pl-0'
             : showSubmenu
-            ? 'lg:pl-[366px]'
-            : 'lg:pl-[110px]'
-        }`}
+              ? 'lg:pl-[366px]'
+              : 'lg:pl-[110px]'
+          }`}
       >
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-3 sm:px-6 sticky top-0 z-30 shadow-sm w-full max-w-full">
@@ -302,7 +299,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                   >
                     {branches.map((b) => (
                       <option key={b.id} value={b.id}>
-                        {b.name.replace('Prabu Gym ', '')}
+                        {b.name.replace('PRABU GYM ', '')}
                       </option>
                     ))}
                   </select>

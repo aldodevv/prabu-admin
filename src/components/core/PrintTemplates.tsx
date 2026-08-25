@@ -123,11 +123,11 @@ const PrintContainer: React.FC<PrintContainerProps> = ({ onClose, title, childre
   );
 };
 
-// Official Prabu Gym transparent logo image
+// Official PRABU GYM transparent logo image
 const LogoIcon = () => (
   <img
     src="/logo-transparent.png"
-    alt="Prabu Gym Logo"
+    alt="PRABU GYM Logo"
     className="h-12 w-auto object-contain"
   />
 );
@@ -346,7 +346,7 @@ export const SessionReceiptTemplate: React.FC<SessionReceiptProps> = ({ onClose,
           <div className="p-4 flex flex-col items-center justify-center text-center">
             <img
               src="/logo-transparent.png"
-              alt="Prabu Gym Logo"
+              alt="PRABU GYM Logo"
               className="h-14 w-auto object-contain"
             />
             <div className="text-center leading-none mt-2">
@@ -578,11 +578,11 @@ export const ReportTemplate: React.FC<ReportProps> = ({ onClose, title, data }) 
         {/* Staff / Admin Info Footer Below Table */}
         <div className="flex justify-between items-center pt-2 text-xs text-slate-700 font-sans border-t border-slate-200">
           <div className="text-slate-400 text-[9px] italic font-bold">
-            * Laporan dibuat otomatis oleh sistem Prabu Gym.
+            * Laporan dibuat otomatis oleh sistem PRABU GYM.
           </div>
           <div className="flex items-center text-right gap-1.5">
             <span className="text-slate-600 font-bold uppercase tracking-wider text-[9px]">Petugas / CS Kasir:</span>
-            <span className="font-extrabold text-slate-900 text-[10px]">{data.cashierName || 'Staff Prabu Gym'}</span>
+            <span className="font-extrabold text-slate-900 text-[10px]">{data.cashierName || 'Staff PRABU GYM'}</span>
           </div>
         </div>
       </div>
@@ -755,7 +755,7 @@ export const ClassCommissionReportTemplate: React.FC<ClassCommissionReportProps>
               </tr>
               <tr>
                 <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-800">Nama Petugas / CS Kasir</td>
-                <td className="py-1.5 px-3 font-bold text-slate-900">{data.cashierName || 'Staff Prabu Gym'}</td>
+                <td className="py-1.5 px-3 font-bold text-slate-900">{data.cashierName || 'Staff PRABU GYM'}</td>
               </tr>
             </tbody>
           </table>
@@ -812,10 +812,10 @@ export const ClassCommissionReportTemplate: React.FC<ClassCommissionReportProps>
         <div className="pt-2 flex justify-between items-center text-[10px] text-slate-600 border-t border-slate-200 print:pt-2 font-bold">
           <div className="flex items-center gap-1.5">
             <span className="text-slate-600 font-bold uppercase tracking-wider text-[9px]">Petugas / CS Kasir:</span>
-            <span className="font-extrabold text-slate-900 text-[10px]">{data.cashierName || 'Staff Prabu Gym'}</span>
+            <span className="font-extrabold text-slate-900 text-[10px]">{data.cashierName || 'Staff PRABU GYM'}</span>
           </div>
           <div className="text-right">
-            <span className="text-slate-500 font-mono text-[9px] font-bold">Prabu Gym Integrated System</span>
+            <span className="text-slate-500 font-mono text-[9px] font-bold">PRABU GYM Integrated System</span>
           </div>
         </div>
       </div>
@@ -885,7 +885,7 @@ export const WorkoutReportTemplate: React.FC<WorkoutReportProps> = ({ onClose, t
               </tr>
               <tr>
                 <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-800">Nama Petugas / CS Kasir</td>
-                <td className="py-1.5 px-3 font-bold text-slate-900">{data.cashierName || 'Staff Prabu Gym'}</td>
+                <td className="py-1.5 px-3 font-bold text-slate-900">{data.cashierName || 'Staff PRABU GYM'}</td>
               </tr>
             </tbody>
           </table>
@@ -954,11 +954,11 @@ export const WorkoutReportTemplate: React.FC<WorkoutReportProps> = ({ onClose, t
         {/* Staff Footer */}
         <div className="flex justify-between items-center pt-2 text-xs text-slate-700 font-sans border-t border-slate-200 font-bold">
           <div className="text-slate-400 text-[9px] italic font-bold">
-            * Laporan dibuat otomatis oleh sistem Prabu Gym.
+            * Laporan dibuat otomatis oleh sistem PRABU GYM.
           </div>
           <div className="flex items-center text-right gap-1.5">
             <span className="text-slate-600 font-bold uppercase tracking-wider text-[9px]">Petugas / CS Kasir:</span>
-            <span className="font-extrabold text-slate-900 text-[10px]">{data.cashierName || 'Staff Prabu Gym'}</span>
+            <span className="font-extrabold text-slate-900 text-[10px]">{data.cashierName || 'Staff PRABU GYM'}</span>
           </div>
         </div>
       </div>
@@ -998,7 +998,7 @@ export const ThermalReceiptTemplate: React.FC<ThermalReceiptProps> = ({ onClose,
         <div className="flex flex-col items-center justify-center text-center space-y-1 mb-2">
           <img
             src="/logo-transparent.png"
-            alt="Prabu Gym Logo"
+            alt="PRABU GYM Logo"
             className="h-12 w-auto object-contain mb-1"
           />
           <h2 className="text-sm font-black tracking-widest font-heading text-black uppercase">
@@ -1091,7 +1091,7 @@ export const ThermalReceiptTemplate: React.FC<ThermalReceiptProps> = ({ onClose,
         <div className="border-t border-dashed border-black pt-2 text-center text-[9px] uppercase font-bold tracking-wider space-y-0.5">
           <div>TERIMA KASIH ATAS KUNJUNGAN ANDA</div>
           <div className="text-[8px] text-slate-500 font-normal">SIMPAN STRUK INI SEBAGAI BUKTI PEMBAYARAN</div>
-          <div className="text-[8px] text-slate-400 font-mono pt-1">Prabu Gym Integrated System</div>
+          <div className="text-[8px] text-slate-400 font-mono pt-1">PRABU GYM Integrated System</div>
         </div>
       </div>
     </PrintContainer>
@@ -1172,7 +1172,7 @@ export const WorkoutRegistrationReportPrintTemplate: React.FC<WorkoutRegistratio
               )}
               <tr>
                 <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-800">Nama Petugas / CS Kasir</td>
-                <td className="py-1.5 px-3 font-bold text-slate-900">{data.cashierName || 'Staff Prabu Gym'}</td>
+                <td className="py-1.5 px-3 font-bold text-slate-900">{data.cashierName || 'Staff PRABU GYM'}</td>
               </tr>
             </tbody>
           </table>

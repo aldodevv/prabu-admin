@@ -129,10 +129,10 @@ export default function OneClubMembersPanel() {
   useEffect(() => {
     packagesApi.listMembershipPackages().then(res => {
       if (res.success && res.data) setMembershipPackages(res.data);
-    }).catch(() => {});
+    }).catch(() => { });
     packagesApi.listPTPackages().then(res => {
       if (res.success && res.data) setPtPackages(res.data);
-    }).catch(() => {});
+    }).catch(() => { });
   }, [activeBranchID]);
 
   useEffect(() => {
@@ -279,7 +279,7 @@ export default function OneClubMembersPanel() {
       const parsedPkg = getMembershipTypeFromNotes(tx.notes || '');
       const matchedPkg = membershipPackages.find(
         p => p.name.toLowerCase().trim() === parsedPkg.toLowerCase().trim() ||
-             p.name.toLowerCase().trim() === (selectedMember?.membership_type || '').toLowerCase().trim()
+          p.name.toLowerCase().trim() === (selectedMember?.membership_type || '').toLowerCase().trim()
       );
       setEditTxPackage(matchedPkg ? matchedPkg.name : (parsedPkg || selectedMember?.membership_type || ''));
       setEditTxStartDate(selectedMember?.membership_start ? selectedMember.membership_start.split('T')[0] : txDate);
@@ -1143,7 +1143,7 @@ export default function OneClubMembersPanel() {
               paymentMethod: getPaymentMethodFromNotes(receiptTx.notes || ''),
               price: receiptTx.total_amount,
               trainerName: getPTDetailsFromNotes(receiptTx.notes || '').trainerName,
-              cashierName: receiptTx.admin_name || user?.full_name || 'Kasir Prabu GYM',
+              cashierName: receiptTx.admin_name || user?.full_name || 'Kasir PRABU GYM',
             }}
           />
         ) : (
@@ -1159,7 +1159,7 @@ export default function OneClubMembersPanel() {
               membershipEnd: selectedMember.membership_end,
               paymentMethod: getPaymentMethodFromNotes(receiptTx.notes || ''),
               price: receiptTx.total_amount,
-              cashierName: receiptTx.admin_name || user?.full_name || 'Kasir Prabu GYM'
+              cashierName: receiptTx.admin_name || user?.full_name || 'Kasir PRABU GYM'
             }}
           />
         )
@@ -1177,8 +1177,8 @@ export default function OneClubMembersPanel() {
             packageName: getMembershipTypeFromNotes(thermalStrukTx.notes || '') || 'Paket Keanggotaan',
             paymentMethod: getPaymentMethodFromNotes(thermalStrukTx.notes || '') || thermalStrukTx.payment_method || 'Tunai',
             totalAmount: thermalStrukTx.total_amount,
-            cashierName: thermalStrukTx.admin_name || user?.full_name || 'Kasir Prabu GYM',
-            branchName: branches.find(b => b.id === activeBranchID)?.name || 'Prabu Gym & Fitness Center',
+            cashierName: thermalStrukTx.admin_name || user?.full_name || 'Kasir PRABU GYM',
+            branchName: branches.find(b => b.id === activeBranchID)?.name || 'PRABU GYM & Fitness Center',
             branchAddress: (branches.find(b => b.id === activeBranchID) as any)?.address || '',
             notes: thermalStrukTx.notes || ''
           }}

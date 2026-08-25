@@ -304,7 +304,7 @@ export default function MemberReportsPage() {
                     </tr>
                     <tr>
                       <td className="py-2 px-3 font-bold bg-slate-50 border-r border-slate-200 text-slate-700">Nama Staff</td>
-                      <td className="py-2 px-3 font-bold text-slate-900">{user?.full_name || 'Prabu GYM Admin'}</td>
+                      <td className="py-2 px-3 font-bold text-slate-900">{user?.full_name || 'PRABU GYM Admin'}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -396,7 +396,7 @@ export default function MemberReportsPage() {
             totalRevenue: totalPembayaran,
             totalPpn: totalPpn,
             grandTotal: grandTotal,
-            cashierName: user?.full_name || 'Kasir Prabu GYM',
+            cashierName: user?.full_name || 'Kasir PRABU GYM',
             transactions: filteredTxs.map(tx => {
               const method = getPaymentMethodFromNotes(tx.notes || '') || tx.payment_method || '-';
               const pkg = getMembershipTypeFromNotes(tx.notes || '') || '-';
@@ -435,7 +435,7 @@ export default function MemberReportsPage() {
             membershipEnd: selectedReceiptTx.transaction_date,
             paymentMethod: getPaymentMethodFromNotes(selectedReceiptTx.notes || '') || selectedReceiptTx.payment_method || 'Tunai',
             price: selectedReceiptTx.total_amount,
-            cashierName: selectedReceiptTx.admin_name || user?.full_name || 'Kasir Prabu GYM'
+            cashierName: selectedReceiptTx.admin_name || user?.full_name || 'Kasir PRABU GYM'
           }}
         />
       )}

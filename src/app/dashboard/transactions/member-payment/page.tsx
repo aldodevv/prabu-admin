@@ -623,16 +623,15 @@ export default function MemberPaymentPage() {
                       value={selectedPackageName}
                       onChange={(e) => setSelectedPackageName(e.target.value)}
                       disabled={loadingPackages || packages.length === 0}
-                      className={`bg-slate-50 border ${
-                        packageFetchError ? 'border-red-400 bg-red-50/20' : 'border-slate-200'
-                      } text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full font-bold disabled:opacity-60 disabled:cursor-not-allowed`}
+                      className={`bg-slate-50 border ${packageFetchError ? 'border-red-400 bg-red-50/20' : 'border-slate-200'
+                        } text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full font-bold disabled:opacity-60 disabled:cursor-not-allowed`}
                     >
                       <option value="">
                         {loadingPackages
                           ? '⏳ Memuat daftar paket anggota...'
                           : packages.length === 0
-                          ? '-- Tidak Ada Paket Tersedia --'
-                          : '-Pilih Paket Anggota-'}
+                            ? '-- Tidak Ada Paket Tersedia --'
+                            : '-Pilih Paket Anggota-'}
                       </option>
                       {packages.map((p, idx) => (
                         <option key={`${p.name}-${idx}`} value={p.name}>
@@ -750,7 +749,7 @@ export default function MemberPaymentPage() {
               <div className="p-4 flex flex-col items-center justify-center text-center">
                 <img
                   src="/logo-transparent.png"
-                  alt="Prabu Gym Logo"
+                  alt="PRABU GYM Logo"
                   className="h-14 w-auto object-contain"
                 />
                 <div className="text-center leading-none mt-2">
@@ -812,7 +811,7 @@ export default function MemberPaymentPage() {
               <div>
                 <div className="py-2 border-b border-black uppercase tracking-wider bg-slate-50 text-[10px]">Customer Service</div>
                 <div className="h-28" />
-                <div className="py-2 border-t border-black uppercase font-extrabold">{user?.full_name || 'Kasir Prabu GYM'}</div>
+                <div className="py-2 border-t border-black uppercase font-extrabold">{user?.full_name || 'Kasir PRABU GYM'}</div>
               </div>
             </div>
 

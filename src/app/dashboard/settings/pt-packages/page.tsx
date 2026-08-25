@@ -89,7 +89,7 @@ export default function PTPackagesPage() {
         duration_days: Number(durationDays),
         session_count: Number(sessionCount),
         price: Number(price),
-        created_by_name: user?.full_name || 'Prabu GYM Admin'
+        created_by_name: user?.full_name || 'PRABU GYM Admin'
       };
 
       if (step === 'create') {
@@ -126,7 +126,7 @@ export default function PTPackagesPage() {
     { key: 'duration_days', header: 'Jumlah Hari', render: (row) => `${row.duration_days}`, className: 'font-mono text-center' },
     { key: 'session_count', header: 'Jumlah Sesi', render: (row) => <span className="font-mono font-bold text-slate-800">{row.session_count}</span>, className: 'text-center' },
     { key: 'price', header: 'Harga Paket', render: (row) => <span className="font-bold text-slate-800">{formatIDR(row.price)}</span> },
-    { key: 'created_by_name', header: 'Nama Petugas', render: (row) => row.created_by_name || 'Prabu GYM Admin', className: 'text-slate-700' },
+    { key: 'created_by_name', header: 'Nama Petugas', render: (row) => row.created_by_name || 'PRABU GYM Admin', className: 'text-slate-700' },
     {
       key: 'actions',
       header: 'Aksi',

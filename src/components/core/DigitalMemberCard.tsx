@@ -191,7 +191,7 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
             <div className="relative z-10 pt-2 flex flex-col items-center justify-center w-full min-h-[105px] shrink-0">
               <img
                 src={logoDataUrl || '/logo-transparent.png'}
-                alt="Prabu Gym Logo"
+                alt="PRABU GYM Logo"
                 className="h-28 w-auto max-w-[180px] object-contain relative z-10 shrink-0"
                 loading="eager"
               />

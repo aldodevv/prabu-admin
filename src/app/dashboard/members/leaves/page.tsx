@@ -228,7 +228,7 @@ export default function MemberLeavesPage() {
     ]);
     exportToExcel({
       filename: 'Data_Cuti_Anggota_PrabuGym',
-      title: 'Data Cuti & Freeze Masa Aktif Anggota Prabu Gym',
+      title: 'Data Cuti & Freeze Masa Aktif Anggota PRABU GYM',
       headers,
       data,
     });

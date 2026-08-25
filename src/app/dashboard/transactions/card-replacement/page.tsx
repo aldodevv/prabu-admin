@@ -370,7 +370,7 @@ export default function CardReplacementPage() {
           <div className="space-y-6 animate-fadeIn">
             <PageHeader
               title="Pergantian Cabang / Mutasi"
-              description="Mutasi Anggota antar Cabang Prabu Gym"
+              description="Mutasi Anggota antar Cabang PRABU GYM"
               action={
                 <button
                   onClick={handleOpenAdd}

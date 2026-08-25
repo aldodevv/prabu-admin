@@ -72,7 +72,7 @@ export default function GymClassesPage() {
     try {
       const payload = {
         name,
-        created_by_name: user?.full_name || 'Prabu GYM Admin'
+        created_by_name: user?.full_name || 'PRABU GYM Admin'
       };
 
       if (step === 'create') {
@@ -102,7 +102,7 @@ export default function GymClassesPage() {
   const columns: Column<GymClass>[] = [
     { key: 'no', header: 'No', render: (_, i) => i + 1, className: 'w-12 text-center' },
     { key: 'name', header: 'Nama Kelas', render: (row) => <span className="font-bold text-slate-800">{row.name}</span> },
-    { key: 'created_by_name', header: 'Nama Petugas', render: (row) => row.created_by_name || 'Prabu GYM Admin', className: 'text-slate-700' },
+    { key: 'created_by_name', header: 'Nama Petugas', render: (row) => row.created_by_name || 'PRABU GYM Admin', className: 'text-slate-700' },
     {
       key: 'actions',
       header: 'Aksi',

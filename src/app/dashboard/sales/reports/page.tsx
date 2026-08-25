@@ -99,7 +99,7 @@ export default function LaporanPenjualanPage() {
   };
 
   const activeBranch = branches.find((b) => b.id === activeBranchID);
-  const activeBranchName = activeBranch ? activeBranch.name : 'Prabu Gym';
+  const activeBranchName = activeBranch ? activeBranch.name : 'PRABU GYM';
   const activeBranchCode = activeBranch ? activeBranch.code : 'LIMO';
 
   const formatInvoiceNumber = (txNumber: string) => {
@@ -180,7 +180,7 @@ export default function LaporanPenjualanPage() {
         {/* Dynamic Branch Tag */}
         {activeBranch && (
           <div className="px-3.5 py-1.5 border border-red-500 text-red-500 font-extrabold text-xs rounded-full uppercase tracking-wider bg-red-50/50 select-none">
-            Club {activeBranchName.replace('Prabu Gym ', '')}
+            Club {activeBranchName.replace('PRABU GYM ', '')}
           </div>
         )}
       </div>
@@ -310,7 +310,7 @@ export default function LaporanPenjualanPage() {
                     <tr>
                       <td className="py-2.5 px-4 font-semibold select-none">Nama Petugas</td>
                       <td className="py-2.5 px-4 text-slate-800 font-semibold uppercase">
-                        {user?.full_name || 'Kasir Prabu GYM'}
+                        {user?.full_name || 'Kasir PRABU GYM'}
                       </td>
                     </tr>
                   </tbody>
@@ -416,7 +416,7 @@ export default function LaporanPenjualanPage() {
               <div className="flex items-center gap-3">
                 <img
                   src="/logo-transparent.png"
-                  alt="Prabu Gym Logo"
+                  alt="PRABU GYM Logo"
                   className="h-12 w-auto object-contain"
                 />
                 <div className="text-left leading-none">

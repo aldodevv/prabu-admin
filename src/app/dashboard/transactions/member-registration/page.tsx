@@ -343,7 +343,7 @@ export default function MemberRegistrationPage() {
                 <div className="flex items-center gap-3">
                   <img
                     src="/logo-transparent.png"
-                    alt="Prabu Gym Logo"
+                    alt="PRABU GYM Logo"
                     className="h-12 w-auto object-contain"
                   />
                   <div className="text-left leading-none">
@@ -401,7 +401,7 @@ export default function MemberRegistrationPage() {
                 <div>
                   <div className="py-2 border-b border-black uppercase tracking-wider bg-slate-50 text-[10px]">Customer Service</div>
                   <div className="h-28" />
-                  <div className="py-2 border-t border-black uppercase font-extrabold">{user?.full_name || 'Kasir Prabu GYM'}</div>
+                  <div className="py-2 border-t border-black uppercase font-extrabold">{user?.full_name || 'Kasir PRABU GYM'}</div>
                 </div>
               </div>
 
@@ -614,16 +614,15 @@ export default function MemberRegistrationPage() {
                       value={packageName}
                       onChange={(e) => setPackageName(e.target.value)}
                       disabled={loadingPackages || packages.length === 0}
-                      className={`w-full bg-slate-50 border ${
-                        packageFetchError ? 'border-red-400 bg-red-50/20' : 'border-slate-300'
-                      } focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-bold disabled:opacity-60 disabled:cursor-not-allowed`}
+                      className={`w-full bg-slate-50 border ${packageFetchError ? 'border-red-400 bg-red-50/20' : 'border-slate-300'
+                        } focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-bold disabled:opacity-60 disabled:cursor-not-allowed`}
                     >
                       <option value="">
                         {loadingPackages
                           ? '⏳ Memuat daftar paket anggota...'
                           : packages.length === 0
-                          ? '-- Tidak Ada Paket Tersedia --'
-                          : '-Pilih Paket Anggota-'}
+                            ? '-- Tidak Ada Paket Tersedia --'
+                            : '-Pilih Paket Anggota-'}
                       </option>
                       {packages.map((pkg, idx) => (
                         <option key={`${pkg.name}-${idx}`} value={pkg.name}>

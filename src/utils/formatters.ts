@@ -202,7 +202,7 @@ export interface PTDetails {
 export function getPTDetailsFromNotes(notes: string = ''): PTDetails {
   const n = notes.trim();
   let packageName = 'PT 12 Sesi';
-  let trainerName = 'Pelatih Prabu GYM';
+  let trainerName = 'Pelatih PRABU GYM';
 
   // 1. Extract package name
   const ptMatch = n.match(/Pendaftaran Personal Trainer:\s*([^\-]+)/i) ||

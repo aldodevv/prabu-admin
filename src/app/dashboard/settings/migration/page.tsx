@@ -140,7 +140,7 @@ export default function MigrationPage() {
         </div>
       )}
 
-      {/* Main Form Container Card with Standard Prabu Gym Header */}
+      {/* Main Form Container Card with Standard PRABU GYM Header */}
       <div className="bg-white border border-slate-200 rounded shadow-xs overflow-hidden w-full">
         {/* Banner Header (Matching Existing Form Pages) */}
         <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
@@ -166,11 +166,10 @@ export default function MigrationPage() {
                     type="button"
                     disabled={loading}
                     onClick={() => setSelectedEntity(opt.id)}
-                    className={`p-3.5 rounded border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                      isSelected
+                    className={`p-3.5 rounded border text-left transition-all cursor-pointer flex flex-col justify-between ${isSelected
                         ? 'border-brand-cyan bg-cyan-50/40 shadow-xs ring-1 ring-brand-cyan'
                         : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700'
-                    } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <div>
                       <div className="flex items-center justify-between">
@@ -255,9 +254,8 @@ export default function MigrationPage() {
               type="button"
               disabled={loading}
               onClick={handleExecuteMigration}
-              className={`px-5 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-xs inline-flex items-center gap-2 ${
-                loading ? 'opacity-60 cursor-not-allowed' : ''
-              }`}
+              className={`px-5 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-xs inline-flex items-center gap-2 ${loading ? 'opacity-60 cursor-not-allowed' : ''
+                }`}
             >
               {loading ? (
                 <>

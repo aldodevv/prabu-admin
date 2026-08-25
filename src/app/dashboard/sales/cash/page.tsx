@@ -173,7 +173,7 @@ export default function TransaksiTunaiPage() {
   };
 
   const activeBranch = branches.find((b) => b.id === activeBranchID);
-  const activeBranchName = activeBranch ? activeBranch.name : 'Prabu Gym';
+  const activeBranchName = activeBranch ? activeBranch.name : 'PRABU GYM';
   const activeBranchCode = activeBranch ? activeBranch.code : 'LIMO';
   const branchAddress = getBranchAddress(activeBranchCode);
 
@@ -220,7 +220,7 @@ export default function TransaksiTunaiPage() {
         {/* Dynamic Branch Tag */}
         {activeBranch && (
           <div className="px-3.5 py-1.5 border border-red-500 text-red-500 font-extrabold text-xs rounded-full uppercase tracking-wider bg-red-50/50 select-none">
-            Club {activeBranchName.replace('Prabu Gym ', '')}
+            Club {activeBranchName.replace('PRABU GYM ', '')}
           </div>
         )}
       </div>
@@ -463,7 +463,7 @@ export default function TransaksiTunaiPage() {
               <div className="flex flex-col items-center justify-center text-center space-y-1 mb-3">
                 <img
                   src="/logo-transparent.png"
-                  alt="Prabu Gym Logo"
+                  alt="PRABU GYM Logo"
                   className="h-16 w-auto object-contain mb-1"
                 />
                 <div className="text-[10px] text-center font-bold whitespace-pre-line leading-tight">
@@ -558,7 +558,7 @@ export default function TransaksiTunaiPage() {
             <div className="flex flex-col items-center justify-center text-center space-y-1 mb-2">
               <img
                 src="/logo-transparent.png"
-                alt="Prabu Gym Logo"
+                alt="PRABU GYM Logo"
                 className="h-10 w-auto object-contain mb-1"
               />
               <div className="text-[8px] text-center font-bold whitespace-pre-line leading-tight">

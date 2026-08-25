@@ -18,11 +18,11 @@ export function getBranchAddress(branchCodeOrName?: string): string {
 }
 
 /**
- * Returns formatted display name for a given branch code or branch name (e.g. "Prabu Gym Grogol")
+ * Returns formatted display name for a given branch code or branch name (e.g. "PRABU GYM Grogol")
  */
 export function getBranchDisplayName(branchCodeOrName?: string): string {
   if (!branchCodeOrName) return BRANCH_NAMES.GROGOL;
-  if (branchCodeOrName.startsWith('Prabu Gym ')) return branchCodeOrName;
+  if (branchCodeOrName.startsWith('PRABU GYM ')) return branchCodeOrName;
   const upper = branchCodeOrName.toUpperCase();
   if (upper.includes('PITARA') || upper.includes('PTR') || upper.includes('PANCORAN')) {
     return BRANCH_NAMES.PITARA;

@@ -163,7 +163,7 @@ export default function TrainerSessionsPage() {
       time: rekapTime,
       trainer_name: rekapTrainerName,
       used_sessions: rekapUsedCount,
-      admin_name: user?.full_name || 'Kasir Prabu GYM',
+      admin_name: user?.full_name || 'Kasir PRABU GYM',
       notes: rekapNotes,
     };
 

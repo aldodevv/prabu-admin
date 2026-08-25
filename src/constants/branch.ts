@@ -25,7 +25,7 @@ export const BRANCH_ADDRESSES: Record<string, string> = {
 };
 
 export const BRANCH_NAMES: Record<string, string> = {
-  GROGOL: 'Prabu Gym Grogol',
-  LIMO: 'Prabu Gym Limo',
-  PITARA: 'Prabu Gym Pitara',
+  GROGOL: 'PRABU GYM Grogol',
+  LIMO: 'PRABU GYM Limo',
+  PITARA: 'PRABU GYM Pitara',
 };

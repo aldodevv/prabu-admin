@@ -385,7 +385,7 @@ export default function WorkoutReportsPage() {
             ppnFormat,
             totalTransactions: filteredList.length,
             grandTotal,
-            cashierName: user?.full_name || 'Staff Prabu Gym',
+            cashierName: user?.full_name || 'Staff PRABU GYM',
             registrations: filteredList,
           }}
         />
@@ -406,7 +406,7 @@ export default function WorkoutReportsPage() {
             paymentMethod: selectedReceiptItem.payment_method,
             price: selectedReceiptItem.total_amount,
             trainerName: selectedReceiptItem.trainer_name,
-            cashierName: selectedReceiptItem.admin_name || user?.full_name || 'Staff Prabu Gym'
+            cashierName: selectedReceiptItem.admin_name || user?.full_name || 'Staff PRABU GYM'
           }}
         />
       )}
