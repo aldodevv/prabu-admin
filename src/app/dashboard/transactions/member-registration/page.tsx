@@ -45,11 +45,11 @@ export default function MemberRegistrationPage() {
   // Form Package states
   const [packageName, setPackageName] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
-  const [clubType, setClubType] = useState('One Club');
   const [notes, setNotes] = useState('');
 
   // Reactive dates
   const [startDateInput, setStartDateInput] = useState('');
+  const canEditTransactionDate = user?.role === 'admin' || user?.role === 'owner' || user?.role === 'developer';
 
   // UI state
   const [loading, setLoading] = useState(false);
@@ -118,8 +118,8 @@ export default function MemberRegistrationPage() {
       return;
     }
 
-    if (!fullName || !gender || !paymentMethod || !clubType) {
-      setErrorMsg('Harap lengkapi semua field bertanda wajib (Nama, Jenis Kelamin, Paket, Jenis Pembayaran, Tipe Club)');
+    if (!fullName || !gender || !paymentMethod) {
+      setErrorMsg('Harap lengkapi semua field bertanda wajib (Nama, Jenis Kelamin, Paket, Jenis Pembayaran)');
       return;
     }
 
@@ -137,7 +137,7 @@ export default function MemberRegistrationPage() {
       address: address || undefined,
       date_of_birth: dob || undefined,
       gender,
-      membership_type: `${packageName} (${clubType})`,
+      membership_type: packageName,
       membership_start: startDateInput,
       membership_end: calculatedEnd,
     };
@@ -175,7 +175,7 @@ export default function MemberRegistrationPage() {
 
       // 3. Create the associated sales transaction
       setLoadingText('Menyimpan Transaksi...');
-      const txNotes = `Pendaftaran Anggota: ${fullName} - Paket: ${packageName} (${clubType})${socialMedia ? ` - Sosial Media: ${socialMedia}` : ''}.${notes ? ` Catatan: ${notes}` : ''}`;
+      const txNotes = `Pendaftaran Anggota: ${fullName} - Paket: ${packageName}${socialMedia ? ` - Sosial Media: ${socialMedia}` : ''}.${notes ? ` Catatan: ${notes}` : ''}`;
       const txBody = {
         member_id: createdMember.id,
         notes: txNotes.trim(),
@@ -215,7 +215,6 @@ export default function MemberRegistrationPage() {
       setPhotoBase64('');
       setPackageName('');
       setPaymentMethod('');
-      setClubType('One Club');
       setNotes('');
     } catch (err: any) {
       setErrorMsg(err.message || 'Terjadi kesalahan sistem');
@@ -449,11 +448,17 @@ export default function MemberRegistrationPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Tanggal Transaksi
-                    <FieldInfo text="Default hari ini dan akses penggantian tanggal hanya bisa di lakukan oleh owner." />
+                    <FieldInfo text="Default hari ini. Hanya role admin, owner, dan developer yang dapat mengubah tanggal transaksi." />
                   </label>
                   <DatePicker
                     value={startDateInput}
-                    onChange={(val) => setStartDateInput(val)}
+                    onChange={(val) => {
+                      if (canEditTransactionDate) {
+                        setStartDateInput(val);
+                      }
+                    }}
+                    readOnly={!canEditTransactionDate}
+                    disabled={!canEditTransactionDate}
                   />
                 </div>
 
@@ -663,21 +668,6 @@ export default function MemberRegistrationPage() {
                   </select>
                 </div>
 
-                {/* Tipe Club */}
-                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-sm font-bold text-slate-700 text-left">
-                    Tipe Club *
-                  </label>
-                  <select
-                    required
-                    value={clubType}
-                    onChange={(e) => setClubType(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-bold"
-                  >
-                    <option value="One Club">One Club</option>
-                  </select>
-                </div>
-
                 {/* Selected Package Details */}
                 {selectedPkg && (
                   <div className="grid grid-cols-[240px_1fr] gap-6 items-start max-sm:grid-cols-1 bg-slate-50 p-4 border border-slate-200 rounded">
@@ -700,12 +690,12 @@ export default function MemberRegistrationPage() {
                           <DatePicker
                             value={startDateInput}
                             onChange={(val) => {
-                              if (user?.role === 'owner' || user?.role === 'developer') {
+                              if (canEditTransactionDate) {
                                 setStartDateInput(val);
                               }
                             }}
-                            readOnly={user?.role !== 'owner' && user?.role !== 'developer'}
-                            disabled={user?.role !== 'owner' && user?.role !== 'developer'}
+                            readOnly={!canEditTransactionDate}
+                            disabled={!canEditTransactionDate}
                           />
                         </div>
                       </div>

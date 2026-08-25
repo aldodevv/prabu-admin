@@ -154,8 +154,8 @@ export default function DistributorsPage() {
         const res = await distributorsApi.create({
           branch_id: activeBranchID || undefined,
           name,
-          phone_telp: phoneTelp,
-          address,
+          phone_telp: phoneTelp.trim() || '-',
+          address: address.trim() || '-',
         });
         if (res.success) {
           setSuccessMsg('Distributor berhasil ditambahkan');
@@ -167,8 +167,8 @@ export default function DistributorsPage() {
       } else if (view === 'edit' && selectedDistributor) {
         const res = await distributorsApi.update(selectedDistributor.id, {
           name,
-          phone_telp: phoneTelp,
-          address,
+          phone_telp: phoneTelp.trim() || '-',
+          address: address.trim() || '-',
         });
         if (res.success) {
           setSuccessMsg('Distributor berhasil diperbarui');
@@ -361,7 +361,7 @@ export default function DistributorsPage() {
                 {/* Telepon */}
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left">
-                    Telepon
+                    Telepon <span className="text-slate-400 font-normal ml-1">(Opsional)</span>
                   </label>
                   <input
                     type="tel"
@@ -375,7 +375,7 @@ export default function DistributorsPage() {
                 {/* Alamat */}
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-start max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left mt-2">
-                    Alamat
+                    Alamat <span className="text-slate-400 font-normal ml-1">(Opsional)</span>
                   </label>
                   <textarea
                     value={address}

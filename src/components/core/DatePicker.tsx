@@ -13,6 +13,7 @@ interface DatePickerProps {
   className?: string;
   minYear?: number;
   maxYear?: number;
+  align?: 'left' | 'right';
 }
 
 const MONTH_NAMES = [
@@ -83,7 +84,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   required = false,
   className = '',
   minYear = 1940,
-  maxYear = 2050
+  maxYear = 2050,
+  align = 'left'
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputText, setInputText] = useState(() => isoToDmy(value));
@@ -275,7 +277,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
       {/* Popover Calendar Modal */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1.5 z-50 w-72 bg-white rounded-xl shadow-2xl border border-slate-200 p-3.5 animate-fadeIn select-none">
+        <div className={`absolute top-full ${align === 'right' ? 'right-0' : 'left-0'} mt-1.5 z-50 w-72 bg-white rounded-xl shadow-2xl border border-slate-200 p-3.5 animate-fadeIn select-none`}>
           {/* Header Navigation */}
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 gap-1">
             <button

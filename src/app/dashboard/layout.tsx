@@ -20,6 +20,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   // Compact sidebar active group dropdown state
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const [mobileActiveGroup, setMobileActiveGroup] = useState<string | null>(null);
+  const [isSidebarHidden, setIsSidebarHidden] = useState(false);
+  const [isSubmenuHidden, setIsSubmenuHidden] = useState(false);
 
   // Helper to dynamically resolve lucide icon components by their string name
   const resolveIcon = (name: string) => {
@@ -80,8 +82,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const hasSubmenu = activeGroup && activeGroup !== 'beranda';
+  const hasSubmenu = Boolean(activeGroup && activeGroup !== 'beranda');
   const activeGroupConfig = filteredNavigation.find(g => g.id === activeGroup);
+  const showSubmenu = !isSidebarHidden && !isSubmenuHidden && hasSubmenu && !!activeGroupConfig;
 
   const MenuIcon = resolveIcon('Menu');
   const XIcon = resolveIcon('X');
@@ -93,13 +96,22 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-brand-bg flex font-sans text-slate-800">
 
       {/* 1. Main Sidebar - Compact Desktop (110px width) */}
-      <aside className="w-27.5 bg-brand-dark flex flex-col justify-between max-lg:hidden fixed h-screen z-40 select-none shadow-md">
+      <aside className={`w-27.5 bg-brand-dark flex flex-col justify-between max-lg:hidden fixed h-screen z-40 select-none shadow-md transition-transform duration-300 ${
+        isSidebarHidden ? '-translate-x-full' : 'translate-x-0'
+      }`}>
         <div className="flex flex-col h-full">
-          {/* Prabu Gym Brand Banner */}
-          <div className="h-16 bg-brand-red flex items-center justify-center text-white flex-shrink-0">
-            <span className="font-heading text-base tracking-widest font-extrabold text-center leading-tight">
+          {/* Prabu Gym Brand Banner with Toggle */}
+          <div className="h-16 bg-brand-red flex items-center justify-between px-3 text-white flex-shrink-0">
+            <span className="font-heading text-base tracking-widest font-extrabold text-center leading-tight pl-1">
               PRABU
             </span>
+            <button
+              onClick={() => setIsSidebarHidden(true)}
+              title="Sembunyikan Sidebar"
+              className="p-1 hover:bg-black/20 rounded transition-colors text-white/90 hover:text-white cursor-pointer"
+            >
+              <Icons.ChevronLeft className="w-4 h-4" />
+            </button>
           </div>
 
           {/* Navigation Icon List */}
@@ -118,7 +130,12 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                     if (isBeranda) {
                       router.push(ROUTES.DASHBOARD);
                     } else {
-                      setActiveGroup(activeGroup === group.id ? null : group.id);
+                      if (activeGroup === group.id) {
+                        setIsSubmenuHidden(!isSubmenuHidden);
+                      } else {
+                        setActiveGroup(group.id);
+                        setIsSubmenuHidden(false);
+                      }
                     }
                   }}
                   className={`w-full flex flex-col items-center justify-center py-5 text-center transition-all duration-150 relative cursor-pointer border-b border-slate-700/10 ${isGroupActive
@@ -127,7 +144,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                     }`}
                 >
                   {/* Arrow Indicator pointing right to sub-menu */}
-                  {isGroupActive && !isBeranda && (
+                  {isGroupActive && !isBeranda && !isSubmenuHidden && (
                     <div className="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-r-[6px] border-r-[#2A2F35] z-50" />
                   )}
 
@@ -143,13 +160,24 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* 2. Secondary Sidebar Drawer - Desktop (Sub-items) */}
-      {hasSubmenu && activeGroupConfig && (
-        <aside className="w-64 bg-[#2A2F35] text-slate-300 fixed left-[110px] top-0 bottom-0 z-30 flex flex-col shadow-lg border-r border-slate-800 max-lg:hidden animate-fade-in select-none">
+      {!isSidebarHidden && hasSubmenu && activeGroupConfig && (
+        <aside
+          className={`w-64 bg-[#2A2F35] text-slate-300 fixed left-[110px] top-0 bottom-0 z-30 flex flex-col shadow-lg border-r border-slate-800 max-lg:hidden select-none transition-all duration-300 ${
+            isSubmenuHidden ? '-translate-x-full opacity-0 pointer-events-none' : 'translate-x-0 opacity-100'
+          }`}
+        >
           {/* Top header to align with primary header */}
-          <div className="h-16 border-b border-slate-800 flex items-center px-5 flex-shrink-0 bg-slate-900/10">
+          <div className="h-16 border-b border-slate-800 flex items-center justify-between px-5 flex-shrink-0 bg-slate-900/10">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest font-accent">
               Menu {activeGroupConfig.label}
             </span>
+            <button
+              onClick={() => setIsSubmenuHidden(true)}
+              title="Sembunyikan Sub Menu"
+              className="p-1 hover:bg-slate-700/60 rounded text-slate-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <Icons.ChevronLeft className="w-4 h-4" />
+            </button>
           </div>
 
           <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
@@ -200,8 +228,13 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
       {/* 3. Main Content Wrapper */}
       <div
-        className={`flex-1 flex flex-col min-h-screen w-full max-w-full overflow-x-hidden transition-all duration-300 ${hasSubmenu ? 'lg:pl-[366px]' : 'lg:pl-[110px]'
-          }`}
+        className={`flex-1 flex flex-col min-h-screen w-full max-w-full overflow-x-hidden transition-all duration-300 ${
+          isSidebarHidden
+            ? 'lg:pl-0'
+            : showSubmenu
+            ? 'lg:pl-[366px]'
+            : 'lg:pl-[110px]'
+        }`}
       >
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-3 sm:px-6 sticky top-0 z-30 shadow-sm w-full max-w-full">
@@ -212,6 +245,30 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           >
             <MenuIcon className="w-6 h-6" />
           </button>
+
+          {/* Desktop toggle when sidebar is hidden */}
+          {isSidebarHidden && (
+            <button
+              onClick={() => setIsSidebarHidden(false)}
+              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-red hover:bg-red-700 text-white rounded text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-xs mr-3"
+              title="Tampilkan Sidebar"
+            >
+              <Icons.ChevronRight className="w-4 h-4" />
+              <span>PRABU</span>
+            </button>
+          )}
+
+          {/* Desktop toggle when sub-menu drawer is hidden */}
+          {!isSidebarHidden && hasSubmenu && isSubmenuHidden && activeGroupConfig && (
+            <button
+              onClick={() => setIsSubmenuHidden(false)}
+              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#2A2F35] hover:bg-slate-700 text-slate-200 hover:text-white rounded text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-xs mr-3 border border-slate-700/50"
+              title="Tampilkan Sub Menu"
+            >
+              <Icons.ChevronRight className="w-4 h-4 text-brand-red" />
+              <span>Menu {activeGroupConfig.label}</span>
+            </button>
+          )}
 
           {/* Easter Egg Mode Main Badge */}
           {isPajakMode && (

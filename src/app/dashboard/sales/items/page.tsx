@@ -604,13 +604,22 @@ export default function ProductsPage() {
         <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
           <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex justify-between items-center select-none">
             <span className="text-sm uppercase tracking-wider">Detail Product</span>
-            <button
-              onClick={() => setView('list')}
-              className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#DC3545] hover:bg-[#C82333] text-white text-xs font-semibold rounded cursor-pointer transition-colors"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Kembali
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleOpenEdit(selectedProduct)}
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-white text-slate-800 hover:bg-slate-100 text-xs font-bold rounded cursor-pointer transition-colors shadow-xs"
+              >
+                <Edit2 className="w-3.5 h-3.5 text-brand-cyan" />
+                Edit
+              </button>
+              <button
+                onClick={() => setView('list')}
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#DC3545] hover:bg-[#C82333] text-white text-xs font-semibold rounded cursor-pointer transition-colors"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Kembali
+              </button>
+            </div>
           </div>
 
           <div className="p-6 space-y-6">

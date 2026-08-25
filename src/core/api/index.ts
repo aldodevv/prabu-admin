@@ -79,6 +79,15 @@ export const transactionsApi = {
     total_amount?: number;
     items?: { product_id: string; quantity: number }[];
   }) => api.post<Transaction>('/admin/transactions', data),
+  update: (id: string, data: {
+    transaction_date?: string;
+    package_name?: string;
+    membership_start?: string;
+    membership_end?: string;
+    notes?: string;
+    total_amount?: number;
+    payment_method?: string;
+  }) => api.put<Transaction>(`/admin/transactions/${id}`, data),
   delete: (id: string) => api.delete<void>(`/admin/transactions/${id}`),
 };
 

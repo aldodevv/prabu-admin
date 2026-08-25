@@ -156,20 +156,26 @@ export function getPaymentMethodFromNotes(notes: string = ''): string {
  * Parse membership package name from transaction notes
  */
 export function getMembershipTypeFromNotes(notes: string = ''): string {
-  if (!notes) return '1 Bulan (Daftar)';
+  if (!notes) return '';
   const n = notes.trim();
 
-  // 1. PT Registration: "Pendaftaran Personal Trainer: PT 12 Sesi - Metode: ..."
+  // 1. Check if "Paket:" is explicitly stated (e.g. "Paket: 12 bulan (Daftar) (One Club)")
+  const paketMatch = n.match(/Paket:\s*([^\-,.\n]+(?:\([^)]*\))?)/i);
+  if (paketMatch && paketMatch[1]) {
+    let p = paketMatch[1].trim();
+    p = p.replace(/\s*\(One Club\)/i, '').replace(/\s*\(All Club\)/i, '').trim();
+    if (p) return p;
+  }
+
+  // 2. PT Registration: "Pendaftaran Personal Trainer: PT 12 Sesi - Metode: ..."
   const ptMatch = n.match(/Pendaftaran Personal Trainer:\s*([^\-]+)/i) || n.match(/Paket PT:\s*([^\-]+)/i);
   if (ptMatch && ptMatch[1]) return ptMatch[1].trim();
 
-  // 2. Member Registration / Renewal: "Pendaftaran Anggota: ... - 1 Bulan (Daftar)" or "Perpanjang Paket: 12 Bulan"
-  const memMatch = n.match(/Perpanjang Paket:\s*([^\-]+)/i) ||
-    n.match(/Pendaftaran Anggota:\s*([^\-]+)/i) ||
-    n.match(/Paket:\s*([^\-,.]+)/i);
+  // 3. Member Registration / Renewal: "Perpanjang Paket: 12 Bulan"
+  const memMatch = n.match(/Perpanjang Paket:\s*([^\-,.]+)/i);
   if (memMatch && memMatch[1]) return memMatch[1].trim();
 
-  // 3. Check for specific known package keywords
+  // 4. Check for specific known package keywords
   for (const pkg of GYM_PACKAGES) {
     if (n.toLowerCase().includes(pkg.name.toLowerCase())) {
       return pkg.name;
@@ -181,7 +187,7 @@ export function getMembershipTypeFromNotes(notes: string = ''): string {
     }
   }
 
-  return '1 Bulan (Daftar)';
+  return '';
 }
 
 export interface PTDetails {

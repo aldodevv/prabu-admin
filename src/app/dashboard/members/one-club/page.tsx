@@ -3,13 +3,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/context/AuthContext';
-import { membersApi, transactionsApi } from '@/core/api';
+import { membersApi, transactionsApi, packagesApi } from '@/core/api';
 import { formatDateLabel, formatIDR, getMembershipTypeFromNotes, getPaymentMethodFromNotes, getPTDetailsFromNotes } from '@/core/constants';
 import { Member, Transaction } from '@/core/types';
 import { PageHeader } from '@/components/core/PageHeader';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 import { DataTable, Column } from '@/components/core/DataTable';
-import { Search, Eye, Edit, Trash2, ArrowLeft, Save, Printer, FileText, FileSpreadsheet, RotateCcw, Download, CreditCard } from 'lucide-react';
+import { Search, Eye, Edit, Trash2, ArrowLeft, Save, Printer, FileText, FileSpreadsheet, RotateCcw, Download, CreditCard, X } from 'lucide-react';
 import { exportToExcel } from '@/lib/excelExport';
 import { compressImage } from '@/utils/imageCompressor';
 import { uploadToCloudflare } from '@/lib/cloudflare';
@@ -17,6 +17,7 @@ import { formatPhotoUrl } from '@/lib/api';
 import { permissions } from '@/lib/permissions';
 import { FetchErrorAlert } from '@/components/core/FetchErrorAlert';
 import { OfficialReceiptTemplate, OfficialPTReceiptTemplate, ThermalReceiptTemplate } from '@/components/core/PrintTemplates';
+import { DatePicker } from '@/components/core/DatePicker';
 
 const DigitalMemberCard = dynamic(
   () => import('@/components/core/DigitalMemberCard').then((mod) => mod.DigitalMemberCard),
@@ -98,7 +99,41 @@ export default function OneClubMembersPanel() {
   const [receiptTx, setReceiptTx] = useState<Transaction | null>(null);
   const [thermalStrukTx, setThermalStrukTx] = useState<Transaction | null>(null);
 
+  // RBAC Permission for editing & deleting transactions on this table: developer, owner, admin
+  const canEditOrDeleteTx = user?.role === 'developer' || user?.role === 'owner' || user?.role === 'admin';
+
+  // Package options for edit dropdown
+  const [membershipPackages, setMembershipPackages] = useState<{ id: string; name: string }[]>([]);
+  const [ptPackages, setPtPackages] = useState<{ id: string; name: string }[]>([]);
+
+  // Edit Transaction Modal states
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+  const [editingTxType, setEditingTxType] = useState<'anggota' | 'latihan'>('anggota');
+  const [editTxDate, setEditTxDate] = useState('');
+  const [editTxPackage, setEditTxPackage] = useState('');
+  const [editTxStartDate, setEditTxStartDate] = useState('');
+  const [editTxEndDate, setEditTxEndDate] = useState('');
+  const [editTxNotes, setEditTxNotes] = useState('');
+  const [savingTx, setSavingTx] = useState(false);
+  const [editTxError, setEditTxError] = useState('');
+  const [editTxSuccess, setEditTxSuccess] = useState('');
+
+  // Delete Transaction Modal states
+  const [txToDelete, setTxToDelete] = useState<Transaction | null>(null);
+  const [deletingTx, setDeletingTx] = useState(false);
+  const [deleteTxError, setDeleteTxError] = useState('');
+
   const initialSearchHandledRef = useRef(false);
+
+  // Fetch package lists for dropdown options from global settings
+  useEffect(() => {
+    packagesApi.listMembershipPackages().then(res => {
+      if (res.success && res.data) setMembershipPackages(res.data);
+    }).catch(() => {});
+    packagesApi.listPTPackages().then(res => {
+      if (res.success && res.data) setPtPackages(res.data);
+    }).catch(() => {});
+  }, [activeBranchID]);
 
   useEffect(() => {
     if (!initialSearchHandledRef.current && typeof window !== 'undefined') {
@@ -231,6 +266,134 @@ export default function OneClubMembersPanel() {
       console.error(err);
     } finally {
       setLoadingTransactions(false);
+    }
+  };
+
+  const handleOpenEditTx = (tx: Transaction, type: 'anggota' | 'latihan') => {
+    setEditingTx(tx);
+    setEditingTxType(type);
+    const txDate = tx.transaction_date ? tx.transaction_date.split('T')[0] : new Date().toISOString().split('T')[0];
+    setEditTxDate(txDate);
+
+    if (type === 'anggota') {
+      const parsedPkg = getMembershipTypeFromNotes(tx.notes || '');
+      const matchedPkg = membershipPackages.find(
+        p => p.name.toLowerCase().trim() === parsedPkg.toLowerCase().trim() ||
+             p.name.toLowerCase().trim() === (selectedMember?.membership_type || '').toLowerCase().trim()
+      );
+      setEditTxPackage(matchedPkg ? matchedPkg.name : (parsedPkg || selectedMember?.membership_type || ''));
+      setEditTxStartDate(selectedMember?.membership_start ? selectedMember.membership_start.split('T')[0] : txDate);
+      setEditTxEndDate(selectedMember?.membership_end ? selectedMember.membership_end.split('T')[0] : txDate);
+    } else {
+      const ptInfo = getPTDetailsFromNotes(tx.notes || '');
+      const matchedPt = ptPackages.find(
+        p => p.name.toLowerCase().trim() === (ptInfo?.packageName || '').toLowerCase().trim()
+      );
+      setEditTxPackage(matchedPt ? matchedPt.name : (ptInfo?.packageName || ''));
+      setEditTxStartDate('');
+      setEditTxEndDate('');
+    }
+    setEditTxNotes(tx.notes || '');
+    setEditTxError('');
+    setEditTxSuccess('');
+  };
+
+  const handleSaveEditTx = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTx) return;
+    setSavingTx(true);
+    setEditTxError('');
+    setEditTxSuccess('');
+
+    try {
+      const payload: {
+        transaction_date?: string;
+        package_name?: string;
+        membership_start?: string;
+        membership_end?: string;
+        notes?: string;
+      } = {
+        transaction_date: editTxDate,
+        notes: editTxNotes,
+      };
+
+      if (editingTxType === 'anggota') {
+        payload.package_name = editTxPackage;
+        payload.membership_start = editTxStartDate;
+        payload.membership_end = editTxEndDate;
+      } else {
+        payload.package_name = editTxPackage;
+      }
+
+      const res = await transactionsApi.update(editingTx.id, payload);
+      if (res.success) {
+        setEditTxSuccess('Transaksi pembayaran berhasil diperbarui.');
+
+        // Update local transaction state
+        setMemberTransactions(prev => prev.map(item => {
+          if (item.id === editingTx.id) {
+            return {
+              ...item,
+              transaction_date: editTxDate,
+              notes: editTxNotes,
+            };
+          }
+          return item;
+        }));
+
+        // If editing anggota, update selected member
+        if (selectedMember && editingTxType === 'anggota') {
+          setSelectedMember(prev => prev ? {
+            ...prev,
+            membership_type: editTxPackage || prev.membership_type,
+            membership_start: editTxStartDate || prev.membership_start,
+            membership_end: editTxEndDate || prev.membership_end,
+          } : null);
+
+          setMembers(prev => prev.map(m => {
+            if (m.id === selectedMember.id) {
+              return {
+                ...m,
+                membership_type: editTxPackage || m.membership_type,
+                membership_start: editTxStartDate || m.membership_start,
+                membership_end: editTxEndDate || m.membership_end,
+              };
+            }
+            return m;
+          }));
+        }
+
+        setTimeout(() => {
+          setEditingTx(null);
+          setEditTxSuccess('');
+        }, 800);
+      } else {
+        setEditTxError(res.error || 'Gagal memperbarui data transaksi pembayaran.');
+      }
+    } catch (err: any) {
+      setEditTxError(err.message || 'Terjadi kesalahan pada sistem.');
+    } finally {
+      setSavingTx(false);
+    }
+  };
+
+  const handleConfirmDeleteTx = async () => {
+    if (!txToDelete) return;
+    setDeletingTx(true);
+    setDeleteTxError('');
+
+    try {
+      const res = await transactionsApi.delete(txToDelete.id);
+      if (res.success) {
+        setMemberTransactions(prev => prev.filter(item => item.id !== txToDelete.id));
+        setTxToDelete(null);
+      } else {
+        setDeleteTxError(res.error || 'Gagal menghapus transaksi pembayaran.');
+      }
+    } catch (err: any) {
+      setDeleteTxError(err.message || 'Terjadi kesalahan saat menghapus transaksi.');
+    } finally {
+      setDeletingTx(false);
     }
   };
 
@@ -646,7 +809,7 @@ export default function OneClubMembersPanel() {
                                   <td className="py-2.5 px-3 border-r border-slate-100 text-slate-500 font-normal leading-relaxed">{tx.notes || '-'}</td>
                                   <td className="py-2.5 px-3 border-r border-slate-100 text-slate-600">{tx.admin_name}</td>
                                   <td className="py-2.5 px-3 text-center select-none no-print">
-                                    <div className="flex items-center justify-center gap-1.5">
+                                    <div className="flex items-center justify-center gap-1.5 flex-wrap">
                                       <button
                                         onClick={() => setThermalStrukTx(tx)}
                                         title="Cetak Struk Thermal (POS)"
@@ -663,6 +826,26 @@ export default function OneClubMembersPanel() {
                                         <FileText className="w-3.5 h-3.5" />
                                         <span>Receipt</span>
                                       </button>
+                                      {canEditOrDeleteTx && (
+                                        <>
+                                          <button
+                                            onClick={() => handleOpenEditTx(tx, 'anggota')}
+                                            title="Ubah Data Transaksi Pembayaran"
+                                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
+                                          >
+                                            <Edit className="w-3.5 h-3.5" />
+                                            <span>Edit</span>
+                                          </button>
+                                          <button
+                                            onClick={() => { setTxToDelete(tx); setDeleteTxError(''); }}
+                                            title="Hapus Transaksi Pembayaran"
+                                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#DC3545] hover:bg-[#c82333] text-white text-[10px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                            <span>Hapus</span>
+                                          </button>
+                                        </>
+                                      )}
                                     </div>
                                   </td>
                                 </tr>
@@ -705,7 +888,7 @@ export default function OneClubMembersPanel() {
                                 <td className="py-2.5 px-3 border-r border-slate-100 text-right text-slate-800 font-black">{formatIDR(tx.total_amount)}</td>
                                 <td className="py-2.5 px-3 border-r border-slate-100 text-slate-600">{tx.admin_name}</td>
                                 <td className="py-2.5 px-3 text-center select-none no-print">
-                                  <div className="flex items-center justify-center gap-1.5">
+                                  <div className="flex items-center justify-center gap-1.5 flex-wrap">
                                     <button
                                       onClick={() => setThermalStrukTx(tx)}
                                       title="Cetak Struk Thermal (POS)"
@@ -722,6 +905,26 @@ export default function OneClubMembersPanel() {
                                       <FileText className="w-3.5 h-3.5" />
                                       <span>Receipt</span>
                                     </button>
+                                    {canEditOrDeleteTx && (
+                                      <>
+                                        <button
+                                          onClick={() => handleOpenEditTx(tx, 'latihan')}
+                                          title="Ubah Data Transaksi Pembayaran"
+                                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
+                                        >
+                                          <Edit className="w-3.5 h-3.5" />
+                                          <span>Edit</span>
+                                        </button>
+                                        <button
+                                          onClick={() => { setTxToDelete(tx); setDeleteTxError(''); }}
+                                          title="Hapus Transaksi Pembayaran"
+                                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#DC3545] hover:bg-[#c82333] text-white text-[10px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                          <span>Hapus</span>
+                                        </button>
+                                      </>
+                                    )}
                                   </div>
                                 </td>
                               </tr>
@@ -980,6 +1183,266 @@ export default function OneClubMembersPanel() {
             notes: thermalStrukTx.notes || ''
           }}
         />
+      )}
+
+      {/* Edit Transaction Modal */}
+      {editingTx && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full overflow-visible border border-slate-200">
+            <div className="bg-[#17A2B8] px-5 py-3.5 text-white flex items-center justify-between rounded-t-xl">
+              <div className="flex items-center gap-2 font-heading font-extrabold text-sm uppercase tracking-wider">
+                <Edit className="w-4 h-4" />
+                <span>
+                  {editingTxType === 'anggota'
+                    ? 'Ubah Transaksi Pembayaran Anggota'
+                    : 'Ubah Transaksi Pembayaran Latihan'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingTx(null)}
+                className="text-white/80 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {editTxError && (
+              <div className="p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-bold uppercase tracking-wider">
+                {editTxError}
+              </div>
+            )}
+
+            {editTxSuccess && (
+              <div className="p-3 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-700 text-xs font-bold uppercase tracking-wider">
+                {editTxSuccess}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveEditTx} className="p-6 space-y-4 text-xs text-slate-700">
+              {/* Nomor Transaksi (Read-only) */}
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                  Nomor Transaksi
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  disabled
+                  value={editingTx.transaction_number || '-'}
+                  className="bg-slate-100 border border-slate-300 text-slate-500 px-3 py-2 text-xs rounded w-full font-mono font-bold"
+                />
+              </div>
+
+              {/* Total Pembayaran (Read-only) */}
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                  Total Pembayaran
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  disabled
+                  value={formatIDR(editingTx.total_amount)}
+                  className="bg-slate-100 border border-slate-300 text-slate-800 px-3 py-2 text-xs rounded w-full font-black"
+                />
+              </div>
+
+              {/* Tanggal Pembayaran (Editable) */}
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                  Tanggal Pembayaran
+                </label>
+                <DatePicker
+                  value={editTxDate}
+                  onChange={setEditTxDate}
+                />
+              </div>
+
+              {/* Paket Anggota / Latihan (Editable) */}
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                  {editingTxType === 'anggota' ? 'Paket Anggota' : 'Paket Latihan'}
+                </label>
+                {editingTxType === 'anggota' ? (
+                  <select
+                    value={editTxPackage}
+                    onChange={(e) => setEditTxPackage(e.target.value)}
+                    className="bg-slate-50 border border-slate-300 text-slate-800 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full font-bold uppercase cursor-pointer"
+                  >
+                    <option value="">-- Pilih Paket Anggota --</option>
+                    {membershipPackages.map((pkg) => (
+                      <option key={pkg.id} value={pkg.name}>
+                        {pkg.name}
+                      </option>
+                    ))}
+                    {editTxPackage && !membershipPackages.some(p => p.name.toLowerCase() === editTxPackage.toLowerCase()) && (
+                      <option value={editTxPackage}>{editTxPackage}</option>
+                    )}
+                  </select>
+                ) : (
+                  <select
+                    value={editTxPackage}
+                    onChange={(e) => setEditTxPackage(e.target.value)}
+                    className="bg-slate-50 border border-slate-300 text-slate-800 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full font-bold uppercase cursor-pointer"
+                  >
+                    <option value="">-- Pilih Paket Latihan --</option>
+                    {ptPackages.map((pkg) => (
+                      <option key={pkg.id} value={pkg.name}>
+                        {pkg.name}
+                      </option>
+                    ))}
+                    {editTxPackage && !ptPackages.some(p => p.name.toLowerCase() === editTxPackage.toLowerCase()) && (
+                      <option value={editTxPackage}>{editTxPackage}</option>
+                    )}
+                  </select>
+                )}
+              </div>
+
+              {/* Masa Aktif (Only for anggota) */}
+              {editingTxType === 'anggota' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                      Masa Aktif Mulai
+                    </label>
+                    <DatePicker
+                      value={editTxStartDate}
+                      onChange={setEditTxStartDate}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                      Masa Aktif Selesai
+                    </label>
+                    <DatePicker
+                      value={editTxEndDate}
+                      onChange={setEditTxEndDate}
+                      align="right"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Keterangan */}
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                  Keterangan
+                </label>
+                <textarea
+                  rows={3}
+                  value={editTxNotes}
+                  onChange={(e) => setEditTxNotes(e.target.value)}
+                  placeholder="Catatan / keterangan transaksi..."
+                  className="bg-slate-50 border border-slate-300 text-slate-800 p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setEditingTx(null)}
+                  disabled={savingTx}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold uppercase transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingTx}
+                  className="px-4 py-2 bg-[#17A2B8] hover:bg-[#138496] text-white rounded-lg text-xs font-bold uppercase shadow-sm transition-colors cursor-pointer flex items-center gap-2"
+                >
+                  {savingTx ? (
+                    <span>Menyimpan...</span>
+                  ) : (
+                    <>
+                      <Save className="w-3.5 h-3.5" />
+                      <span>Simpan Perubahan</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Transaction Confirmation Modal */}
+      {txToDelete && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-5 border border-slate-200">
+            <div className="flex items-center gap-3 text-red-600">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-heading font-extrabold text-base uppercase tracking-wider text-slate-900">
+                  Hapus Transaksi Pembayaran
+                </h3>
+                <p className="text-xs text-slate-500 font-medium">
+                  Tindakan ini akan menghapus catatan transaksi pembayaran.
+                </p>
+              </div>
+            </div>
+
+            {deleteTxError && (
+              <div className="p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-bold uppercase tracking-wider">
+                {deleteTxError}
+              </div>
+            )}
+
+            <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-1.5 text-xs text-slate-700">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Nomor Transaksi:</span>
+                <span className="font-mono font-bold text-slate-900">{txToDelete.transaction_number || '-'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Tanggal:</span>
+                <span className="font-mono font-bold text-slate-900">{formatDateLabel(txToDelete.transaction_date)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Total Pembayaran:</span>
+                <span className="font-black text-red-600">{formatIDR(txToDelete.total_amount)}</span>
+              </div>
+              {txToDelete.notes && (
+                <div className="flex justify-between border-t border-slate-200 pt-1.5">
+                  <span className="text-slate-500">Keterangan:</span>
+                  <span className="font-semibold text-slate-800 text-right max-w-[200px] truncate">{txToDelete.notes}</span>
+                </div>
+              )}
+            </div>
+
+            <p className="text-xs text-slate-600 font-semibold leading-relaxed">
+              Apakah Anda yakin ingin menghapus transaksi pembayaran ini? Tindakan ini tidak dapat dibatalkan.
+            </p>
+
+            <div className="flex items-center gap-3 justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setTxToDelete(null)}
+                disabled={deletingTx}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold uppercase transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteTx}
+                disabled={deletingTx}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold uppercase shadow-sm transition-colors cursor-pointer flex items-center gap-2"
+              >
+                {deletingTx ? (
+                  <span>Menghapus...</span>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Hapus Transaksi</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Delete Confirmation Modal */}

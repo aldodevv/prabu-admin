@@ -1098,6 +1098,154 @@ export const ThermalReceiptTemplate: React.FC<ThermalReceiptProps> = ({ onClose,
   );
 };
 
+// 12. PT Workout Registration List Report Print Template (New Dedicated Template)
+export interface WorkoutRegistrationReportPrintProps {
+  onClose: () => void;
+  title?: string;
+  data: {
+    startDate: string;
+    endDate: string;
+    transactionType?: string;
+    ppnFormat?: string;
+    totalTransactions: number;
+    grandTotal: number;
+    cashierName?: string;
+    registrations: {
+      id: string;
+      created_at: string;
+      transaction_number?: string;
+      member_name: string;
+      member_username?: string;
+      trainer_name: string;
+      package_name: string;
+      payment_method: string;
+      total_amount: number;
+    }[];
+  };
+}
+
+export const WorkoutRegistrationReportPrintTemplate: React.FC<WorkoutRegistrationReportPrintProps> = ({ onClose, title, data }) => {
+  return (
+    <PrintContainer onClose={onClose} title={title || 'LAPORAN TRANSAKSI PENDAFTARAN LATIHAN'} maxWidthClass="max-w-5xl">
+      <div id="print-area" className="space-y-3.5 print:space-y-2.5 font-sans font-bold">
+        {/* Header Box with Thin Border */}
+        <div className="border border-slate-300 p-3 print:p-2.5 rounded-md flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <LogoIcon />
+            <div className="text-left leading-none">
+              <h1 className="text-xl print:text-lg font-black tracking-widest font-heading text-slate-900">PRABU GYM</h1>
+              <span className="text-[9px] print:text-[8px] uppercase font-bold text-slate-600 tracking-wider">Gym &amp; Fitness Center</span>
+            </div>
+          </div>
+          <div className="text-right border-l border-slate-300 pl-6 pr-3">
+            <h2 className="text-lg print:text-base font-black uppercase tracking-widest text-slate-900">{title || 'LAPORAN TRANSAKSI PENDAFTARAN LATIHAN'}</h2>
+          </div>
+        </div>
+
+        {/* Summary Table with Thin Border */}
+        <div className="border border-slate-300 rounded-md overflow-hidden font-bold">
+          <table className="w-full text-left text-xs print:text-[11px] border-collapse">
+            <tbody>
+              <tr className="border-b border-slate-300">
+                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 w-[35%] text-slate-800">Tanggal Transaksi</td>
+                <td className="py-1.5 px-3 font-mono font-bold text-slate-900">
+                  {data.startDate ? formatDateLabel(data.startDate) : 'Awal'} s/d {data.endDate ? formatDateLabel(data.endDate) : 'Sekarang'}
+                </td>
+              </tr>
+              <tr className="border-b border-slate-300">
+                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-800">Jenis Transaksi</td>
+                <td className="py-1.5 px-3 font-bold text-slate-900">{data.transactionType || 'Semua Transaksi'}</td>
+              </tr>
+              <tr className="border-b border-slate-300">
+                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-800">
+                  Total Pemasukan Transaksi {data.transactionType && data.transactionType !== 'Semua Transaksi' ? data.transactionType : ''}
+                </td>
+                <td className="py-1.5 px-3 font-black text-[#DC3545]">Rp. {data.grandTotal.toLocaleString('id-ID')}</td>
+              </tr>
+              {data.ppnFormat === 'Ya' && (
+                <tr className="border-b border-slate-300">
+                  <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-800">Format Laporan PPN</td>
+                  <td className="py-1.5 px-3 font-bold text-slate-900">
+                    PPN 10% (DPP: Rp. {Math.round(data.grandTotal / 1.1).toLocaleString('id-ID')} | PPN: Rp. {Math.round(data.grandTotal - (data.grandTotal / 1.1)).toLocaleString('id-ID')})
+                  </td>
+                </tr>
+              )}
+              <tr>
+                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-800">Nama Petugas / CS Kasir</td>
+                <td className="py-1.5 px-3 font-bold text-slate-900">{data.cashierName || 'Staff Prabu Gym'}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Sub Header Title Banner */}
+        <div className="bg-slate-800 text-white px-3 py-1.5 rounded-t font-bold text-xs uppercase tracking-wider select-none flex justify-between items-center print:bg-slate-800 print:text-white">
+          <span>TRANSAKSI LATIHAN</span>
+          <span className="font-mono text-[10px] font-bold">TOTAL: {data.totalTransactions} TRANSAKSI</span>
+        </div>
+
+        {/* Main Table with Thin Borders */}
+        <div className="border border-slate-300 rounded-md overflow-x-auto print:overflow-visible font-bold">
+          <table className="w-full text-left text-xs print:text-[10px] border-collapse table-auto print:table-fixed">
+            <thead>
+              <tr className="bg-slate-100 border-b border-slate-300 font-extrabold uppercase text-[10px] print:text-[9px] tracking-wider text-slate-800">
+                <th className="py-1.5 px-2 border-r border-slate-300 text-center font-bold w-10">No</th>
+                <th className="py-1.5 px-2 border-r border-slate-300 text-center font-bold">Tanggal Transaksi</th>
+                <th className="py-1.5 px-2.5 border-r border-slate-300 text-left font-bold">Nomor Transaksi</th>
+                <th className="py-1.5 px-2.5 border-r border-slate-300 text-left font-bold">Nomor Anggota</th>
+                <th className="py-1.5 px-2.5 border-r border-slate-300 text-left font-bold">Nama Anggota</th>
+                <th className="py-1.5 px-2.5 border-r border-slate-300 text-left font-bold">Nama Pelatih</th>
+                <th className="py-1.5 px-2.5 border-r border-slate-300 text-left font-bold">Paket Anggota</th>
+                <th className="py-1.5 px-2 border-r border-slate-300 text-center font-bold">Jenis Pembayaran</th>
+                <th className="py-1.5 px-2.5 text-right font-bold">Total Pembayaran</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 text-slate-900 font-bold">
+              {data.registrations.length > 0 ? (
+                data.registrations.map((r, idx) => (
+                  <tr key={r.id} className="hover:bg-slate-50/50">
+                    <td className="py-1.5 px-2 text-center border-r border-slate-200 font-mono text-slate-700 font-bold">{idx + 1}</td>
+                    <td className="py-1.5 px-2 border-r border-slate-200 text-center font-mono font-bold">{formatDateLabel(r.created_at)}</td>
+                    <td className="py-1.5 px-2.5 border-r border-slate-200 font-mono font-bold text-slate-900">
+                      {r.transaction_number || `PRABU-PT-${r.id.substring(0, 7).toUpperCase()}`}
+                    </td>
+                    <td className="py-1.5 px-2.5 border-r border-slate-200 font-mono font-bold text-slate-700">
+                      {r.member_username || '-'}
+                    </td>
+                    <td className="py-1.5 px-2.5 border-r border-slate-200 font-bold text-slate-900">
+                      {r.member_name}
+                    </td>
+                    <td className="py-1.5 px-2.5 border-r border-slate-200 font-bold text-slate-900">{r.trainer_name}</td>
+                    <td className="py-1.5 px-2.5 border-r border-slate-200 font-bold uppercase">{r.package_name}</td>
+                    <td className="py-1.5 px-2 border-r border-slate-200 text-center uppercase font-bold">{r.payment_method}</td>
+                    <td className="py-1.5 px-2.5 text-right font-mono font-bold text-slate-900">
+                      {r.total_amount.toLocaleString('id-ID')}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={9} className="py-6 text-center text-slate-400 font-bold uppercase tracking-wider text-xs">
+                    Tidak ada transaksi pendaftaran latihan.
+                  </td>
+                </tr>
+              )}
+              <tr className="bg-slate-100 font-bold border-t-2 border-slate-300">
+                <td colSpan={8} className="py-2 px-3 text-right uppercase tracking-wider text-xs text-slate-800 font-bold">
+                  Grand Total
+                </td>
+                <td className="py-2 px-3 text-right font-mono font-black text-sm text-[#DC3545]">
+                  {data.grandTotal.toLocaleString('id-ID')}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </PrintContainer>
+  );
+};
+
 export type PrintTemplateType = 'official-receipt' | 'session-receipt' | 'report' | 'leave-receipt' | 'class-commission' | 'workout-report' | 'thermal-receipt';
 
 interface DynamicPrintTemplateProps {

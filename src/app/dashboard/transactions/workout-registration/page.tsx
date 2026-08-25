@@ -285,7 +285,7 @@ export default function PTRegistrationPage() {
     <div className="space-y-6">
 
       {/* Main Registration Form Container */}
-      <div className="space-y-6">
+      <div className="space-y-6 no-print">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-800 uppercase font-heading">
             Pendaftaran Personal Trainer
@@ -557,10 +557,10 @@ export default function PTRegistrationPage() {
                       />
                     </div>
 
-                    {/* Mulai Gym */}
+                    {/* Masa Aktif dimulai */}
                     <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                       <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
-                        Mulai Gym
+                        Masa Aktif dimulai
                         <FieldInfo text="Pilih tanggal pertama kali dimulainya sesi latihan." />
                       </label>
                       <DatePicker

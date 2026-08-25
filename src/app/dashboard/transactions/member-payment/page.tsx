@@ -52,7 +52,6 @@ export default function MemberPaymentPage() {
   // Form Fields
   const [selectedPackageName, setSelectedPackageName] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
-  const [clubType, setClubType] = useState('One Club');
   const [notes, setNotes] = useState('');
 
   // Date calculations
@@ -78,7 +77,6 @@ export default function MemberPaymentPage() {
 
   const fetchDbPackages = async () => {
     setLoadingPackages(true);
-    setPackageFetchError(null);
     try {
       const res = await packagesApi.listMembershipPackages(activeBranchID || undefined);
       if (res.success && res.data && res.data.length > 0) {
@@ -88,54 +86,30 @@ export default function MemberPaymentPage() {
           days: Number(p.duration_days) || 30,
         }));
         setPackages(mapped);
-      } else if (res.success && (!res.data || res.data.length === 0)) {
-        setPackages([]);
-        setPackageFetchError('Belum ada paket anggota yang aktif di sistem. Silakan tambahkan paket di menu Pengaturan Paket.');
       } else {
         setPackages([]);
-        setPackageFetchError(res.error || 'Gagal memuat daftar paket anggota dari database.');
       }
-    } catch (err: any) {
-      console.error('Gagal mengambil data paket dari database:', err);
+    } catch (err) {
+      console.error('Gagal mengambil data paket membership:', err);
       setPackages([]);
-      setPackageFetchError(err.message || 'Gagal terhubung ke database untuk memuat paket anggota.');
     } finally {
       setLoadingPackages(false);
     }
   };
 
   useEffect(() => {
+    fetchMembers();
     fetchDbPackages();
-  }, [activeBranchID]);
+  }, [page, perPage, debouncedSearch, filterColumn, activeBranchID]);
 
-  // Fetch members reactively on branch, page, perPage, or search change
-  useEffect(() => {
-    if (activeBranchID) {
-      fetchMembers(debouncedSearch, page, perPage);
-    }
-  }, [activeBranchID, page, perPage, debouncedSearch]);
-
-  // Handle URL query parameter pay_member_id (e.g. from summary dashboard)
-  useEffect(() => {
-    if (typeof window !== 'undefined' && activeBranchID) {
-      const params = new URLSearchParams(window.location.search);
-      const payMemberId = params.get('pay_member_id');
-      if (payMemberId) {
-        membersApi.get(payMemberId).then((res) => {
-          if (res.success && res.data) {
-            handleOpenPayment(res.data);
-            const newUrl = window.location.pathname;
-            window.history.replaceState({}, '', newUrl);
-          }
-        }).catch(console.error);
-      }
-    }
-  }, [activeBranchID]);
-
-  const fetchMembers = async (search = debouncedSearch, pageNum = page, perPageNum = perPage) => {
+  const fetchMembers = async () => {
     if (!activeBranchID) return;
     setLoading(true);
     try {
+      const pageNum = Number(page) || 1;
+      const perPageNum = Number(perPage) || 50;
+      const search = debouncedSearch.trim();
+
       const res = await membersApi.list({
         branch_id: activeBranchID,
         search: search || undefined,
@@ -172,7 +146,6 @@ export default function MemberPaymentPage() {
     setSelectedMember(m);
     setSelectedPackageName('');
     setPaymentMethod('');
-    setClubType('One Club');
     setNotes('');
     setErrorMsg('');
     setSuccessTx(null);
@@ -218,14 +191,20 @@ export default function MemberPaymentPage() {
       if (diffDays > 365) {
         const years = Math.floor(diffDays / 365);
         const days = diffDays % 365;
-        return `${years} year, ${days} days`;
+        return `${years} thn ${days} hr`;
       }
-      return `${diffDays} days`;
-    } else {
-      // Remaining
+      return `${diffDays} hari`;
+    } else if (diffDays < 0) {
+      // Active
       const remainingDays = Math.abs(diffDays);
-      return `${remainingDays} days left`;
+      if (remainingDays > 365) {
+        const years = Math.floor(remainingDays / 365);
+        const days = remainingDays % 365;
+        return `${years} thn ${days} hr`;
+      }
+      return `${remainingDays} hari`;
     }
+    return 'Hari Ini';
   };
 
   const isMemberActive = (dateStr?: string) => {
@@ -239,7 +218,7 @@ export default function MemberPaymentPage() {
 
   const handleSavePayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedMember || !selectedPackageName || !paymentMethod || !clubType) {
+    if (!selectedMember || !selectedPackageName || !paymentMethod) {
       setErrorMsg('Semua field wajib diisi!');
       return;
     }
@@ -254,7 +233,7 @@ export default function MemberPaymentPage() {
     setErrorMsg('');
 
     // Step 1: Create transaction record (Kategori: Perpanjang)
-    const txNotes = `Perpanjang Paket: ${selectedPackageName} - Metode: ${paymentMethod} (${clubType}). Catatan: ${notes}`;
+    const txNotes = `Perpanjang Paket: ${selectedPackageName} - Metode: ${paymentMethod}.${notes ? ` Catatan: ${notes}` : ''}`;
     const txBody = {
       member_id: selectedMember.id,
       notes: txNotes.trim(),
@@ -314,6 +293,10 @@ export default function MemberPaymentPage() {
   };
 
   const handleDeletePayment = async (m: Member) => {
+    if (user?.role === 'cs' || user?.role === 'karyawan') {
+      alert('Anda tidak memiliki izin untuk menghapus data pembayaran.');
+      return;
+    }
     if (
       !confirm(
         `Apakah Anda yakin ingin membatalkan dan menghapus data pembayaran terakhir untuk anggota:\n${m.full_name} (${m.username})?\n\nCatatan: Data akun anggota TIDAK akan terhapus, hanya riwayat transaksi pembayaran terakhir yang dibatalkan.`
@@ -450,24 +433,29 @@ export default function MemberPaymentPage() {
       header: 'Aksi',
       align: 'center',
       className: 'text-center select-none w-24',
-      render: (m) => (
-        <div className="flex gap-1.5 justify-center">
-          <button
-            onClick={() => handleOpenPayment(m)}
-            title="Proses Pembayaran / Perpanjangan"
-            className="p-2 bg-brand-cyan hover:bg-[#138496] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
-          >
-            <PlusCircle className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => handleDeletePayment(m)}
-            title="Hapus Data Pembayaran Terakhir (Akun Anggota Tidak Dihapus)"
-            className="p-2 bg-[#DC3545] hover:bg-[#C82333] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
-          >
-            <Trash className="w-4 h-4" />
-          </button>
-        </div>
-      ),
+      render: (m) => {
+        const canDelete = user?.role === 'developer' || user?.role === 'owner' || user?.role === 'admin';
+        return (
+          <div className="flex gap-1.5 justify-center">
+            <button
+              onClick={() => handleOpenPayment(m)}
+              title="Proses Pembayaran / Perpanjangan"
+              className="p-2 bg-brand-cyan hover:bg-[#138496] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
+            >
+              <PlusCircle className="w-4 h-4" />
+            </button>
+            {canDelete && (
+              <button
+                onClick={() => handleDeletePayment(m)}
+                title="Hapus Data Pembayaran Terakhir (Akun Anggota Tidak Dihapus)"
+                className="p-2 bg-[#DC3545] hover:bg-[#C82333] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
+              >
+                <Trash className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        );
+      },
     },
   ];
 
@@ -684,19 +672,6 @@ export default function MemberPaymentPage() {
                     <option value="Tunai">Tunai / Cash</option>
                     <option value="Transfer Bank">Transfer Bank</option>
                     <option value="QRIS">QRIS</option>
-                  </select>
-                </div>
-
-                {/* Tipe Club */}
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Tipe Club *</label>
-                  <select
-                    required
-                    value={clubType}
-                    onChange={(e) => setClubType(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full"
-                  >
-                    <option value="One Club">One Club</option>
                   </select>
                 </div>
 

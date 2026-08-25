@@ -125,11 +125,11 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName }: Digi
   };
 
   // Pre-filled Email Template matching the official PRABU GYM specification
-  const rawSubject = `Kartu Keanggotaan Digital Prabu Gym - ${member.full_name}`;
+  const rawSubject = `Kartu Keanggotaan Digital PRABU GYM - ${member.full_name}`;
   const emailSubject = encodeURIComponent(rawSubject);
   const emailBodyRaw =
     `Halo ${member.full_name},\n\n` +
-    `Selamat bergabung di PRABU GYM! Berikut adalah rincian keanggotaan digital Anda:\n\n` +
+    `Selamat bergabung di PRABU GYM! Berikut adalah rincian keanggotaan Anda:\n\n` +
     `• Nama Lengkap: ${member.full_name}\n` +
     `• Nomor Anggota: ${member.username}\n` +
     `• Cabang Gym: ${displayBranch}\n` +
