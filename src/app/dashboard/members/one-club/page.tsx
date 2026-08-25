@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { useAuth } from '@/context/AuthContext';
 import { membersApi, transactionsApi, packagesApi } from '@/core/api';
 import { formatDateLabel, formatIDR, getMembershipTypeFromNotes, getPaymentMethodFromNotes, getPTDetailsFromNotes } from '@/core/constants';
-import { Member, Transaction } from '@/core/types';
+import { Member, Transaction, MembershipPackage, PTPackage } from '@/core/types';
 import { PageHeader } from '@/components/core/PageHeader';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 import { DataTable, Column } from '@/components/core/DataTable';
@@ -36,6 +36,36 @@ const isPtTransaction = (tx: Transaction) => {
     n.includes('sesi')
   );
 };
+
+function calculateEndDateFromPackage(startDateStr: string, pkgName: string, packagesList: MembershipPackage[]): string {
+  if (!startDateStr || !pkgName) return '';
+  const d = new Date(startDateStr + 'T00:00:00');
+  if (isNaN(d.getTime())) return '';
+
+  const matched = packagesList.find(p => p.name.toLowerCase().trim() === pkgName.toLowerCase().trim());
+  const nameLower = pkgName.toLowerCase();
+
+  if (nameLower.includes('12 bulan') || nameLower.includes('1 tahun') || (matched && matched.duration_days >= 360)) {
+    d.setFullYear(d.getFullYear() + 1);
+    d.setDate(d.getDate() - 1);
+  } else if (nameLower.includes('6 bulan') || (matched && matched.duration_days >= 170 && matched.duration_days <= 190)) {
+    d.setMonth(d.getMonth() + 6);
+    d.setDate(d.getDate() - 1);
+  } else if (nameLower.includes('3 bulan') || (matched && matched.duration_days >= 80 && matched.duration_days <= 100)) {
+    d.setMonth(d.getMonth() + 3);
+    d.setDate(d.getDate() - 1);
+  } else if (nameLower.includes('1 bulan') || (matched && matched.duration_days >= 25 && matched.duration_days <= 35)) {
+    d.setMonth(d.getMonth() + 1);
+    d.setDate(d.getDate() - 1);
+  } else if (matched && matched.duration_days > 0) {
+    d.setDate(d.getDate() + matched.duration_days - 1);
+  } else {
+    d.setMonth(d.getMonth() + 1);
+    d.setDate(d.getDate() - 1);
+  }
+
+  return d.toISOString().split('T')[0];
+}
 
 export default function OneClubMembersPanel() {
   const { activeBranchID, user, branches, loading: authLoading } = useAuth();
@@ -103,8 +133,8 @@ export default function OneClubMembersPanel() {
   const canEditOrDeleteTx = user?.role === 'developer' || user?.role === 'owner' || user?.role === 'admin';
 
   // Package options for edit dropdown
-  const [membershipPackages, setMembershipPackages] = useState<{ id: string; name: string }[]>([]);
-  const [ptPackages, setPtPackages] = useState<{ id: string; name: string }[]>([]);
+  const [membershipPackages, setMembershipPackages] = useState<MembershipPackage[]>([]);
+  const [ptPackages, setPtPackages] = useState<PTPackage[]>([]);
 
   // Edit Transaction Modal states
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
@@ -113,6 +143,7 @@ export default function OneClubMembersPanel() {
   const [editTxPackage, setEditTxPackage] = useState('');
   const [editTxStartDate, setEditTxStartDate] = useState('');
   const [editTxEndDate, setEditTxEndDate] = useState('');
+  const [editTxTotalAmount, setEditTxTotalAmount] = useState<number>(0);
   const [editTxNotes, setEditTxNotes] = useState('');
   const [savingTx, setSavingTx] = useState(false);
   const [editTxError, setEditTxError] = useState('');
@@ -274,6 +305,7 @@ export default function OneClubMembersPanel() {
     setEditingTxType(type);
     const txDate = tx.transaction_date ? tx.transaction_date.split('T')[0] : new Date().toISOString().split('T')[0];
     setEditTxDate(txDate);
+    setEditTxTotalAmount(Number(tx.total_amount) || 0);
 
     if (type === 'anggota') {
       const parsedPkg = getMembershipTypeFromNotes(tx.notes || '');
@@ -281,9 +313,20 @@ export default function OneClubMembersPanel() {
         p => p.name.toLowerCase().trim() === parsedPkg.toLowerCase().trim() ||
           p.name.toLowerCase().trim() === (selectedMember?.membership_type || '').toLowerCase().trim()
       );
-      setEditTxPackage(matchedPkg ? matchedPkg.name : (parsedPkg || selectedMember?.membership_type || ''));
-      setEditTxStartDate(selectedMember?.membership_start ? selectedMember.membership_start.split('T')[0] : txDate);
-      setEditTxEndDate(selectedMember?.membership_end ? selectedMember.membership_end.split('T')[0] : txDate);
+      const pkgName = matchedPkg ? matchedPkg.name : (parsedPkg || selectedMember?.membership_type || '');
+      setEditTxPackage(pkgName);
+
+      const start = selectedMember?.membership_start ? selectedMember.membership_start.split('T')[0] : txDate;
+      setEditTxStartDate(start);
+
+      const end = selectedMember?.membership_end
+        ? selectedMember.membership_end.split('T')[0]
+        : calculateEndDateFromPackage(start, pkgName, membershipPackages);
+      setEditTxEndDate(end);
+
+      if (matchedPkg && Number(tx.total_amount) === 0) {
+        setEditTxTotalAmount(Number(matchedPkg.price) || 0);
+      }
     } else {
       const ptInfo = getPTDetailsFromNotes(tx.notes || '');
       const matchedPt = ptPackages.find(
@@ -292,10 +335,54 @@ export default function OneClubMembersPanel() {
       setEditTxPackage(matchedPt ? matchedPt.name : (ptInfo?.packageName || ''));
       setEditTxStartDate('');
       setEditTxEndDate('');
+      if (matchedPt && Number(tx.total_amount) === 0) {
+        setEditTxTotalAmount(Number(matchedPt.price) || 0);
+      }
     }
     setEditTxNotes(tx.notes || '');
     setEditTxError('');
     setEditTxSuccess('');
+  };
+
+  const handlePackageChange = (newPkgName: string) => {
+    setEditTxPackage(newPkgName);
+
+    if (editingTxType === 'anggota') {
+      const matched = membershipPackages.find(p => p.name.toLowerCase().trim() === newPkgName.toLowerCase().trim());
+      if (matched) {
+        setEditTxTotalAmount(Number(matched.price) || 0);
+        const start = editTxStartDate || editTxDate || new Date().toISOString().split('T')[0];
+        const newEnd = calculateEndDateFromPackage(start, newPkgName, membershipPackages);
+        if (newEnd) {
+          setEditTxEndDate(newEnd);
+        }
+      }
+
+      // Update notes with new package name if notes has "Paket: ..."
+      if (editTxNotes && editTxNotes.includes('Paket:')) {
+        const updatedNotes = editTxNotes.replace(/Paket:\s*([^\-,.\n]+(?:\([^)]*\))?)/i, `Paket: ${newPkgName}`);
+        setEditTxNotes(updatedNotes);
+      }
+    } else {
+      const matched = ptPackages.find(p => p.name.toLowerCase().trim() === newPkgName.toLowerCase().trim());
+      if (matched) {
+        setEditTxTotalAmount(Number(matched.price) || 0);
+      }
+      if (editTxNotes && editTxNotes.includes('Pendaftaran Personal Trainer:')) {
+        const updatedNotes = editTxNotes.replace(/Pendaftaran Personal Trainer:\s*([^\-]+)/i, `Pendaftaran Personal Trainer: ${newPkgName} `);
+        setEditTxNotes(updatedNotes);
+      }
+    }
+  };
+
+  const handleStartDateChange = (newStartDate: string) => {
+    setEditTxStartDate(newStartDate);
+    if (editingTxType === 'anggota' && editTxPackage && newStartDate) {
+      const newEnd = calculateEndDateFromPackage(newStartDate, editTxPackage, membershipPackages);
+      if (newEnd) {
+        setEditTxEndDate(newEnd);
+      }
+    }
   };
 
   const handleSaveEditTx = async (e: React.FormEvent) => {
@@ -311,9 +398,11 @@ export default function OneClubMembersPanel() {
         package_name?: string;
         membership_start?: string;
         membership_end?: string;
+        total_amount?: number;
         notes?: string;
       } = {
         transaction_date: editTxDate,
+        total_amount: editTxTotalAmount,
         notes: editTxNotes,
       };
 
@@ -335,6 +424,8 @@ export default function OneClubMembersPanel() {
             return {
               ...item,
               transaction_date: editTxDate,
+              total_amount: editTxTotalAmount,
+              payment_amount: editTxTotalAmount,
               notes: editTxNotes,
             };
           }
@@ -1234,7 +1325,7 @@ export default function OneClubMembersPanel() {
                 />
               </div>
 
-              {/* Total Pembayaran (Read-only) */}
+              {/* Total Pembayaran (Read-only / Auto-updated) */}
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
                   Total Pembayaran
@@ -1243,8 +1334,8 @@ export default function OneClubMembersPanel() {
                   type="text"
                   readOnly
                   disabled
-                  value={formatIDR(editingTx.total_amount)}
-                  className="bg-slate-100 border border-slate-300 text-slate-800 px-3 py-2 text-xs rounded w-full font-black"
+                  value={formatIDR(editTxTotalAmount)}
+                  className="bg-slate-100 border border-slate-300 text-slate-800 px-3 py-2 text-xs rounded w-full font-black font-mono"
                 />
               </div>
 
@@ -1267,7 +1358,7 @@ export default function OneClubMembersPanel() {
                 {editingTxType === 'anggota' ? (
                   <select
                     value={editTxPackage}
-                    onChange={(e) => setEditTxPackage(e.target.value)}
+                    onChange={(e) => handlePackageChange(e.target.value)}
                     className="bg-slate-50 border border-slate-300 text-slate-800 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full font-bold uppercase cursor-pointer"
                   >
                     <option value="">-- Pilih Paket Anggota --</option>
@@ -1283,7 +1374,7 @@ export default function OneClubMembersPanel() {
                 ) : (
                   <select
                     value={editTxPackage}
-                    onChange={(e) => setEditTxPackage(e.target.value)}
+                    onChange={(e) => handlePackageChange(e.target.value)}
                     className="bg-slate-50 border border-slate-300 text-slate-800 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full font-bold uppercase cursor-pointer"
                   >
                     <option value="">-- Pilih Paket Latihan --</option>
@@ -1308,7 +1399,7 @@ export default function OneClubMembersPanel() {
                     </label>
                     <DatePicker
                       value={editTxStartDate}
-                      onChange={setEditTxStartDate}
+                      onChange={handleStartDateChange}
                     />
                   </div>
                   <div className="space-y-1">

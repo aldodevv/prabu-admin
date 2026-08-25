@@ -8,7 +8,6 @@ import { Save, Printer, ArrowLeft, UserCheck, Search, Check, X, Phone } from 'lu
 import { packagesApi } from '@/core/api';
 import { useDebounce } from '@/hooks/useDebounce';
 import { DatePicker } from '@/components/core/DatePicker';
-import FieldInfo from '@/components/core/FieldInfo';
 import { OfficialPTReceiptTemplate } from '@/components/core/PrintTemplates';
 
 interface Member {
@@ -223,7 +222,7 @@ export default function PTRegistrationPage() {
     setLoading(true);
     setErrorMsg('');
 
-    const memberObj = members.find(m => m.id === selectedMemberID);
+    const memberObj = selectedMemberObj || members.find(m => m.id === selectedMemberID);
     const trainerObj = trainers.find(t => t.id === selectedTrainerID);
 
     const body = {
@@ -239,14 +238,19 @@ export default function PTRegistrationPage() {
     try {
       const res = await api.post<any>('/admin/pt-registrations', body);
       if (res.success && res.data) {
+        const memberName = res.data.member_name || memberObj?.full_name || 'Member';
+        const memberUsername = res.data.member_username || memberObj?.username || '-';
+        const trainerName = res.data.trainer_name || trainerObj?.full_name || 'Trainer';
+        const txNum = res.data.transaction_number || `RGS-TRA-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-0001`;
+
         setSuccessTx({
           id: res.data.id,
-          transaction_number: res.data.transaction_number || `RGS-TRA-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-0001`,
+          transaction_number: txNum,
           member_id: selectedMemberID,
-          member_name: memberObj?.full_name || 'Member',
-          member_username: memberObj?.username || 'Member',
+          member_name: memberName,
+          member_username: memberUsername,
           trainer_id: selectedTrainerID,
-          trainer_name: trainerObj?.full_name || 'Trainer',
+          trainer_name: trainerName,
           package_name: selectedPackage,
           session_count: sessionCount,
           membership_end: endDate,
@@ -256,6 +260,7 @@ export default function PTRegistrationPage() {
         });
 
         setSelectedMemberID('');
+        setSelectedMemberObj(null);
         setMemberSearchQuery('');
         setSelectedTrainerID('');
         setSelectedPackage('');
@@ -320,7 +325,6 @@ export default function PTRegistrationPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Tanggal Transaksi
-                    <FieldInfo text="Default hari ini dan akses penggantian tanggal hanya bisa di lakukan oleh owner." />
                   </label>
                   <div className="w-full">
                     <DatePicker
@@ -340,7 +344,6 @@ export default function PTRegistrationPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-start max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center mt-2">
                     Nama Anggota <span className="text-red-500 ml-1">*</span>
-                    <FieldInfo text="Ketik minimal 4 karakter (nama atau nomor anggota) untuk mencari data member." />
                   </label>
 
                   <div className="w-full relative" ref={memberComboboxRef}>
@@ -481,7 +484,6 @@ export default function PTRegistrationPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-start max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center mt-2">
                     Paket Latihan Anggota *
-                    <FieldInfo text="Wajib memilih dari daftar paket Personal Trainer aktif." />
                   </label>
                   <div className="space-y-2 w-full">
                     <select
@@ -530,7 +532,6 @@ export default function PTRegistrationPage() {
                     <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                       <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                         Jumlah Sesi
-                        <FieldInfo text="Total kuota sesi pertemuan latihan yang didapatkan." />
                       </label>
                       <input
                         type="number"
@@ -545,7 +546,6 @@ export default function PTRegistrationPage() {
                     <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                       <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                         Total Bayar
-                        <FieldInfo text="Total nominal biaya paket pendaftaran latihan PT." />
                       </label>
                       <input
                         type="text"
@@ -560,7 +560,6 @@ export default function PTRegistrationPage() {
                     <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                       <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                         Masa Aktif dimulai
-                        <FieldInfo text="Pilih tanggal pertama kali dimulainya sesi latihan." />
                       </label>
                       <DatePicker
                         value={startDate}
@@ -572,7 +571,6 @@ export default function PTRegistrationPage() {
                     <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                       <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                         Masa Aktif Berakhir
-                        <FieldInfo text="Tanggal otomatis kadaluarsa/berakhirnya masa aktif paket." />
                       </label>
                       <DatePicker
                         value={endDate}
@@ -586,7 +584,6 @@ export default function PTRegistrationPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Jenis Pembayaran *
-                    <FieldInfo text="Wajib memilih metode pembayaran (Tunai, Transfer, QRIS, atau Debit)." />
                   </label>
                   <select
                     required
@@ -606,7 +603,6 @@ export default function PTRegistrationPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-start max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left mt-2 inline-flex items-center">
                     Keterangan
-                    <FieldInfo text="Catatan khusus atau keterangan tambahan (opsional)." />
                   </label>
                   <textarea
                     value={notes}

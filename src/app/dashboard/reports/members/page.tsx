@@ -7,7 +7,6 @@ import { getPaymentMethodFromNotes, getMembershipTypeFromNotes, formatDateLabel,
 import { Transaction } from '@/core/types';
 import { ReportTemplate, OfficialReceiptTemplate } from '@/components/core/PrintTemplates';
 import { FileText, ArrowLeft, Printer, List } from 'lucide-react';
-import FieldInfo from '@/components/core/FieldInfo';
 import { DatePicker } from '@/components/core/DatePicker';
 
 export default function MemberReportsPage() {
@@ -167,7 +166,6 @@ export default function MemberReportsPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Dari Tanggal
-                    <FieldInfo text="Pilih tanggal mulai periode laporan" />
                   </label>
                   <DatePicker
                     value={startDate}
@@ -179,7 +177,6 @@ export default function MemberReportsPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Sampai Tanggal
-                    <FieldInfo text="Pilih tanggal akhir periode laporan" />
                   </label>
                   <DatePicker
                     value={endDate}
@@ -191,7 +188,6 @@ export default function MemberReportsPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Jenis Transaksi
-                    <FieldInfo text="Pilih metode pembayaran atau jenis transaksi" />
                   </label>
                   <div className="space-y-2 w-full">
                     <select
@@ -221,7 +217,6 @@ export default function MemberReportsPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Jumlah Hari
-                    <FieldInfo text="Filter berdasarkan jumlah hari rentang transaksi" />
                   </label>
                   <div className="space-y-2 w-full">
                     <select
@@ -251,7 +246,6 @@ export default function MemberReportsPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Format PPN
-                    <FieldInfo text="Pilih format PPN 10% atau tanpa PPN" />
                   </label>
                   <select
                     value={ppnFormat}

@@ -1246,7 +1246,110 @@ export const WorkoutRegistrationReportPrintTemplate: React.FC<WorkoutRegistratio
   );
 };
 
-export type PrintTemplateType = 'official-receipt' | 'session-receipt' | 'report' | 'leave-receipt' | 'class-commission' | 'workout-report' | 'thermal-receipt';
+// 13. PT Session List Report Print Template (Dedicated Template matching screenshot)
+export interface PTSessionReportPrintProps {
+  onClose: () => void;
+  title?: string;
+  data: {
+    startDate: string;
+    endDate: string;
+    trainerName: string;
+    totalSessions: number;
+    cashierName?: string;
+    sessions: {
+      id: string;
+      transaction_date: string;
+      member_name: string;
+      member_username?: string;
+      package_name: string;
+      session_count: number;
+    }[];
+  };
+}
+
+export const PTSessionReportPrintTemplate: React.FC<PTSessionReportPrintProps> = ({ onClose, title, data }) => {
+  return (
+    <PrintContainer onClose={onClose} title={title || 'DAFTAR SESI PERSONAL TRAINNER'} maxWidthClass="max-w-4xl">
+      <div id="print-area" className="space-y-3.5 print:space-y-2.5 font-sans font-bold">
+        {/* Header Box with Thin Border */}
+        <div className="border border-slate-300 p-3 print:p-2.5 rounded-md flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <LogoIcon />
+            <div className="text-left leading-none">
+              <h1 className="text-xl print:text-lg font-black tracking-widest font-heading text-slate-900">PRABU GYM</h1>
+              <span className="text-[9px] print:text-[8px] uppercase font-bold text-slate-600 tracking-wider">Gym &amp; Fitness Center</span>
+            </div>
+          </div>
+          <div className="text-right border-l border-slate-300 pl-6 pr-3">
+            <h2 className="text-lg print:text-base font-black uppercase tracking-widest text-slate-900">{title || 'DAFTAR SESI PERSONAL TRAINNER'}</h2>
+          </div>
+        </div>
+
+        {/* Summary Table */}
+        <div className="border border-slate-300 rounded-md overflow-hidden font-bold">
+          <table className="w-full text-left text-xs print:text-[11px] border-collapse">
+            <tbody>
+              <tr className="border-b border-slate-300">
+                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 w-[30%] text-slate-800">Tanggal Transaksi</td>
+                <td className="py-1.5 px-3 font-mono font-bold text-slate-900">
+                  {data.startDate ? formatDateLabel(data.startDate) : 'Awal'} s/d {data.endDate ? formatDateLabel(data.endDate) : 'Sekarang'}
+                </td>
+              </tr>
+              <tr>
+                <td className="py-1.5 px-3 font-bold bg-slate-50 border-r border-slate-300 text-slate-800">Nama Pelatih</td>
+                <td className="py-1.5 px-3 font-bold text-slate-900">{data.trainerName || 'Semua Pelatih'}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Main Table */}
+        <div className="border border-slate-300 rounded-md overflow-x-auto print:overflow-visible font-bold">
+          <table className="w-full text-left text-xs print:text-[10px] border-collapse table-auto print:table-fixed">
+            <thead>
+              <tr className="bg-slate-100 border-b border-slate-300 font-extrabold uppercase text-[10px] print:text-[9px] tracking-wider text-slate-800">
+                <th className="py-1.5 px-2 border-r border-slate-300 text-center font-bold w-10">No</th>
+                <th className="py-1.5 px-3 border-r border-slate-300 text-left font-bold">Tanggal Transaksi</th>
+                <th className="py-1.5 px-3 border-r border-slate-300 text-left font-bold">Nama Anggota</th>
+                <th className="py-1.5 px-3 border-r border-slate-300 text-left font-bold">Paket Latihan</th>
+                <th className="py-1.5 px-3 text-center font-bold w-24">Jumlah Sesi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 text-slate-900 font-bold">
+              {data.sessions.length > 0 ? (
+                data.sessions.map((s, idx) => (
+                  <tr key={s.id || idx} className="hover:bg-slate-50/50">
+                    <td className="py-1.5 px-2 text-center border-r border-slate-200 font-mono text-slate-700 font-bold">{idx + 1}</td>
+                    <td className="py-1.5 px-3 border-r border-slate-200 font-mono font-bold">{formatDateLabel(s.transaction_date)}</td>
+                    <td className="py-1.5 px-3 border-r border-slate-200 font-bold text-slate-900">{s.member_name}</td>
+                    <td className="py-1.5 px-3 border-r border-slate-200 font-bold uppercase">{s.package_name}</td>
+                    <td className="py-1.5 px-3 text-center font-mono font-bold text-slate-900">{s.session_count}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="py-6 text-center text-slate-400 font-bold uppercase tracking-wider text-xs">
+                    Tidak ada data sesi personal trainer untuk periode dan pelatih terpilih.
+                  </td>
+                </tr>
+              )}
+              <tr className="bg-slate-100 font-bold border-t-2 border-slate-300">
+                <td colSpan={4} className="py-2 px-3 text-left uppercase tracking-wider text-xs text-slate-800 font-bold">
+                  Total Sesi
+                </td>
+                <td className="py-2 px-3 text-center font-mono font-black text-sm text-slate-900">
+                  {data.totalSessions}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </PrintContainer>
+  );
+};
+
+export type PrintTemplateType = 'official-receipt' | 'session-receipt' | 'report' | 'leave-receipt' | 'class-commission' | 'workout-report' | 'pt-session-report' | 'thermal-receipt';
 
 interface DynamicPrintTemplateProps {
   template: PrintTemplateType;
@@ -1269,10 +1372,13 @@ export function DynamicPrintTemplate({ template, title, data, onClose }: Dynamic
       return <ClassCommissionReportTemplate title={title || 'LAPORAN KOMISI KELAS INSTRUKTUR'} data={data} onClose={onClose} />;
     case 'workout-report':
       return <WorkoutReportTemplate title={title || 'LAPORAN PENDAFTARAN LATIHAN (PT)'} data={data} onClose={onClose} />;
+    case 'pt-session-report':
+      return <PTSessionReportPrintTemplate title={title || 'DAFTAR SESI PERSONAL TRAINNER'} data={data} onClose={onClose} />;
     case 'thermal-receipt':
       return <ThermalReceiptTemplate data={data} onClose={onClose} />;
     default:
       return null;
   }
 }
+
 

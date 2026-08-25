@@ -133,8 +133,8 @@ export default function WorkoutReportsPage() {
             )}
 
             {/* Main Form Card */}
-            <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
-              <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
+            <div className="bg-white border border-slate-200 rounded shadow-sm overflow-visible">
+              <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex items-center gap-2 select-none rounded-t">
                 <FileText className="w-4 h-4" />
                 <span className="text-sm uppercase tracking-wider font-heading">Laporan Fitnes Latihan</span>
               </div>

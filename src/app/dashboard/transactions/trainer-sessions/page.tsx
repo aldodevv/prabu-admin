@@ -16,7 +16,6 @@ import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 import { DataTable, Column } from '@/components/core/DataTable';
 import { SessionReceiptTemplate } from '@/components/core/PrintTemplates';
 import { DatePicker } from '@/components/core/DatePicker';
-import FieldInfo from '@/components/core/FieldInfo';
 import { Search, Edit, Printer, List, ArrowLeft, Plus, Minus, Save, FileText, ClipboardCheck, AlertCircle, CheckCircle2, User, Dumbbell, Calendar, Clock } from 'lucide-react';
 
 interface SessionLog {
@@ -414,7 +413,6 @@ export default function TrainerSessionsPage() {
                   <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                     <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                       Tanggal Sesi
-                      <FieldInfo text="Pilih atau ketik tanggal kehadiran sesi latihan personal trainer (DD/MM/YYYY)." />
                     </label>
                     <DatePicker
                       value={rekapDate}
@@ -427,7 +425,6 @@ export default function TrainerSessionsPage() {
                   <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                     <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                       Waktu Kehadiran
-                      <FieldInfo text="Waktu otomatis pencatatan sesi latihan." />
                     </label>
                     <input
                       type="text"
@@ -442,7 +439,6 @@ export default function TrainerSessionsPage() {
                   <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                     <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                       Nama Pelatih / Trainer <span className="text-red-500 ml-1">*</span>
-                      <FieldInfo text="Nama pelatih yang mendampingi sesi latihan anggota." />
                     </label>
                     <input
                       type="text"
@@ -458,7 +454,6 @@ export default function TrainerSessionsPage() {
                   <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                     <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                       Sesi Terpakai
-                      <FieldInfo text="Jumlah sesi yang dikurangi untuk latihan ini." />
                     </label>
                     <div className="flex items-center gap-3">
                       <button
@@ -486,7 +481,6 @@ export default function TrainerSessionsPage() {
                   <div className="grid grid-cols-[240px_1fr] gap-6 items-start max-sm:grid-cols-1">
                     <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center mt-2">
                       Keterangan / Notes
-                      <FieldInfo text="Catatan materi atau fokus latihan anggota (contoh: Chest & Triceps, Leg Day, Kardio)." />
                     </label>
                     <textarea
                       rows={3}

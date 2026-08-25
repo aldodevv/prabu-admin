@@ -227,7 +227,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   };
 
   return (
-    <div ref={containerRef} className="relative inline-block w-full text-slate-800 font-sans">
+    <div ref={containerRef} className={`relative inline-block w-full text-slate-800 font-sans ${isOpen ? 'z-50' : 'z-auto'}`}>
       {/* Input Field Container */}
       <div
         className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded transition-all ${

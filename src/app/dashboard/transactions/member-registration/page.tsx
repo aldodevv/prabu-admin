@@ -9,7 +9,6 @@ import { compressImage } from '@/utils/imageCompressor';
 import { uploadToCloudflare } from '@/lib/cloudflare';
 import { DigitalMemberCard } from '@/components/core/DigitalMemberCard';
 import { DatePicker } from '@/components/core/DatePicker';
-import FieldInfo from '@/components/core/FieldInfo';
 
 import { packagesApi } from '@/core/api';
 
@@ -448,7 +447,6 @@ export default function MemberRegistrationPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Tanggal Transaksi
-                    <FieldInfo text="Default hari ini. Hanya role admin, owner, dan developer yang dapat mengubah tanggal transaksi." />
                   </label>
                   <DatePicker
                     value={startDateInput}
@@ -466,7 +464,6 @@ export default function MemberRegistrationPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Foto Anggota
-                    <FieldInfo text="Format foto (JPG, PNG, atau WebP), ukuran maksimal file 5MB." />
                   </label>
                   <div className="flex gap-4 items-center">
                     <div className="w-28 h-28 bg-slate-50 border border-slate-300 rounded flex items-center justify-center text-slate-400 text-xs select-none relative overflow-hidden">
@@ -500,7 +497,6 @@ export default function MemberRegistrationPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Nama Anggota *
-                    <FieldInfo text="Wajib diisi. Maksimal 100 karakter (gunakan nama sesuai KTP/identitas)." />
                   </label>
                   <input
                     type="text"
@@ -516,7 +512,6 @@ export default function MemberRegistrationPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Jenis Kelamin *
-                    <FieldInfo text="Wajib memilih salah satu: Laki-laki atau Perempuan." />
                   </label>
                   <select
                     required
@@ -534,7 +529,6 @@ export default function MemberRegistrationPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Tanggal Lahir
-                    <FieldInfo text="Ketik manual / paste format DD/MM/YYYY atau pilih tanggal dari kalender." />
                   </label>
                   <DatePicker
                     value={dob}
@@ -547,7 +541,6 @@ export default function MemberRegistrationPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Nomor HP (Angka)
-                    <FieldInfo text="Hanya angka tanpa spasi/simbol, maksimal 20 digit (contoh: 08123456789)." />
                   </label>
                   <input
                     type="tel"
@@ -562,7 +555,6 @@ export default function MemberRegistrationPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Email
-                    <FieldInfo text="Format email valid (user@domain.com), tidak lebih dari 100 karakter." />
                   </label>
                   <input
                     type="email"
@@ -577,7 +569,6 @@ export default function MemberRegistrationPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                     Sosial Media <span className="text-slate-400 font-normal ml-1">(Opsional)</span>
-                    <FieldInfo text="Username sosial media (Instagram/TikTok/Facebook), maksimal 100 karakter." />
                   </label>
                   <input
                     type="text"
@@ -592,7 +583,6 @@ export default function MemberRegistrationPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-start max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left mt-2 inline-flex items-center">
                     Alamat
-                    <FieldInfo text="Alamat tempat tinggal lengkap anggota." />
                   </label>
                   <textarea
                     value={address}
@@ -606,7 +596,6 @@ export default function MemberRegistrationPage() {
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-start max-sm:grid-cols-1 pt-4 border-t border-slate-100">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center mt-2">
                     Paket Anggota <span className="text-red-500 ml-1">*</span>
-                    <FieldInfo text="Wajib pilih salah satu paket membership yang tersedia dari database." />
                   </label>
                   <div className="space-y-2 w-full">
                     <select

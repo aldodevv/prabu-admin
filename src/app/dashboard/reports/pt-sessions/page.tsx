@@ -1,102 +1,128 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
-import { SearchFilterBar } from '@/components/core/SearchFilterBar';
+import { trainersApi } from '@/core/api';
 import { FetchErrorAlert } from '@/components/core/FetchErrorAlert';
-import { getSessionCountFromPackage } from '@/core/constants';
-import { Printer, UserCheck, Calendar } from 'lucide-react';
-import { exportToExcel } from '@/lib/excelExport';
+import { PTSessionReportPrintTemplate } from '@/components/core/PrintTemplates';
+import { formatDateLabel, getSessionCountFromPackage } from '@/core/constants';
+import { Printer, LayoutGrid, ArrowLeft } from 'lucide-react';
+import { DatePicker } from '@/components/core/DatePicker';
+import { Trainer } from '@/core/types';
 
 interface PTSessionReportItem {
+  id: string;
+  transaction_date: string;
+  member_name: string;
+  member_username?: string;
+  package_name: string;
+  session_count: number;
   trainer_name: string;
-  total_clients: number;
-  total_sessions: number;
-  completed_sessions: number;
-  remaining_sessions: number;
 }
 
 export default function PTSessionReportsPage() {
-  const { activeBranchID, loading: authLoading } = useAuth();
-  const lastFetchedBranchRef = useRef<string | null>(null);
-  const [reports, setReports] = useState<PTSessionReportItem[]>([]);
-  const [trainers, setTrainers] = useState<string[]>([]);
-  const [selectedTrainer, setSelectedTrainer] = useState('Semua');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  const [loading, setLoading] = useState(true);
+  const { activeBranchID, user, loading: authLoading } = useAuth();
+
+  // Navigation Step: 'form' | 'result'
+  const [step, setStep] = useState<'form' | 'result'>('form');
+
+  // Form Filter States
+  const [trainersList, setTrainersList] = useState<Trainer[]>([]);
+  const [selectedTrainer, setSelectedTrainer] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  // Data & Status
+  const [sessions, setSessions] = useState<PTSessionReportItem[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [isPrintOpen, setIsPrintOpen] = useState(false);
 
+  // Set default dates (Awal bulan s/d hari ini) & fetch trainers
   useEffect(() => {
-    if (!authLoading && activeBranchID && (lastFetchedBranchRef.current !== activeBranchID || dateFrom || dateTo)) {
-      lastFetchedBranchRef.current = activeBranchID;
-      fetchPTSessionReports();
-    }
-  }, [activeBranchID, dateFrom, dateTo, authLoading]);
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
 
-  const fetchPTSessionReports = async () => {
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    const firstDayStr = firstDay.toISOString().split('T')[0];
+
+    setStartDate(firstDayStr);
+    setEndDate(todayStr);
+
+    if (activeBranchID) {
+      trainersApi.list(activeBranchID).then(res => {
+        if (res.success && res.data) {
+          setTrainersList(res.data);
+        }
+      }).catch(() => { });
+    }
+  }, [activeBranchID]);
+
+  const handleGenerate = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!activeBranchID) {
+      setError('Silakan pilih cabang terlebih dahulu.');
+      return;
+    }
+
     setLoading(true);
     setError('');
+
     try {
-      let url = `/admin/pt-registrations?branch_id=${activeBranchID}&per_page=200`;
-      if (dateFrom) url += `&date_from=${dateFrom}`;
-      if (dateTo) url += `&date_to=${dateTo}`;
+      let url = `/admin/pt-registrations?branch_id=${activeBranchID}&per_page=500`;
+      if (startDate) url += `&date_from=${startDate}`;
+      if (endDate) url += `&date_to=${endDate}`;
 
       const res = await api.get<any>(url);
       if (res.success && res.data) {
         const rawRegs: any[] = res.data;
-        const trainerMap: { [key: string]: PTSessionReportItem } = {};
-        const trainerNamesSet = new Set<string>();
+        let items: PTSessionReportItem[] = [];
 
         rawRegs.forEach(reg => {
-          const tName = reg.trainer_name || 'Tidak Ada Pelatih';
-          trainerNamesSet.add(tName);
+          const tName = (reg.trainer_name || '').trim();
 
-          if (!trainerMap[tName]) {
-            trainerMap[tName] = {
-              trainer_name: tName,
-              total_clients: 0,
-              total_sessions: 0,
-              completed_sessions: 0,
-              remaining_sessions: 0,
-            };
-          }
-
-          let logsCount = 0;
-          let totalSess = getSessionCountFromPackage(reg.package_name || '');
-          let remainingSess = totalSess;
-
-          if (reg.notes) {
-            try {
-              const parsed = JSON.parse(reg.notes);
-              if (parsed.logs && Array.isArray(parsed.logs)) {
-                logsCount = parsed.logs.reduce((acc: number, item: any) => acc + (item.used_sessions || 1), 0);
-              }
-              if (parsed.total_sessions !== undefined && parsed.total_sessions > 0) {
-                totalSess = parsed.total_sessions;
-              }
-              if (parsed.remaining_sessions !== undefined) {
-                remainingSess = parsed.remaining_sessions;
-              } else {
-                remainingSess = Math.max(0, totalSess - logsCount);
-              }
-            } catch {
-              remainingSess = Math.max(0, totalSess - logsCount);
+          // Filter by selected trainer
+          if (selectedTrainer && selectedTrainer !== 'Semua' && selectedTrainer !== '-Pilih-') {
+            if (tName.toLowerCase() !== selectedTrainer.toLowerCase()) {
+              return;
             }
           }
 
-          trainerMap[tName].total_clients += 1;
-          trainerMap[tName].total_sessions += totalSess;
-          trainerMap[tName].completed_sessions += logsCount;
-          trainerMap[tName].remaining_sessions += remainingSess;
+          const txDate = reg.registration_date || (reg.created_at ? reg.created_at.split('T')[0] : '');
+
+          // Filter by Date Range (client-side safety check)
+          if (startDate && txDate && txDate < startDate) return;
+          if (endDate && txDate && txDate > endDate) return;
+
+          let count = getSessionCountFromPackage(reg.package_name || '');
+          if (reg.notes) {
+            try {
+              const parsed = JSON.parse(reg.notes);
+              if (parsed.total_sessions && parsed.total_sessions > 0) {
+                count = parsed.total_sessions;
+              }
+            } catch { }
+          }
+
+          items.push({
+            id: reg.id,
+            transaction_date: txDate || new Date().toISOString().split('T')[0],
+            member_name: reg.member_name || 'Member',
+            member_username: reg.member_username || '',
+            package_name: reg.package_name || 'Paket Personal Trainer',
+            session_count: count,
+            trainer_name: tName || 'Pelatih',
+          });
         });
 
-        setReports(Object.values(trainerMap));
-        setTrainers(Array.from(trainerNamesSet));
+        // Sort by transaction date descending
+        items.sort((a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime());
+
+        setSessions(items);
+        setStep('result');
       } else {
-        setError(res.error || 'Gagal memuat data laporan sesi PT');
+        setError(res.error || 'Gagal memuat data laporan sesi personal trainer');
       }
     } catch (err: any) {
       console.error(err);
@@ -106,167 +132,243 @@ export default function PTSessionReportsPage() {
     }
   };
 
-  const getFilteredReports = () => {
-    return reports.filter(r => {
-      if (selectedTrainer !== 'Semua' && r.trainer_name !== selectedTrainer) return false;
-      if (searchQuery.trim() && !r.trainer_name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-      return true;
-    });
-  };
-
-  const filtered = getFilteredReports();
-  const totalCompletedAll = filtered.reduce((acc, curr) => acc + curr.completed_sessions, 0);
-  const totalClientsAll = filtered.reduce((acc, curr) => acc + curr.total_clients, 0);
-
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const handleExportExcel = () => {
-    const headers = ['No', 'Nama Personal Trainer', 'Total Client Anggota', 'Total Sesi Terjadwal', 'Sesi Dijalani (Selesai)', 'Sisa Sesi'];
-    const data = filtered.map((r, idx) => [
-      idx + 1,
-      r.trainer_name,
-      r.total_clients,
-      r.total_sessions,
-      r.completed_sessions,
-      r.remaining_sessions,
-    ]);
-
-    exportToExcel({
-      filename: `Laporan_Sesi_PT_${new Date().toISOString().split('T')[0]}`,
-      title: 'LAPORAN REKAPITULASI SESI PERSONAL TRAINER (PT) - PRABU GYM',
-      headers,
-      data,
-    });
-  };
+  const totalSessions = sessions.reduce((acc, curr) => acc + (curr.session_count || 0), 0);
 
   return (
     <div className="space-y-6 font-sans">
-      <style jsx global>{`
-        @media print {
-          header, aside, button, .no-print {
-            display: none !important;
-          }
-          body, .min-h-screen, main, #print-pt-area {
-            background: white !important;
-            color: black !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-        }
-      `}</style>
-
       <div className="no-print space-y-6">
-        <div className="flex justify-between items-start">
-          <div>
-            <h2 className="text-3xl font-heading text-slate-800 uppercase tracking-tight">LAPORAN SESI PERSONAL TRAINER</h2>
-            <p className="text-slate-500 text-xs mt-1 uppercase tracking-widest font-accent">
-              Rangkuman Total Sesi Latihan Yang Dijalani Per Trainer Pada Periode Waktu Terpilih
-            </p>
-          </div>
-          <button
-            onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer"
-          >
-            <Printer className="w-4 h-4" />
-            <span>Cetak Laporan</span>
-          </button>
-        </div>
 
-        <SearchFilterBar
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          searchPlaceholder="Cari nama pelatih trainer..."
-          onExportExcel={handleExportExcel}
-        >
-          <div className="flex items-center gap-3">
-            <select
-              value={selectedTrainer}
-              onChange={e => setSelectedTrainer(e.target.value)}
-              className="bg-slate-50 border border-slate-300 text-slate-700 px-3 py-2 text-xs rounded font-semibold cursor-pointer"
-            >
-              <option value="Semua">Pelatih: Semua Trainer</option>
-              {trainers.map(t => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-            <div className="flex items-center gap-2">
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={e => setDateFrom(e.target.value)}
-                className="bg-slate-50 border border-slate-300 text-slate-700 px-3 py-2 text-xs rounded font-mono"
-              />
-              <span className="text-slate-400 text-xs font-bold">s/d</span>
-              <input
-                type="date"
-                value={dateTo}
-                onChange={e => setDateTo(e.target.value)}
-                className="bg-slate-50 border border-slate-300 text-slate-700 px-3 py-2 text-xs rounded font-mono"
-              />
+        {/* STEP 1: FORM FILTER INPUT (GENERATOR) */}
+        {step === 'form' && (
+          <div className="space-y-4">
+            {/* Breadcrumb Navigation */}
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 font-accent">
+              <span>Laporan</span>
+              <span className="text-slate-400">/</span>
+              <span className="text-slate-800 font-bold">Laporan Sesi Personal Trainner</span>
+            </div>
+
+            {error && (
+              <FetchErrorAlert error={error} featureName="Laporan Sesi Personal Trainer" onRetry={handleGenerate} />
+            )}
+
+            {/* Main Form Card */}
+            <div className="bg-white border border-slate-200 rounded shadow-sm overflow-visible">
+              <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex items-center gap-2 select-none rounded-t">
+                <LayoutGrid className="w-4 h-4" />
+                <span className="text-sm uppercase tracking-wider font-heading">Laporan Sesi Personal Trainner</span>
+              </div>
+
+              <div className="p-6 md:p-8">
+                <form onSubmit={handleGenerate} className="space-y-5 text-sm text-slate-700 max-w-3xl">
+                  {/* Nama Pelatih */}
+                  <div className="grid grid-cols-[200px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-xs font-semibold text-right max-sm:text-left text-slate-600 font-accent uppercase tracking-wider">
+                      Nama Pelatih
+                    </label>
+                    <select
+                      value={selectedTrainer}
+                      onChange={(e) => setSelectedTrainer(e.target.value)}
+                      className="bg-slate-50 border border-slate-300 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-brand-cyan rounded w-full cursor-pointer font-medium"
+                    >
+                      <option value="">-Pilih-</option>
+                      <option value="Semua">Semua Pelatih</option>
+                      {trainersList.map((t) => (
+                        <option key={t.id} value={t.full_name}>
+                          {t.full_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Dari Tanggal */}
+                  <div className="grid grid-cols-[200px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-xs font-semibold text-right max-sm:text-left text-slate-600 font-accent uppercase tracking-wider">
+                      Dari Tanggal
+                    </label>
+                    <DatePicker
+                      value={startDate}
+                      onChange={setStartDate}
+                      placeholder="Masukan Tanggal"
+                      required
+                    />
+                  </div>
+
+                  {/* Sampai Tanggal */}
+                  <div className="grid grid-cols-[200px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-xs font-semibold text-right max-sm:text-left text-slate-600 font-accent uppercase tracking-wider">
+                      Sampai Tanggal
+                    </label>
+                    <DatePicker
+                      value={endDate}
+                      onChange={setEndDate}
+                      placeholder="Masukan Tanggal"
+                      required
+                    />
+                  </div>
+
+                  {/* Action Button */}
+                  <div className="grid grid-cols-[200px_1fr] gap-6 items-center max-sm:grid-cols-1 pt-2">
+                    <div />
+                    <div>
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors disabled:opacity-50"
+                      >
+                        <Printer className="w-4 h-4" />
+                        <span>{loading ? 'Memuat Data...' : 'Cetak Laporan'}</span>
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
-        </SearchFilterBar>
+        )}
 
-        <FetchErrorAlert error={error} featureName="Laporan Sesi Personal Trainer" onRetry={fetchPTSessionReports} />
+        {/* STEP 2: RESULT TABLE VIEW */}
+        {step === 'result' && (
+          <div className="space-y-4">
+            {/* Breadcrumb Navigation */}
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 font-accent">
+              <span>Laporan Fitness</span>
+              <span className="text-slate-400">/</span>
+              <span>Laporan Sesi Personal Trainner</span>
+              <span className="text-slate-400">/</span>
+              <span className="text-slate-800 font-bold">Daftar Sesi Personal Trainner</span>
+            </div>
 
-        <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden" id="print-pt-area">
-          <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex items-center justify-between select-none">
-            <span className="text-sm uppercase tracking-wider font-heading flex items-center gap-2">
-              <UserCheck className="w-4 h-4" />
-              <span>Rekapitulasi Kinerja Sesi Pelatih (PT)</span>
-            </span>
-            <span className="text-xs font-mono">Total Completed: {totalCompletedAll} Sesi</span>
-          </div>
+            {/* Main Result Card */}
+            <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
+              <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
+                <LayoutGrid className="w-4 h-4" />
+                <span className="text-sm uppercase tracking-wider font-heading">Daftar Sesi Personal Trainner</span>
+              </div>
 
-          <div className="p-6 space-y-4">
-            <div className="overflow-x-auto border border-slate-200 rounded">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-[#6C7A89] text-white text-[10px] uppercase tracking-wider font-bold select-none">
-                    <th className="py-2.5 px-4 border-r border-slate-350 w-12 text-center">No</th>
-                    <th className="py-2.5 px-4 border-r border-slate-350">Nama Personal Trainer</th>
-                    <th className="py-2.5 px-4 border-r border-slate-350 text-center">Total Client Anggota</th>
-                    <th className="py-2.5 px-4 border-r border-slate-350 text-center">Total Sesi Terjadwal</th>
-                    <th className="py-2.5 px-4 border-r border-slate-350 text-center">Sesi Dijalani (Selesai)</th>
-                    <th className="py-2.5 px-4 text-center">Sisa Sesi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700 font-semibold">
-                  {filtered.length > 0 ? (
-                    filtered.map((r, idx) => (
-                      <tr key={r.trainer_name} className="hover:bg-slate-50/50">
-                        <td className="py-3 px-4 text-center border-r border-slate-100 font-mono">{idx + 1}</td>
-                        <td className="py-3 px-4 font-bold text-slate-800 border-r border-slate-100">{r.trainer_name}</td>
-                        <td className="py-3 px-4 border-r border-slate-100 text-center font-bold text-slate-800">{r.total_clients} Member</td>
-                        <td className="py-3 px-4 border-r border-slate-100 text-center text-slate-600">{r.total_sessions} Sesi</td>
-                        <td className="py-3 px-4 border-r border-slate-100 text-center text-emerald-700 font-black">{r.completed_sessions} Sesi</td>
-                        <td className="py-3 px-4 text-center text-amber-600 font-black">{r.remaining_sessions} Sesi</td>
+              <div className="p-6 md:p-8 space-y-6">
+                {/* Action Bar (Kembali & Cetak Komisi Pelatih) */}
+                <div className="flex justify-between items-center">
+                  <button
+                    onClick={() => setStep('form')}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#DC3545] hover:bg-[#C82333] text-white text-xs font-accent font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Kembali</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsPrintOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-accent font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
+                  >
+                    <Printer className="w-4 h-4" />
+                    <span>Cetak Komisi Pelatih</span>
+                  </button>
+                </div>
+
+                {/* Summary Metadata Box */}
+                <div className="border border-slate-200 rounded overflow-hidden">
+                  <table className="w-full text-xs border-collapse">
+                    <tbody>
+                      <tr className="border-b border-slate-200">
+                        <td className="py-2.5 px-4 font-bold bg-white text-slate-700 w-64 border-r border-slate-200">
+                          Tanggal Transaksi
+                        </td>
+                        <td className="py-2.5 px-4 font-mono font-bold text-slate-800">
+                          {startDate ? formatDateLabel(startDate) : 'Awal'} s/d {endDate ? formatDateLabel(endDate) : 'Sekarang'}
+                        </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-400 italic">
-                        Tidak ada data sesi pelatih untuk filter terpilih.
-                      </td>
-                    </tr>
-                  )}
-                  <tr className="bg-slate-100 font-bold border-t-2 border-slate-300">
-                    <td colSpan={2} className="py-3 px-4 text-right uppercase tracking-wider text-xs text-slate-700">
-                      Total Seluruh Pelatih
-                    </td>
-                    <td className="py-3 px-4 text-center font-mono font-bold text-slate-800">{totalClientsAll} Member</td>
-                    <td className="py-3 px-4"></td>
-                    <td className="py-3 px-4 text-center font-mono font-black text-sm text-emerald-700">{totalCompletedAll} Sesi Completed</td>
-                    <td className="py-3 px-4"></td>
-                  </tr>
-                </tbody>
-              </table>
+                      <tr>
+                        <td className="py-2.5 px-4 font-bold bg-white text-slate-700 w-64 border-r border-slate-200">
+                          Nama Pelatih
+                        </td>
+                        <td className="py-2.5 px-4 font-bold text-slate-800">
+                          {selectedTrainer || 'Semua Pelatih'}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Main Data Table */}
+                <div className="overflow-x-auto border border-slate-200 rounded">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-[#6C7A89] text-white text-[10px] uppercase tracking-wider font-bold select-none">
+                        <th className="py-2.5 px-4 border-r border-slate-400 w-12 text-center">No</th>
+                        <th className="py-2.5 px-4 border-r border-slate-400">Tanggal Transaksi</th>
+                        <th className="py-2.5 px-4 border-r border-slate-400">Nama Anggota</th>
+                        <th className="py-2.5 px-4 border-r border-slate-400">Paket Latihan</th>
+                        <th className="py-2.5 px-4 text-center w-28">Jumlah Sesi</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-slate-700 font-semibold">
+                      {sessions.length > 0 ? (
+                        sessions.map((row, idx) => (
+                          <tr key={row.id || idx} className="hover:bg-slate-50/50">
+                            <td className="py-3 px-4 text-center border-r border-slate-100 font-mono text-slate-500">{idx + 1}</td>
+                            <td className="py-3 px-4 border-r border-slate-100 font-mono font-bold text-slate-700">
+                              {formatDateLabel(row.transaction_date)}
+                            </td>
+                            <td className="py-3 px-4 border-r border-slate-100 font-bold text-slate-900">
+                              {row.member_name}
+                            </td>
+                            <td className="py-3 px-4 border-r border-slate-100 font-bold uppercase text-slate-800">
+                              {row.package_name}
+                            </td>
+                            <td className="py-3 px-4 text-center font-mono font-bold text-slate-900">
+                              {row.session_count}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={5} className="py-8 text-center text-slate-400 italic">
+                            Tidak ada data sesi personal trainer untuk periode dan pelatih terpilih.
+                          </td>
+                        </tr>
+                      )}
+
+                      {/* Footer Row (Total Sesi) */}
+                      <tr className="bg-[#6C7A89] text-white font-bold">
+                        <td colSpan={4} className="py-3 px-4 font-bold text-white uppercase tracking-wider text-xs">
+                          Total Sesi
+                        </td>
+                        <td className="py-3 px-4 text-center font-mono font-bold text-sm text-white">
+                          {totalSessions}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
+
+      {/* PRINT REPORT MODAL */}
+      {isPrintOpen && (
+        <PTSessionReportPrintTemplate
+          title="DAFTAR SESI PERSONAL TRAINNER"
+          onClose={() => setIsPrintOpen(false)}
+          data={{
+            startDate,
+            endDate,
+            trainerName: selectedTrainer || 'Semua Pelatih',
+            totalSessions,
+            cashierName: user?.username || 'Staff PRABU GYM',
+            sessions: sessions.map(s => ({
+              id: s.id,
+              transaction_date: s.transaction_date,
+              member_name: s.member_name,
+              member_username: s.member_username,
+              package_name: s.package_name,
+              session_count: s.session_count,
+            })),
+          }}
+        />
+      )}
     </div>
   );
 }

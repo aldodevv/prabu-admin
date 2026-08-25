@@ -803,7 +803,7 @@ export default function PurchaseTransactionsPage() {
                 className="w-full py-3 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm disabled:opacity-50 transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Check className="w-4 h-4" />
-                {submitting ? 'MEMPROSES TRANSAKSI...' : '✔ Transaction is complete'}
+                {submitting ? 'MEMPROSES TRANSAKSI...' : 'Transaction is complete'}
               </button>
             </div>
           </div>
