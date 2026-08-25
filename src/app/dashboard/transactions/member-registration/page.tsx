@@ -48,7 +48,8 @@ export default function MemberRegistrationPage() {
 
   // Reactive dates
   const [startDateInput, setStartDateInput] = useState('');
-  const canEditTransactionDate = user?.role === 'admin' || user?.role === 'owner' || user?.role === 'developer';
+  const userRole = (user?.role || '').toLowerCase().trim();
+  const canEditStartDate = userRole === 'admin' || userRole === 'owner' || userRole === 'developer';
 
   // UI state
   const [loading, setLoading] = useState(false);
@@ -451,12 +452,12 @@ export default function MemberRegistrationPage() {
                   <DatePicker
                     value={startDateInput}
                     onChange={(val) => {
-                      if (canEditTransactionDate) {
+                      if (canEditStartDate) {
                         setStartDateInput(val);
                       }
                     }}
-                    readOnly={!canEditTransactionDate}
-                    disabled={!canEditTransactionDate}
+                    readOnly={!canEditStartDate}
+                    disabled={!canEditStartDate}
                   />
                 </div>
 
@@ -673,17 +674,17 @@ export default function MemberRegistrationPage() {
                         />
                       </div>
                       <div className="flex items-center gap-4">
-                        <span className="w-28 text-xs font-semibold text-slate-600">Tanggal Transaksi:</span>
+                        <span className="w-28 text-xs font-semibold text-slate-600">Masa Aktif Dimulai:</span>
                         <div className="flex-1">
                           <DatePicker
                             value={startDateInput}
                             onChange={(val) => {
-                              if (canEditTransactionDate) {
+                              if (canEditStartDate) {
                                 setStartDateInput(val);
                               }
                             }}
-                            readOnly={!canEditTransactionDate}
-                            disabled={!canEditTransactionDate}
+                            readOnly={!canEditStartDate}
+                            disabled={!canEditStartDate}
                           />
                         </div>
                       </div>
