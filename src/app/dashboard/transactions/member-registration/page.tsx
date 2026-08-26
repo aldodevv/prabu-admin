@@ -48,8 +48,6 @@ export default function MemberRegistrationPage() {
 
   // Reactive dates
   const [startDateInput, setStartDateInput] = useState('');
-  const userRole = (user?.role || '').toLowerCase().trim();
-  const canEditStartDate = userRole === 'admin' || userRole === 'owner' || userRole === 'developer';
 
   // UI state
   const [loading, setLoading] = useState(false);
@@ -451,13 +449,7 @@ export default function MemberRegistrationPage() {
                   </label>
                   <DatePicker
                     value={startDateInput}
-                    onChange={(val) => {
-                      if (canEditStartDate) {
-                        setStartDateInput(val);
-                      }
-                    }}
-                    readOnly={!canEditStartDate}
-                    disabled={!canEditStartDate}
+                    onChange={setStartDateInput}
                   />
                 </div>
 
@@ -678,13 +670,7 @@ export default function MemberRegistrationPage() {
                         <div className="flex-1">
                           <DatePicker
                             value={startDateInput}
-                            onChange={(val) => {
-                              if (canEditStartDate) {
-                                setStartDateInput(val);
-                              }
-                            }}
-                            readOnly={!canEditStartDate}
-                            disabled={!canEditStartDate}
+                            onChange={setStartDateInput}
                           />
                         </div>
                       </div>

@@ -11,6 +11,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { exportToExcel } from '@/lib/excelExport';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 import { DataTable, Column } from '@/components/core/DataTable';
+import { DatePicker } from '@/components/core/DatePicker';
 
 interface Transaction {
   id: string;
@@ -653,6 +654,52 @@ export default function MemberPaymentPage() {
                         >
                           Coba Lagi
                         </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Masa Aktif Mulai */}
+                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">
+                    Masa Aktif Mulai *
+                  </label>
+                  <DatePicker
+                    value={newStartDate}
+                    onChange={setNewStartDate}
+                    placeholder="Pilih Tanggal Mulai"
+                  />
+                </div>
+
+                {/* Masa Aktif Berakhir */}
+                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">
+                    Masa Aktif Berakhir *
+                  </label>
+                  <div className="space-y-1.5 w-full">
+                    <DatePicker
+                      value={newEndDate}
+                      onChange={setNewEndDate}
+                      placeholder="Pilih Tanggal Berakhir"
+                    />
+                    {selectedPackageName && packages.find((p) => p.name === selectedPackageName) && (
+                      <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-500 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded">
+                        <span>
+                          Durasi Paket:{' '}
+                          <strong className="text-brand-cyan">
+                            +{packages.find((p) => p.name === selectedPackageName)?.days} Hari
+                          </strong>
+                        </span>
+                        <span>•</span>
+                        <span>
+                          Total:{' '}
+                          <strong className="text-slate-800">
+                            Rp.{' '}
+                            {packages
+                              .find((p) => p.name === selectedPackageName)
+                              ?.price.toLocaleString('id-ID')}
+                          </strong>
+                        </span>
                       </div>
                     )}
                   </div>
