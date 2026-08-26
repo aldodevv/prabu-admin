@@ -209,7 +209,7 @@ export default function MigrationPage() {
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 font-medium">
-                Dibatasi maksimal 20 data per proses untuk mencegah beban compute hours pada Neon DB.
+                Dibatasi maksimal 20 data per proses untuk optimasi beban kerja database.
               </p>
             </div>
 

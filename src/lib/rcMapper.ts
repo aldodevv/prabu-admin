@@ -173,7 +173,7 @@ export const RC_DICTIONARY: Record<string, RCDetail> = {
     category: 'SYSTEM_ERROR',
     categoryLabel: 'SYSTEM ERROR (DATABASE TERPUTUS)',
     title: 'Koneksi Database Terputus',
-    message: 'Server backend kehilangan koneksi ke database Postgres Neon.',
+    message: 'Server backend kehilangan koneksi ke database Postgres.',
     actionAdvice: 'Hubungi Tim IT / Server Administrator untuk memeriksa status server DB.',
   },
   'SYS02': {
