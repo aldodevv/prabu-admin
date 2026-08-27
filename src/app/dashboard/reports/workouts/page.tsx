@@ -46,18 +46,6 @@ export default function WorkoutReportsPage() {
   const [isPrintOpen, setIsPrintOpen] = useState(false);
   const [selectedReceiptItem, setSelectedReceiptItem] = useState<PTRegistrationReportItem | null>(null);
 
-  // Set default dates (Awal bulan s/d hari ini)
-  useEffect(() => {
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-    const firstDayStr = firstDay.toISOString().split('T')[0];
-
-    setStartDate(firstDayStr);
-    setEndDate(todayStr);
-  }, []);
-
   const handleGenerate = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!activeBranchID) {

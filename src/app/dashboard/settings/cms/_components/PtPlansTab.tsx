@@ -151,23 +151,44 @@ export const PtPlansTab: React.FC<PtPlansTabProps> = ({ onSuccess, onError }) =>
         ? editingPtPlan.featuresStr.split('\n').map((s) => s.trim()).filter(Boolean)
         : (editingPtPlan.features || []);
 
-      const payload = {
-        name: editingPtPlan.name,
-        price: Number(editingPtPlan.price),
-        original_price: editingPtPlan.original_price ? Number(editingPtPlan.original_price) : null,
-        badge: editingPtPlan.badge || '',
-        popular: editingPtPlan.popular,
-        bonus_text: editingPtPlan.bonus_text || '',
-        discount_badge: editingPtPlan.discount_badge || '',
-        tagline: editingPtPlan.tagline || '',
-        features: featArray,
-        button_text: editingPtPlan.button_text || 'DAFTAR SEKARANG',
-        button_link: editingPtPlan.button_link || '',
-      };
+      const updatedPlans = ptPlans.map((p) => {
+        if (p.id === editingPtPlan.id) {
+          return {
+            id: p.id,
+            name: editingPtPlan.name,
+            durationLabel: editingPtPlan.duration_days ? `Paket Coaching` : '',
+            priceTotal: Number(editingPtPlan.price),
+            originalPriceTotal: editingPtPlan.original_price ? Number(editingPtPlan.original_price) : undefined,
+            badge: editingPtPlan.badge || 'Coaching',
+            popular: !!editingPtPlan.popular,
+            bonusText: editingPtPlan.bonus_text || undefined,
+            discountBadge: editingPtPlan.discount_badge || undefined,
+            tagline: editingPtPlan.tagline || undefined,
+            features: featArray,
+            buttonText: editingPtPlan.button_text || 'DAFTAR SEKARANG',
+            buttonLink: editingPtPlan.button_link || '',
+          };
+        }
+        return {
+          id: p.id,
+          name: p.name,
+          durationLabel: p.duration_days ? `Paket Coaching` : '',
+          priceTotal: Number(p.price),
+          originalPriceTotal: p.original_price ? Number(p.original_price) : undefined,
+          badge: p.badge || 'Coaching',
+          popular: !!p.popular,
+          bonusText: p.bonus_text || undefined,
+          discountBadge: p.discount_badge || undefined,
+          tagline: p.tagline || undefined,
+          features: p.features || [],
+          buttonText: p.button_text || 'DAFTAR SEKARANG',
+          buttonLink: p.button_link || '',
+        };
+      });
 
-      const res = await api.put(`/admin/pt-packages/${editingPtPlan.id}`, payload);
+      const res = await api.put('/admin/pricing/pt', { plans: updatedPlans });
       if (res.success) {
-        onSuccess(`Paket Personal Trainer "${editingPtPlan.name}" berhasil diperbarui!`);
+        onSuccess(`Kartu Paket Personal Trainer "${editingPtPlan.name}" berhasil diperbarui di website!`);
         setEditingPtPlan(null);
         fetchPtData();
       }

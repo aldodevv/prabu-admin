@@ -28,17 +28,6 @@ export default function MemberReportsPage() {
   const [showPrintReport, setShowPrintReport] = useState(false);
   const [selectedReceiptTx, setSelectedReceiptTx] = useState<Transaction | null>(null);
 
-  // Default date intervals
-  useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
-    const aWeekAgo = new Date();
-    aWeekAgo.setDate(aWeekAgo.getDate() - 7);
-    const aWeekAgoStr = aWeekAgo.toISOString().split('T')[0];
-
-    setStartDate(aWeekAgoStr);
-    setEndDate(today);
-  }, []);
-
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);

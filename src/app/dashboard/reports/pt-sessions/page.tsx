@@ -39,17 +39,8 @@ export default function PTSessionReportsPage() {
   const [error, setError] = useState('');
   const [isPrintOpen, setIsPrintOpen] = useState(false);
 
-  // Set default dates (Awal bulan s/d hari ini) & fetch trainers
+  // Fetch trainers
   useEffect(() => {
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-    const firstDayStr = firstDay.toISOString().split('T')[0];
-
-    setStartDate(firstDayStr);
-    setEndDate(todayStr);
-
     if (activeBranchID) {
       trainersApi.list(activeBranchID).then(res => {
         if (res.success && res.data) {

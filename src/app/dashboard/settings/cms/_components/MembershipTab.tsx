@@ -66,23 +66,44 @@ export const MembershipTab: React.FC<MembershipTabProps> = ({ onSuccess, onError
         ? editingMemPlan.featuresStr.split('\n').map((s) => s.trim()).filter(Boolean)
         : (editingMemPlan.features || []);
 
-      const payload = {
-        name: editingMemPlan.name,
-        price: Number(editingMemPlan.price),
-        original_price: editingMemPlan.original_price ? Number(editingMemPlan.original_price) : null,
-        badge: editingMemPlan.badge || '',
-        popular: editingMemPlan.popular,
-        bonus_text: editingMemPlan.bonus_text || '',
-        discount_badge: editingMemPlan.discount_badge || '',
-        tagline: editingMemPlan.tagline || '',
-        features: featArray,
-        button_text: editingMemPlan.button_text || 'DAFTAR SEKARANG',
-        button_link: editingMemPlan.button_link || '',
-      };
+      const updatedPlans = membershipPlans.map((p) => {
+        if (p.id === editingMemPlan.id) {
+          return {
+            id: p.id,
+            name: editingMemPlan.name,
+            durationLabel: p.duration_days ? `Member ${p.duration_days} Hari` : '',
+            priceTotal: Number(editingMemPlan.price),
+            originalPriceTotal: editingMemPlan.original_price ? Number(editingMemPlan.original_price) : undefined,
+            badge: editingMemPlan.badge || '',
+            popular: !!editingMemPlan.popular,
+            bonusText: editingMemPlan.bonus_text || undefined,
+            discountBadge: editingMemPlan.discount_badge || undefined,
+            tagline: editingMemPlan.tagline || undefined,
+            features: featArray,
+            buttonText: editingMemPlan.button_text || 'DAFTAR SEKARANG',
+            buttonLink: editingMemPlan.button_link || '',
+          };
+        }
+        return {
+          id: p.id,
+          name: p.name,
+          durationLabel: p.duration_days ? `Member ${p.duration_days} Hari` : '',
+          priceTotal: Number(p.price),
+          originalPriceTotal: p.original_price ? Number(p.original_price) : undefined,
+          badge: p.badge || '',
+          popular: !!p.popular,
+          bonusText: p.bonus_text || undefined,
+          discountBadge: p.discount_badge || undefined,
+          tagline: p.tagline || undefined,
+          features: p.features || [],
+          buttonText: p.button_text || 'DAFTAR SEKARANG',
+          buttonLink: p.button_link || '',
+        };
+      });
 
-      const res = await api.put(`/admin/membership-packages/${editingMemPlan.id}`, payload);
+      const res = await api.put('/admin/pricing/membership', { plans: updatedPlans });
       if (res.success) {
-        onSuccess(`Paket Membership "${editingMemPlan.name}" berhasil diperbarui!`);
+        onSuccess(`Kartu Paket Membership "${editingMemPlan.name}" berhasil diperbarui di website!`);
         setEditingMemPlan(null);
         fetchMembershipData();
       }
