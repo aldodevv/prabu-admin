@@ -574,259 +574,279 @@ export default function MemberPaymentPage() {
 
         {/* Step 2: Payment/Renewal Form */}
         {step === 'pay' && selectedMember && !successTx && (
-          <div className="space-y-6 animate-fadeIn max-w-4xl mx-auto">
+          <div className="bg-white border border-slate-200 rounded shadow-sm overflow-visible w-full no-print animate-fadeIn">
             {/* Header cyan bar */}
-            <div className="bg-brand-cyan px-5 py-3 text-white font-bold select-none flex items-center gap-2 rounded-t">
+            <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex items-center gap-2 select-none">
+              <UserPlus className="w-4 h-4" />
               <span className="text-sm uppercase tracking-wider font-heading">Transaksi Pembayaran Anggota</span>
             </div>
 
             {errorMsg && (
-              <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-bold uppercase tracking-wider">
+              <div className="m-6 mb-0 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-bold uppercase tracking-wider">
                 ⚠️ {errorMsg}
               </div>
             )}
 
-            <div className="bg-white border border-slate-200 p-8 rounded shadow-sm">
-              <form onSubmit={handleSavePayment} className="space-y-6 text-sm text-slate-700">
+            <div className="p-6 md:p-8">
+              <form onSubmit={handleSavePayment} className="space-y-6 w-full">
+                <div className="space-y-5">
 
-                {/* Tanggal Transaksi */}
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Tanggal Transaksi</label>
-                  <input
-                    type="text"
-                    readOnly
-                    disabled
-                    value={todayFormatted}
-                    className="bg-slate-100 border border-slate-200 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-mono font-bold"
-                  />
-                </div>
-
-                {/* Nomor Anggota */}
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Nomor Anggota</label>
-                  <input
-                    type="text"
-                    readOnly
-                    disabled
-                    value={selectedMember.username}
-                    className="bg-slate-100 border border-slate-200 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-mono font-bold"
-                  />
-                </div>
-
-                {/* Nama Anggota */}
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Nama Anggota</label>
-                  <input
-                    type="text"
-                    readOnly
-                    disabled
-                    value={selectedMember.full_name}
-                    className="bg-slate-100 border border-slate-200 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-bold"
-                  />
-                </div>
-
-                {/* Masa Aktif Terakhir */}
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Masa Aktif Terakhir</label>
-                  <input
-                    type="text"
-                    readOnly
-                    disabled
-                    value={selectedMember.membership_end || '-'}
-                    className="bg-slate-100 border border-slate-200 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-mono"
-                  />
-                </div>
-
-                {/* Selisih */}
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Selisih</label>
-                  <input
-                    type="text"
-                    readOnly
-                    disabled
-                    value={calculateDaysDiffLabel(selectedMember.membership_end)}
-                    className="bg-slate-100 border border-slate-200 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-bold"
-                  />
-                </div>
-
-                {/* Paket Anggota (Dropdown from DB) */}
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-start max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent mt-2">
-                    Paket Anggota *
-                  </label>
-                  <div className="space-y-2 w-full">
-                    <select
-                      required
-                      value={selectedPackageName}
-                      onChange={(e) => setSelectedPackageName(e.target.value)}
-                      disabled={loadingPackages || packages.length === 0}
-                      className={`bg-slate-50 border ${packageFetchError ? 'border-red-400 bg-red-50/20' : 'border-slate-200'
-                        } text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full font-bold disabled:opacity-60 disabled:cursor-not-allowed`}
-                    >
-                      <option value="">
-                        {loadingPackages
-                          ? '⏳ Memuat daftar paket anggota...'
-                          : packages.length === 0
-                            ? '-- Tidak Ada Paket Tersedia --'
-                            : '-Pilih Paket Anggota-'}
-                      </option>
-                      {packages.map((p, idx) => (
-                        <option key={`${p.name}-${idx}`} value={p.name}>
-                          {p.name} (Rp. {p.price.toLocaleString('id-ID')}) - {p.days} Hari
-                        </option>
-                      ))}
-                    </select>
-
-                    {/* Error / info alert directly beneath the input */}
-                    {packageFetchError && (
-                      <div className="flex items-center justify-between gap-2 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-xs animate-fadeIn">
-                        <span className="flex items-center gap-1.5 font-medium">
-                          ⚠️ {packageFetchError}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={fetchDbPackages}
-                          className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-[10px] font-bold uppercase transition-colors shrink-0 cursor-pointer"
-                        >
-                          Coba Lagi
-                        </button>
-                      </div>
-                    )}
+                  {/* Tanggal Transaksi */}
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                      Tanggal Transaksi
+                    </label>
+                    <input
+                      type="text"
+                      readOnly
+                      disabled
+                      value={todayFormatted}
+                      className="w-full bg-slate-100 border border-slate-300 text-slate-600 px-3.5 py-2.5 text-xs focus:outline-none rounded font-mono font-bold"
+                    />
                   </div>
-                </div>
 
-                {/* Diskon */}
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">
-                    Diskon <span className="text-slate-400 font-normal lowercase">(opsional)</span>
-                  </label>
-                  <div className="flex gap-2 items-center w-full">
-                    <select
-                      value={discountType}
-                      onChange={(e) => setDiscountType(e.target.value as 'nominal' | 'percent')}
-                      className="bg-slate-50 border border-slate-300 text-slate-800 px-3 py-2.5 text-xs focus:outline-none focus:border-brand-cyan rounded font-semibold shrink-0 cursor-pointer"
-                    >
-                      <option value="nominal">Nominal (Rp)</option>
-                      <option value="percent">Persentase (%)</option>
-                    </select>
-                    <div className="relative flex-1">
-                      <input
-                        type="number"
-                        min="0"
-                        max={discountType === 'percent' ? 100 : undefined}
-                        value={discountValue}
-                        onChange={(e) => setDiscountValue(e.target.value)}
-                        placeholder={discountType === 'percent' ? 'Contoh: 10 (untuk diskon 10%)' : 'Contoh: 50000 (untuk diskon Rp 50.000)'}
-                        className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-mono font-semibold"
-                      />
-                      {discountAmount > 0 && (
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-emerald-600">
-                          -Rp {discountAmount.toLocaleString('id-ID')}
-                        </span>
+                  {/* Nomor Anggota */}
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                      Nomor Anggota
+                    </label>
+                    <input
+                      type="text"
+                      readOnly
+                      disabled
+                      value={selectedMember.username}
+                      className="w-full bg-slate-100 border border-slate-300 text-slate-600 px-3.5 py-2.5 text-xs focus:outline-none rounded font-mono font-bold"
+                    />
+                  </div>
+
+                  {/* Nama Anggota */}
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                      Nama Anggota
+                    </label>
+                    <input
+                      type="text"
+                      readOnly
+                      disabled
+                      value={selectedMember.full_name}
+                      className="w-full bg-slate-100 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-semibold"
+                    />
+                  </div>
+
+                  {/* Masa Aktif Terakhir */}
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                      Masa Aktif Terakhir
+                    </label>
+                    <input
+                      type="text"
+                      readOnly
+                      disabled
+                      value={selectedMember.membership_end ? formatDateLabel(selectedMember.membership_end) : '-'}
+                      className="w-full bg-slate-100 border border-slate-300 text-slate-600 px-3.5 py-2.5 text-xs focus:outline-none rounded font-mono font-bold"
+                    />
+                  </div>
+
+                  {/* Selisih */}
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                      Selisih
+                    </label>
+                    <input
+                      type="text"
+                      readOnly
+                      disabled
+                      value={calculateDaysDiffLabel(selectedMember.membership_end)}
+                      className="w-full bg-slate-100 border border-slate-300 text-slate-600 px-3.5 py-2.5 text-xs focus:outline-none rounded font-bold"
+                    />
+                  </div>
+
+                  {/* Paket Anggota (Dropdown from DB) */}
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-start max-sm:grid-cols-1 pt-4 border-t border-slate-100">
+                    <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center mt-2">
+                      Paket Anggota <span className="text-red-500 ml-1">*</span>
+                    </label>
+                    <div className="space-y-3 w-full">
+                      <select
+                        required
+                        value={selectedPackageName}
+                        onChange={(e) => setSelectedPackageName(e.target.value)}
+                        disabled={loadingPackages || packages.length === 0}
+                        className={`w-full bg-slate-50 border ${packageFetchError ? 'border-red-400 bg-red-50/20' : 'border-slate-300'
+                          } focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-bold disabled:opacity-60 disabled:cursor-not-allowed`}
+                      >
+                        <option value="">
+                          {loadingPackages
+                            ? '⏳ Memuat daftar paket anggota...'
+                            : packages.length === 0
+                              ? '-- Tidak Ada Paket Tersedia --'
+                              : '-Pilih Paket Anggota-'}
+                        </option>
+                        {packages.map((p, idx) => (
+                          <option key={`${p.name}-${idx}`} value={p.name}>
+                            {p.name} (Rp. {p.price.toLocaleString('id-ID')}) - {p.days} Hari
+                          </option>
+                        ))}
+                      </select>
+
+                      {/* Error / info alert directly beneath the input */}
+                      {packageFetchError && (
+                        <div className="flex items-center justify-between gap-2 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-xs animate-fadeIn">
+                          <span className="flex items-center gap-1.5 font-medium">
+                            ⚠️ {packageFetchError}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={fetchDbPackages}
+                            className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-[10px] font-bold uppercase transition-colors shrink-0 cursor-pointer"
+                          >
+                            Coba Lagi
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
-                </div>
 
-                {/* Masa Aktif Mulai */}
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">
-                    Masa Aktif Mulai *
-                  </label>
-                  <DatePicker
-                    value={newStartDate}
-                    onChange={setNewStartDate}
-                    placeholder="Pilih Tanggal Mulai"
-                  />
-                </div>
+                  {/* Diskon */}
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                      Diskon <span className="text-slate-400 font-normal ml-1">(Opsional)</span>
+                    </label>
+                    <div className="flex gap-2 items-center w-full">
+                      <select
+                        value={discountType}
+                        onChange={(e) => setDiscountType(e.target.value as 'nominal' | 'percent')}
+                        className="bg-slate-50 border border-slate-300 text-slate-800 px-3 py-2.5 text-xs focus:outline-none focus:border-brand-cyan rounded font-semibold shrink-0 cursor-pointer"
+                      >
+                        <option value="nominal">Nominal (Rp)</option>
+                        <option value="percent">Persentase (%)</option>
+                      </select>
+                      <div className="relative flex-1">
+                        <input
+                          type="number"
+                          min="0"
+                          max={discountType === 'percent' ? 100 : undefined}
+                          value={discountValue}
+                          onChange={(e) => setDiscountValue(e.target.value)}
+                          placeholder={discountType === 'percent' ? 'Contoh: 10 (untuk diskon 10%)' : 'Contoh: 50000 (untuk diskon Rp 50.000)'}
+                          className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-mono font-semibold"
+                        />
+                        {discountAmount > 0 && (
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-emerald-600">
+                            -Rp {discountAmount.toLocaleString('id-ID')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
 
-                {/* Masa Aktif Berakhir */}
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">
-                    Masa Aktif Berakhir *
-                  </label>
-                  <div className="space-y-1.5 w-full">
+                  {/* Masa Aktif Mulai */}
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                      Masa Aktif Mulai <span className="text-red-500 ml-1">*</span>
+                    </label>
+                    <DatePicker
+                      value={newStartDate}
+                      onChange={setNewStartDate}
+                      placeholder="Pilih Tanggal Mulai"
+                    />
+                  </div>
+
+                  {/* Masa Aktif Berakhir */}
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                      Masa Aktif Berakhir <span className="text-red-500 ml-1">*</span>
+                    </label>
                     <DatePicker
                       value={newEndDate}
                       onChange={setNewEndDate}
                       placeholder="Pilih Tanggal Berakhir"
                     />
-                    {selectedPackageName && packages.find((p) => p.name === selectedPackageName) && (
-                      <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-500 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded">
-                        <span>
-                          Durasi Paket:{' '}
-                          <strong className="text-brand-cyan">
-                            +{packages.find((p) => p.name === selectedPackageName)?.days} Hari
-                          </strong>
-                        </span>
-                        <span>•</span>
-                        <span>
-                          Total Bayar:{' '}
-                          <strong className="text-slate-800 font-bold">
-                            Rp. {totalPrice.toLocaleString('id-ID')}
-                          </strong>
-                          {discountAmount > 0 && (
-                            <span className="text-emerald-600 font-semibold ml-1">
-                              (Diskon: -Rp {discountAmount.toLocaleString('id-ID')})
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                    )}
                   </div>
-                </div>
 
-                {/* Jenis Pembayaran */}
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Jenis Pembayaran *</label>
-                  <select
-                    required
-                    value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full"
-                  >
-                    <option value="">-Pilih-</option>
-                    <option value="Tunai">Tunai / Cash</option>
-                    <option value="Transfer Bank">Transfer Bank</option>
-                    <option value="QRIS">QRIS</option>
-                  </select>
-                </div>
+                  {/* Selected Package Details */}
+                  {selectedPkg && (
+                    <div className="grid grid-cols-[240px_1fr] gap-6 items-start max-sm:grid-cols-1 bg-slate-50 p-4 border border-slate-200 rounded">
+                      <label className="text-sm font-bold text-slate-700 text-left">
+                        Rincian Paket
+                      </label>
+                      <div className="space-y-3 w-full">
+                        <div className="flex items-center gap-4">
+                          <span className="w-28 text-xs font-semibold text-slate-600">Total Bayar:</span>
+                          <div className="flex-1 flex flex-wrap items-center gap-2">
+                            <input
+                              type="text"
+                              readOnly
+                              value={`Rp. ${totalPrice.toLocaleString('id-ID')}`}
+                              className="bg-slate-100 border border-slate-200 text-slate-800 font-black px-3 py-1.5 text-xs rounded"
+                            />
+                            <div className="text-[10px] text-slate-500 font-semibold flex flex-wrap gap-1 items-center">
+                              <span>(Paket: Rp {selectedPkg.price.toLocaleString('id-ID')} - {selectedPkg.days} Hari</span>
+                              {discountAmount > 0 && (
+                                <span className="text-emerald-600 font-bold">
+                                  - Diskon: {discountType === 'percent' ? `${discountValue}% (Rp ${discountAmount.toLocaleString('id-ID')})` : `Rp ${discountAmount.toLocaleString('id-ID')}`}
+                                </span>
+                              )}
+                              <span>)</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-                {/* Keterangan */}
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
-                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">Keterangan</label>
-                  <textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Masukan Keterangan"
-                    rows={4}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full resize-none h-[80px]"
-                  />
-                </div>
+                  {/* Jenis Pembayaran */}
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                      Jenis Pembayaran <span className="text-red-500 ml-1">*</span>
+                    </label>
+                    <select
+                      required
+                      value={paymentMethod}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded"
+                    >
+                      <option value="">-Pilih-</option>
+                      <option value="Tunai">Tunai / Cash</option>
+                      <option value="Transfer Bank">Transfer Bank</option>
+                      <option value="QRIS">QRIS</option>
+                    </select>
+                  </div>
 
-                {/* Form Action */}
-                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1 pt-4 border-t border-slate-100">
-                  <div />
-                  <div className="flex gap-4">
+                  {/* Keterangan */}
+                  <div className="grid grid-cols-[240px_1fr] gap-6 items-start max-sm:grid-cols-1">
+                    <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center mt-2">
+                      Keterangan
+                    </label>
+                    <textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Masukkan Keterangan (Opsional)"
+                      className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded resize-none h-[72px]"
+                    />
+                  </div>
+
+                  {/* Form Action Buttons */}
+                  <div className="flex items-center gap-3 justify-end pt-6 border-t border-slate-200/60">
                     <button
                       type="submit"
                       disabled={submitting || loadingPackages || !selectedPackageName || packages.length === 0}
-                      className="inline-flex items-center gap-1.5 px-6 py-3 bg-[#28A745] hover:bg-[#218838] text-white text-xs font-accent font-bold uppercase tracking-widest rounded transition-colors shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Save className="w-4 h-4" />
-                      <span>{submitting ? 'Menyimpan...' : 'Simpan'}</span>
+                      <span>{submitting ? 'Menyimpan...' : 'Simpan Transaksi'}</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setStep('list')}
-                      className="inline-flex items-center gap-1.5 px-6 py-3 bg-[#DC3545] hover:bg-[#c82333] text-white text-xs font-accent font-bold uppercase tracking-widest rounded transition-colors shadow-sm cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#DC3545] hover:bg-[#c82333] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
                     >
                       <ArrowLeft className="w-4 h-4" />
                       <span>Kembali</span>
                     </button>
                   </div>
-                </div>
 
+                </div>
               </form>
             </div>
           </div>
