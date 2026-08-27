@@ -415,6 +415,7 @@ export default function ProductsPage() {
             selectedColumn={filterColumn}
             onColumnChange={setFilterColumn}
             isTyping={isTyping}
+            loading={loading}
             onReset={handleReset}
           />
 

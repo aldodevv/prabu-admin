@@ -182,11 +182,11 @@ export default function OneClubMembersPanel() {
   // Fetch members whenever branch, page, perPage, or statusFilter changes
   useEffect(() => {
     if (!authLoading && activeBranchID) {
-      fetchMembers(search, filterColumn, page, perPage);
+      fetchMembers(search, filterColumn, page, perPage, statusFilter);
     }
   }, [activeBranchID, page, perPage, statusFilter, authLoading]);
 
-  const fetchMembers = async (searchQuery = search, col = filterColumn, pageNum = page, perPageNum = perPage) => {
+  const fetchMembers = async (searchQuery = search, col = filterColumn, pageNum = page, perPageNum = perPage, status = statusFilter) => {
     setLoading(true);
     setFetchError(null);
     try {
@@ -194,28 +194,23 @@ export default function OneClubMembersPanel() {
         branch_id: activeBranchID || undefined,
         search: searchQuery || undefined,
         search_by: searchQuery ? col : undefined,
+        status: status !== 'Semua' ? status : undefined,
         page: pageNum,
         per_page: perPageNum
       });
       if (res.success && res.data) {
-        let list = res.data;
-        if (statusFilter === 'Aktif') {
-          list = list.filter((m: Member) => m.is_active);
-        } else if (statusFilter === 'Expired') {
-          list = list.filter((m: Member) => m.is_active && new Date(m.membership_end) < new Date());
-        } else if (statusFilter === 'Nonaktif') {
-          list = list.filter((m: Member) => !m.is_active);
-        }
-        setMembers(list);
+        setMembers(res.data);
         setTotal(res.meta?.total || 0);
       } else {
         if (res.error) setFetchError(res.error);
         setMembers([]);
+        setTotal(0);
       }
     } catch (err: any) {
       console.error(err);
       setFetchError(err.message || 'Gagal mengambil data anggota One Club');
       setMembers([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
@@ -224,7 +219,7 @@ export default function OneClubMembersPanel() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
-    fetchMembers(search, filterColumn, 1, perPage);
+    fetchMembers(search, filterColumn, 1, perPage, statusFilter);
   };
 
   const handleResetSearch = () => {
@@ -232,7 +227,7 @@ export default function OneClubMembersPanel() {
     setFilterColumn('username');
     setStatusFilter('Semua');
     setPage(1);
-    fetchMembers('', 'username', 1, perPage);
+    fetchMembers('', 'username', 1, perPage, 'Semua');
   };
 
   const getSearchPlaceholder = () => {
@@ -552,8 +547,32 @@ export default function OneClubMembersPanel() {
       const res = await membersApi.update(selectedMember.id, body);
       if (res.success) {
         setEditSuccess('Data anggota berhasil disimpan.');
-        // Refresh the member data list
-        fetchMembers();
+        // Update local selectedMember state immediately
+        setSelectedMember(prev => prev ? {
+          ...prev,
+          full_name: fullName,
+          email,
+          phone,
+          address,
+          date_of_birth: dob,
+          gender,
+          photo_url: finalPhotoUrl,
+        } : null);
+
+        // Update local members array immediately
+        setMembers(prev => prev.map(m => m.id === selectedMember.id ? {
+          ...m,
+          full_name: fullName,
+          email,
+          phone,
+          address,
+          date_of_birth: dob,
+          gender,
+          photo_url: finalPhotoUrl,
+        } : m));
+
+        // Refresh the member data list from server
+        fetchMembers(search, filterColumn, page, perPage, statusFilter);
         setTimeout(() => {
           setStep('list');
         }, 1200);
@@ -614,6 +633,38 @@ export default function OneClubMembersPanel() {
       key: 'membership_type',
       header: 'Paket Anggota',
       className: 'text-slate-700 uppercase text-xs'
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      align: 'center',
+      className: 'w-28 text-center',
+      render: (m) => {
+        if (!m.is_active) {
+          return (
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+              Nonaktif
+            </span>
+          );
+        }
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const end = m.membership_end ? new Date(m.membership_end) : null;
+        if (end) end.setHours(0, 0, 0, 0);
+
+        if (!end || end >= today) {
+          return (
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              Aktif
+            </span>
+          );
+        }
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+            Expired
+          </span>
+        );
+      }
     },
     {
       key: 'action',
@@ -678,6 +729,7 @@ export default function OneClubMembersPanel() {
               hideAllColumnOption={true}
               onExportExcel={handleExportExcel}
               onReset={handleResetSearch}
+              loading={loading}
             >
               <select
                 value={statusFilter}

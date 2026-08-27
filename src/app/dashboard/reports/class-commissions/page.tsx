@@ -185,6 +185,7 @@ export default function ClassCommissionReportsPage() {
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           searchPlaceholder="Cari nama instruktur kelas..."
+          loading={loading}
           onExportExcel={handleExportExcel}
         >
           <div className="flex items-center gap-2">

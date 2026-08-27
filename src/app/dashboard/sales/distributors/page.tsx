@@ -246,6 +246,7 @@ export default function DistributorsPage() {
             selectedColumn={filterColumn}
             onColumnChange={setFilterColumn}
             isTyping={isTyping}
+            loading={loading}
             onReset={handleReset}
           />
 

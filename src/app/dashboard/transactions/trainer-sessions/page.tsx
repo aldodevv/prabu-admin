@@ -307,6 +307,7 @@ export default function TrainerSessionsPage() {
               onSearchChange={setSearchQuery}
               searchPlaceholder="Cari nama anggota, nomor HP..."
               onReset={handleResetSearch}
+              loading={loading}
             >
               <select
                 value={selectedMemberFilter}

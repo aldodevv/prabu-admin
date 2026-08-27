@@ -391,6 +391,7 @@ export default function CardReplacementPage() {
               selectedColumn={filterColumn}
               onColumnChange={setFilterColumn}
               isTyping={isTyping}
+              loading={loading}
               onReset={handleResetSearch}
             />
 

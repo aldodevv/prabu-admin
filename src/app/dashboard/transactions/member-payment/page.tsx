@@ -513,6 +513,7 @@ export default function MemberPaymentPage() {
               selectedColumn={filterColumn}
               onColumnChange={setFilterColumn}
               isTyping={isTyping}
+              loading={loading}
               onReset={handleResetSearch}
             />
 

@@ -486,6 +486,7 @@ export default function PurchaseTransactionsPage() {
             selectedColumn={filterColumn}
             onColumnChange={setFilterColumn}
             isTyping={isTyping}
+            loading={loading}
             onExportExcel={handleExportExcel}
             onReset={handleResetSearch}
           />

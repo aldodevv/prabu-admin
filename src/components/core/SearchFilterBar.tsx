@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, FileSpreadsheet, RotateCcw, Filter } from 'lucide-react';
+import { Search, FileSpreadsheet, RotateCcw, Filter, Loader2 } from 'lucide-react';
 
 export interface ColumnOption {
   label: string;
@@ -16,6 +16,7 @@ interface SearchFilterBarProps {
   onColumnChange?: (col: string) => void;
   hideAllColumnOption?: boolean;
   isTyping?: boolean;
+  loading?: boolean;
   onExportExcel?: () => void;
   onReset?: () => void;
   children?: React.ReactNode;
@@ -31,6 +32,7 @@ export const SearchFilterBar: React.FC<SearchFilterBarProps> = ({
   onColumnChange,
   hideAllColumnOption = false,
   isTyping = false,
+  loading = false,
   onExportExcel,
   onReset,
   children
@@ -84,9 +86,17 @@ export const SearchFilterBar: React.FC<SearchFilterBarProps> = ({
                 </div>
                 <button
                   type="submit"
-                  className="px-4 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm transition-colors cursor-pointer flex-shrink-0"
+                  disabled={loading}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-brand-cyan hover:bg-[#138496] disabled:opacity-75 text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm transition-colors cursor-pointer flex-shrink-0"
                 >
-                  Pencarian
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Memuat...</span>
+                    </>
+                  ) : (
+                    <span>Pencarian</span>
+                  )}
                 </button>
               </form>
             ) : (

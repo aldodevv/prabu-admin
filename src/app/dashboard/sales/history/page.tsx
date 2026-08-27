@@ -265,6 +265,7 @@ export default function TransactionHistoryPage() {
             selectedColumn={filterColumn}
             onColumnChange={setFilterColumn}
             isTyping={isTyping}
+            loading={loading}
             onExportExcel={handleExportExcel}
             onReset={handleClearSearch}
           >

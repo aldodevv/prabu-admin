@@ -15,12 +15,14 @@ import {
 
 // Structured fetch system wrapping api calls with proper TypeScript typing
 export const membersApi = {
-  list: (params: { branch_id?: string; page?: number; search?: string; search_by?: string; per_page?: number }) => {
+  list: (params: { branch_id?: string; page?: number; search?: string; search_by?: string; per_page?: number; status?: string; active_only?: boolean }) => {
     const q = new URLSearchParams();
     if (params.branch_id) q.append('branch_id', params.branch_id);
     if (params.page) q.append('page', String(params.page));
     if (params.search) q.append('search', params.search);
     if (params.search_by) q.append('search_by', params.search_by);
+    if (params.status) q.append('status', params.status);
+    if (params.active_only) q.append('active_only', 'true');
     if (params.per_page) q.append('per_page', String(params.per_page));
     return api.get<Member[]>(`/admin/members?${q.toString()}`);
   },

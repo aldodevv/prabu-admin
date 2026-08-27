@@ -4,13 +4,13 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import Link from 'next/link';
-import { Printer, ArrowLeft, CheckCircle, UserPlus, Check } from 'lucide-react';
+import { Printer, ArrowLeft, CheckCircle, UserPlus, Check, RotateCcw } from 'lucide-react';
 import { compressImage } from '@/utils/imageCompressor';
 import { uploadToCloudflare } from '@/lib/cloudflare';
 import { DigitalMemberCard } from '@/components/core/DigitalMemberCard';
 import { DatePicker } from '@/components/core/DatePicker';
 
-import { packagesApi } from '@/core/api';
+import { packagesApi, membersApi } from '@/core/api';
 
 interface SuccessData {
   member: any;
@@ -31,6 +31,8 @@ export default function MemberRegistrationPage() {
   const [packageFetchError, setPackageFetchError] = useState<string | null>(null);
 
   // Form Personal Data states
+  const [memberNumber, setMemberNumber] = useState('');
+  const [loadingMemberNumber, setLoadingMemberNumber] = useState(false);
   const [fullName, setFullName] = useState('');
   const [gender, setGender] = useState('');
   const [dob, setDob] = useState('');
@@ -43,6 +45,9 @@ export default function MemberRegistrationPage() {
 
   // Form Package states
   const [packageName, setPackageName] = useState('');
+  const [includeAdminFee, setIncludeAdminFee] = useState(true);
+  const [discountType, setDiscountType] = useState<'nominal' | 'percent'>('nominal');
+  const [discountValue, setDiscountValue] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -53,6 +58,21 @@ export default function MemberRegistrationPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successData, setSuccessData] = useState<SuccessData | null>(null);
+
+  const fetchNextMemberCode = async () => {
+    if (!activeBranchID) return;
+    setLoadingMemberNumber(true);
+    try {
+      const res = await membersApi.getNextCode(activeBranchID);
+      if (res.success && res.data?.next_code) {
+        setMemberNumber(res.data.next_code);
+      }
+    } catch (err) {
+      console.error('Gagal mengambil next member code:', err);
+    } finally {
+      setLoadingMemberNumber(false);
+    }
+  };
 
   const fetchDbPackages = async () => {
     setLoadingPackages(true);
@@ -85,6 +105,7 @@ export default function MemberRegistrationPage() {
   useEffect(() => {
     setStartDateInput(new Date().toISOString().split('T')[0]);
     fetchDbPackages();
+    fetchNextMemberCode();
   }, [activeBranchID]);
 
   const selectedPkg = packages.find(p => p.name === packageName);
@@ -93,6 +114,23 @@ export default function MemberRegistrationPage() {
     d.setDate(d.getDate() + selectedPkg.days);
     return d.toISOString().split('T')[0];
   })() : '';
+
+  const adminFee = includeAdminFee ? 50000 : 0;
+  const basePrice = selectedPkg ? selectedPkg.price : 0;
+  const subtotal = basePrice + adminFee;
+
+  const discountAmount = (() => {
+    if (!discountValue || isNaN(Number(discountValue)) || Number(discountValue) <= 0) return 0;
+    const num = Number(discountValue);
+    if (discountType === 'percent') {
+      const pct = Math.min(100, Math.max(0, num));
+      return Math.round((subtotal * pct) / 100);
+    }
+    return Math.min(subtotal, Math.max(0, num));
+  })();
+
+  const totalPrice = Math.max(0, subtotal - discountAmount);
+  const packageDesc = includeAdminFee ? `${packageName} (DAFTAR)` : packageName;
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -124,18 +162,17 @@ export default function MemberRegistrationPage() {
     setLoading(true);
     setLoadingText('Mendaftarkan Anggota Baru...');
 
-    const price = selectedPkg ? selectedPkg.price : 0;
-
     // 1. Create member record FIRST in database
     const memberBody = {
       branch_id: activeBranchID,
+      username: memberNumber ? memberNumber.trim() : undefined,
       full_name: fullName,
       email: email || undefined,
       phone: phone || undefined,
       address: address || undefined,
       date_of_birth: dob || undefined,
       gender,
-      membership_type: packageName,
+      membership_type: packageDesc,
       membership_start: startDateInput,
       membership_end: calculatedEnd,
     };
@@ -149,7 +186,7 @@ export default function MemberRegistrationPage() {
       }
 
       const createdMember = memRes.data.member;
-      const username = memRes.data.username;
+      const username = memRes.data.username || memberNumber;
       const password = memRes.data.password;
 
       // 2. If member creation succeeded, upload photo to cloud (Cloudflare R2)
@@ -173,15 +210,28 @@ export default function MemberRegistrationPage() {
 
       // 3. Create the associated sales transaction
       setLoadingText('Menyimpan Transaksi...');
-      const txNotes = `Pendaftaran Anggota: ${fullName} - Paket: ${packageName}${socialMedia ? ` - Sosial Media: ${socialMedia}` : ''}.${notes ? ` Catatan: ${notes}` : ''}`;
+      const discountInfo = discountAmount > 0
+        ? ` - Diskon: ${discountType === 'percent' ? `${discountValue}%` : `Rp ${discountAmount.toLocaleString('id-ID')}`} (-Rp ${discountAmount.toLocaleString('id-ID')})`
+        : '';
+      const txNotes = `Pendaftaran Anggota: ${fullName} - Paket: ${packageDesc}${discountInfo}${socialMedia ? ` - Sosial Media: ${socialMedia}` : ''}.${notes ? ` Catatan: ${notes}` : ''}`;
       const txBody = {
         member_id: createdMember.id,
         notes: txNotes.trim(),
-        total_amount: price,
+        total_amount: totalPrice,
         payment_method: paymentMethod || 'Tunai',
-        payment_amount: price,
+        payment_amount: totalPrice,
         change_amount: 0,
-        items: [],
+        items: [
+          {
+            name: packageDesc,
+            item_type: 'membership',
+            quantity: 1,
+            unit_price: totalPrice,
+            total_price: totalPrice,
+            discount_percent: discountType === 'percent' ? Number(discountValue) || 0 : 0,
+            discount_amount: discountAmount,
+          }
+        ],
       };
 
       const txRes = await api.post<any>('/admin/transactions', txBody);
@@ -195,11 +245,11 @@ export default function MemberRegistrationPage() {
         username,
         password,
         transactionNumber: txNumber,
-        packageName: packageName,
+        packageName: packageDesc,
         membershipStart: startDateInput,
         membershipEnd: calculatedEnd,
         paymentMethod: paymentMethod,
-        price: price,
+        price: totalPrice,
       });
 
       // Clear Form on success
@@ -212,8 +262,11 @@ export default function MemberRegistrationPage() {
       setAddress('');
       setPhotoBase64('');
       setPackageName('');
+      setDiscountType('nominal');
+      setDiscountValue('');
       setPaymentMethod('');
       setNotes('');
+      fetchNextMemberCode();
     } catch (err: any) {
       setErrorMsg(err.message || 'Terjadi kesalahan sistem');
     } finally {
@@ -486,6 +539,33 @@ export default function MemberRegistrationPage() {
                   </div>
                 </div>
 
+                {/* Nomor Anggota */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                    Nomor Anggota *
+                  </label>
+                  <div className="flex gap-2 items-center w-full">
+                    <input
+                      type="text"
+                      required
+                      value={memberNumber}
+                      onChange={(e) => setMemberNumber(e.target.value)}
+                      placeholder="Contoh: 16770001"
+                      className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-mono font-bold"
+                    />
+                    <button
+                      type="button"
+                      onClick={fetchNextMemberCode}
+                      disabled={loadingMemberNumber}
+                      title="Generate nomor anggota otomatis berikutnya"
+                      className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-xs font-semibold rounded cursor-pointer transition-colors shrink-0 inline-flex items-center gap-1"
+                    >
+                      <RotateCcw className={`w-3.5 h-3.5 ${loadingMemberNumber ? 'animate-spin' : ''}`} />
+                      <span>Auto</span>
+                    </button>
+                  </div>
+                </div>
+
                 {/* Nama Anggota */}
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
@@ -590,7 +670,7 @@ export default function MemberRegistrationPage() {
                   <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center mt-2">
                     Paket Anggota <span className="text-red-500 ml-1">*</span>
                   </label>
-                  <div className="space-y-2 w-full">
+                  <div className="space-y-3 w-full">
                     <select
                       required
                       value={packageName}
@@ -613,6 +693,23 @@ export default function MemberRegistrationPage() {
                       ))}
                     </select>
 
+                    {/* Checkbox Biaya Admin / Pendaftaran */}
+                    <div className="flex items-center gap-2 pt-1 bg-slate-50 p-2.5 rounded border border-slate-200">
+                      <input
+                        type="checkbox"
+                        id="includeAdminFee"
+                        checked={includeAdminFee}
+                        onChange={(e) => setIncludeAdminFee(e.target.checked)}
+                        className="w-4 h-4 text-brand-cyan rounded border-slate-300 focus:ring-brand-cyan cursor-pointer"
+                      />
+                      <label htmlFor="includeAdminFee" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
+                        Biaya Pendaftaran / Admin (+Rp 50.000)
+                      </label>
+                      <span className="text-[11px] text-slate-500 font-medium ml-auto">
+                        {includeAdminFee ? 'Deskripsi: (DAFTAR)' : 'Tanpa biaya admin'}
+                      </span>
+                    </div>
+
                     {/* Error / info alert directly beneath the input */}
                     {packageFetchError && (
                       <div className="flex items-center justify-between gap-2 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-xs animate-fadeIn">
@@ -628,6 +725,39 @@ export default function MemberRegistrationPage() {
                         </button>
                       </div>
                     )}
+                  </div>
+                </div>
+
+                {/* Diskon */}
+                <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
+                    Diskon <span className="text-slate-400 font-normal ml-1">(Opsional)</span>
+                  </label>
+                  <div className="flex gap-2 items-center w-full">
+                    <select
+                      value={discountType}
+                      onChange={(e) => setDiscountType(e.target.value as 'nominal' | 'percent')}
+                      className="bg-slate-50 border border-slate-300 text-slate-800 px-3 py-2.5 text-xs focus:outline-none focus:border-brand-cyan rounded font-semibold shrink-0 cursor-pointer"
+                    >
+                      <option value="nominal">Nominal (Rp)</option>
+                      <option value="percent">Persentase (%)</option>
+                    </select>
+                    <div className="relative flex-1">
+                      <input
+                        type="number"
+                        min="0"
+                        max={discountType === 'percent' ? 100 : undefined}
+                        value={discountValue}
+                        onChange={(e) => setDiscountValue(e.target.value)}
+                        placeholder={discountType === 'percent' ? 'Contoh: 10 (untuk diskon 10%)' : 'Contoh: 50000 (untuk diskon Rp 50.000)'}
+                        className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-mono font-semibold"
+                      />
+                      {discountAmount > 0 && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-emerald-600">
+                          -Rp {discountAmount.toLocaleString('id-ID')}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -658,12 +788,24 @@ export default function MemberRegistrationPage() {
                     <div className="space-y-3 w-full">
                       <div className="flex items-center gap-4">
                         <span className="w-28 text-xs font-semibold text-slate-600">Total Bayar:</span>
-                        <input
-                          type="text"
-                          readOnly
-                          value={`Rp. ${selectedPkg.price.toLocaleString('id-ID')}`}
-                          className="bg-slate-100 border border-slate-200 text-slate-800 font-bold px-3 py-1.5 text-xs rounded flex-1"
-                        />
+                        <div className="flex-1 flex flex-wrap items-center gap-2">
+                          <input
+                            type="text"
+                            readOnly
+                            value={`Rp. ${totalPrice.toLocaleString('id-ID')}`}
+                            className="bg-slate-100 border border-slate-200 text-slate-800 font-black px-3 py-1.5 text-xs rounded"
+                          />
+                          <div className="text-[10px] text-slate-500 font-semibold flex flex-wrap gap-1 items-center">
+                            <span>(Paket: Rp {selectedPkg.price.toLocaleString('id-ID')}</span>
+                            {includeAdminFee && <span>+ Admin: Rp 50.000</span>}
+                            {discountAmount > 0 && (
+                              <span className="text-emerald-600 font-bold">
+                                - Diskon: {discountType === 'percent' ? `${discountValue}% (Rp ${discountAmount.toLocaleString('id-ID')})` : `Rp ${discountAmount.toLocaleString('id-ID')}`}
+                              </span>
+                            )}
+                            <span>)</span>
+                          </div>
+                        </div>
                       </div>
                       <div className="flex items-center gap-4">
                         <span className="w-28 text-xs font-semibold text-slate-600">Masa Aktif Dimulai:</span>
