@@ -52,6 +52,8 @@ export default function MemberPaymentPage() {
 
   // Form Fields
   const [selectedPackageName, setSelectedPackageName] = useState('');
+  const [discountType, setDiscountType] = useState<'nominal' | 'percent'>('nominal');
+  const [discountValue, setDiscountValue] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -133,6 +135,21 @@ export default function MemberPaymentPage() {
     }
   };
 
+  const selectedPkg = packages.find(p => p.name === selectedPackageName);
+  const basePrice = selectedPkg ? selectedPkg.price : 0;
+
+  const discountAmount = (() => {
+    if (!discountValue || isNaN(Number(discountValue)) || Number(discountValue) <= 0) return 0;
+    const num = Number(discountValue);
+    if (discountType === 'percent') {
+      const pct = Math.min(100, Math.max(0, num));
+      return Math.round((basePrice * pct) / 100);
+    }
+    return Math.min(basePrice, Math.max(0, num));
+  })();
+
+  const totalPrice = Math.max(0, basePrice - discountAmount);
+
   const handleOpenPayment = (m: Member) => {
     if (m.branch_id !== activeBranchID) {
       const confirmChange = window.confirm(
@@ -146,6 +163,8 @@ export default function MemberPaymentPage() {
 
     setSelectedMember(m);
     setSelectedPackageName('');
+    setDiscountType('nominal');
+    setDiscountValue('');
     setPaymentMethod('');
     setNotes('');
     setErrorMsg('');
@@ -234,12 +253,28 @@ export default function MemberPaymentPage() {
     setErrorMsg('');
 
     // Step 1: Create transaction record (Kategori: Perpanjang)
-    const txNotes = `Perpanjang Paket: ${selectedPackageName} - Metode: ${paymentMethod}.${notes ? ` Catatan: ${notes}` : ''}`;
+    const discountInfo = discountAmount > 0
+      ? ` - Diskon: ${discountType === 'percent' ? `${discountValue}%` : `Rp ${discountAmount.toLocaleString('id-ID')}`} (-Rp ${discountAmount.toLocaleString('id-ID')})`
+      : '';
+    const txNotes = `Perpanjang Paket: ${selectedPackageName}${discountInfo} - Metode: ${paymentMethod}.${notes ? ` Catatan: ${notes}` : ''}`;
     const txBody = {
       member_id: selectedMember.id,
       notes: txNotes.trim(),
-      total_amount: pkg.price,
-      items: [],
+      total_amount: totalPrice,
+      payment_method: paymentMethod || 'Tunai',
+      payment_amount: totalPrice,
+      change_amount: 0,
+      items: [
+        {
+          name: selectedPackageName,
+          item_type: 'membership',
+          quantity: 1,
+          unit_price: totalPrice,
+          total_price: totalPrice,
+          discount_percent: discountType === 'percent' ? Number(discountValue) || 0 : 0,
+          discount_amount: discountAmount,
+        }
+      ],
     };
 
     try {
@@ -275,7 +310,7 @@ export default function MemberPaymentPage() {
         setSuccessTx({
           txNumber: invoiceNum,
           packageName: selectedPackageName,
-          totalAmount: pkg.price,
+          totalAmount: totalPrice,
           paymentMethod: paymentMethod,
           newStart: newStartDate,
           newEnd: newEndDate,
@@ -660,6 +695,39 @@ export default function MemberPaymentPage() {
                   </div>
                 </div>
 
+                {/* Diskon */}
+                <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
+                  <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">
+                    Diskon <span className="text-slate-400 font-normal lowercase">(opsional)</span>
+                  </label>
+                  <div className="flex gap-2 items-center w-full">
+                    <select
+                      value={discountType}
+                      onChange={(e) => setDiscountType(e.target.value as 'nominal' | 'percent')}
+                      className="bg-slate-50 border border-slate-300 text-slate-800 px-3 py-2.5 text-xs focus:outline-none focus:border-brand-cyan rounded font-semibold shrink-0 cursor-pointer"
+                    >
+                      <option value="nominal">Nominal (Rp)</option>
+                      <option value="percent">Persentase (%)</option>
+                    </select>
+                    <div className="relative flex-1">
+                      <input
+                        type="number"
+                        min="0"
+                        max={discountType === 'percent' ? 100 : undefined}
+                        value={discountValue}
+                        onChange={(e) => setDiscountValue(e.target.value)}
+                        placeholder={discountType === 'percent' ? 'Contoh: 10 (untuk diskon 10%)' : 'Contoh: 50000 (untuk diskon Rp 50.000)'}
+                        className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-mono font-semibold"
+                      />
+                      {discountAmount > 0 && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-emerald-600">
+                          -Rp {discountAmount.toLocaleString('id-ID')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 {/* Masa Aktif Mulai */}
                 <div className="grid grid-cols-[1.5fr_3fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">
@@ -684,7 +752,7 @@ export default function MemberPaymentPage() {
                       placeholder="Pilih Tanggal Berakhir"
                     />
                     {selectedPackageName && packages.find((p) => p.name === selectedPackageName) && (
-                      <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-500 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded">
+                      <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-500 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded">
                         <span>
                           Durasi Paket:{' '}
                           <strong className="text-brand-cyan">
@@ -693,13 +761,15 @@ export default function MemberPaymentPage() {
                         </span>
                         <span>•</span>
                         <span>
-                          Total:{' '}
-                          <strong className="text-slate-800">
-                            Rp.{' '}
-                            {packages
-                              .find((p) => p.name === selectedPackageName)
-                              ?.price.toLocaleString('id-ID')}
+                          Total Bayar:{' '}
+                          <strong className="text-slate-800 font-bold">
+                            Rp. {totalPrice.toLocaleString('id-ID')}
                           </strong>
+                          {discountAmount > 0 && (
+                            <span className="text-emerald-600 font-semibold ml-1">
+                              (Diskon: -Rp {discountAmount.toLocaleString('id-ID')})
+                            </span>
+                          )}
                         </span>
                       </div>
                     )}
