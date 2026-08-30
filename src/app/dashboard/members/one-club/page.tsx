@@ -9,7 +9,7 @@ import { Member, Transaction, MembershipPackage, PTPackage } from '@/core/types'
 import { PageHeader } from '@/components/core/PageHeader';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 import { DataTable, Column } from '@/components/core/DataTable';
-import { Search, Eye, Edit, Trash2, ArrowLeft, Save, Printer, FileText, FileSpreadsheet, RotateCcw, Download, CreditCard, X } from 'lucide-react';
+import { Search, Eye, Edit, Trash2, ArrowLeft, Save, Printer, FileText, FileSpreadsheet, RotateCcw, Download, CreditCard, X, AlertTriangle, UserX } from 'lucide-react';
 import { exportToExcel } from '@/lib/excelExport';
 import { compressImage } from '@/utils/imageCompressor';
 import { uploadToCloudflare } from '@/lib/cloudflare';
@@ -100,13 +100,38 @@ export default function OneClubMembersPanel() {
   const [editError, setEditError] = useState('');
   const [editSuccess, setEditSuccess] = useState('');
 
-  // Delete states
+  // Delete & Status action states
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
-  const [deletingMember, setDeletingMember] = useState(false);
+  const [actionLoading, setActionLoading] = useState<'deactivate' | 'delete' | null>(null);
 
-  const confirmDeleteMember = async () => {
+  const handleToggleMemberStatus = async () => {
     if (!memberToDelete) return;
-    setDeletingMember(true);
+    setActionLoading('deactivate');
+    try {
+      const newStatus = !memberToDelete.is_active;
+      const res = await membersApi.update(memberToDelete.id, {
+        is_active: newStatus,
+      });
+      if (res.success) {
+        setMembers((prev) =>
+          prev.map((m) =>
+            m.id === memberToDelete.id ? { ...m, is_active: newStatus } : m
+          )
+        );
+        setMemberToDelete(null);
+      } else {
+        alert(res.error || 'Gagal mengubah status anggota');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Terjadi kesalahan saat mengubah status anggota');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handlePermanentDeleteMember = async () => {
+    if (!memberToDelete) return;
+    setActionLoading('delete');
     try {
       const res = await membersApi.delete(memberToDelete.id);
       if (res.success) {
@@ -118,7 +143,7 @@ export default function OneClubMembersPanel() {
     } catch (err: any) {
       alert(err.message || 'Terjadi kesalahan saat menghapus data anggota');
     } finally {
-      setDeletingMember(false);
+      setActionLoading(null);
     }
   };
 
@@ -1588,57 +1613,105 @@ export default function OneClubMembersPanel() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete & Status Confirmation Modal */}
       {memberToDelete && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-5 border border-slate-200">
-            <div className="flex items-center gap-3 text-red-600">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                <Trash2 className="w-5 h-5 text-red-600" />
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-5 border border-slate-200">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="font-heading font-extrabold text-lg text-slate-900">
+                    Kelola Status & Hapus Anggota
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    Pilih tindakan untuk data anggota <span className="font-bold text-slate-800">"{memberToDelete.full_name}"</span> (@{memberToDelete.username})
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-heading font-extrabold text-base uppercase tracking-wider text-slate-900">
-                  {user?.role === 'developer' ? 'Hapus Permanen Anggota' : 'Nonaktifkan Status Anggota'}
-                </h3>
-                <p className="text-xs text-slate-500 font-medium">
-                  {user?.role === 'developer' ? 'Tindakan ini menghapus data total dari database.' : 'Status anggota akan diubah menjadi tidak aktif.'}
+              <button
+                type="button"
+                onClick={() => setMemberToDelete(null)}
+                disabled={actionLoading !== null}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Explanation Boxes */}
+            <div className="space-y-3">
+              {/* Option 1 Box: Nonaktifkan Status */}
+              <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/60 space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-amber-800">
+                    Opsi 1: {memberToDelete.is_active ? 'Nonaktifkan Status (Soft Deactivate)' : 'Aktifkan Kembali Status'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed pl-4">
+                  {memberToDelete.is_active
+                    ? 'Status keanggotaan diubah menjadi Nonaktif. Profil dan seluruh riwayat transaksi keuangan tetap tersimpan utuh di sistem.'
+                    : 'Mengaktifkan kembali status keanggotaan anggota agar dapat melakukan transaksi & check-in.'}
+                </p>
+              </div>
+
+              {/* Option 2 Box: Hapus Permanen */}
+              <div className="p-3.5 rounded-xl border border-red-200 bg-red-50/60 space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-red-800">
+                    Opsi 2: Hapus Permanen (Total Data Loss)
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed pl-4">
+                  Menghapus akun anggota secara permanen beserta seluruh riwayat transaksi (Pendaftaran, Perpanjang, Cuti, Ganti Cabang), presensi check-in, dan data PT. <span className="font-bold text-red-700">Data tidak dapat dikembalikan</span>.
                 </p>
               </div>
             </div>
 
-            <p className="text-xs text-slate-600 font-semibold leading-relaxed">
-              {user?.role === 'developer' ? (
-                <>
-                  Apakah Anda yakin ingin <span className="text-red-600 font-extrabold uppercase">menghapus permanen</span> data anggota <span className="font-bold text-slate-900">"{memberToDelete.full_name}"</span> (ID: @{memberToDelete.username})? Seluruh riwayat kunjungan dan cuti terkait akan dihapus total.
-                </>
-              ) : (
-                <>
-                  Apakah Anda yakin ingin <span className="text-amber-600 font-bold uppercase">menonaktifkan</span> status anggota <span className="font-bold text-slate-900">"{memberToDelete.full_name}"</span> (ID: @{memberToDelete.username})?
-                </>
-              )}
-            </p>
-
-            <div className="flex items-center gap-3 justify-end pt-2">
+            {/* Actions Buttons */}
+            <div className="flex flex-col sm:flex-row items-center gap-2.5 justify-end pt-2 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setMemberToDelete(null)}
-                disabled={deletingMember}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold uppercase transition-colors cursor-pointer"
+                disabled={actionLoading !== null}
+                className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold uppercase transition-colors cursor-pointer"
               >
                 Batal
               </button>
+
               <button
                 type="button"
-                onClick={confirmDeleteMember}
-                disabled={deletingMember}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold uppercase shadow-sm transition-colors cursor-pointer flex items-center gap-2"
+                onClick={handleToggleMemberStatus}
+                disabled={actionLoading !== null}
+                className="w-full sm:w-auto px-4 py-2.5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white rounded-xl text-xs font-bold uppercase shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                {deletingMember ? (
+                {actionLoading === 'deactivate' ? (
                   <span>Memproses...</span>
                 ) : (
                   <>
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>{user?.role === 'developer' ? 'Hapus Permanen' : 'Nonaktifkan Anggota'}</span>
+                    <UserX className="w-4 h-4" />
+                    <span>{memberToDelete.is_active ? 'Nonaktifkan' : 'Aktifkan'}</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={handlePermanentDeleteMember}
+                disabled={actionLoading !== null}
+                className="w-full sm:w-auto px-4 py-2.5 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-xl text-xs font-bold uppercase shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                {actionLoading === 'delete' ? (
+                  <span>Menghapus...</span>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    <span>Hapus Permanen</span>
                   </>
                 )}
               </button>

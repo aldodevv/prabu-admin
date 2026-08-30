@@ -76,10 +76,13 @@ export const transactionsApi = {
   },
   get: (id: string) => api.get<Transaction>(`/admin/transactions/${id}`),
   create: (data: {
-    member_id: string | null;
+    member_id?: string | null;
     notes: string;
     total_amount?: number;
-    items?: { product_id: string; quantity: number }[];
+    payment_method?: string;
+    payment_amount?: number;
+    change_amount?: number;
+    items?: { product_id?: string; quantity?: number; discount_percent?: number }[];
   }) => api.post<Transaction>('/admin/transactions', data),
   update: (id: string, data: {
     transaction_date?: string;

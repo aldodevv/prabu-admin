@@ -264,17 +264,7 @@ export default function MemberPaymentPage() {
       payment_method: paymentMethod || 'Tunai',
       payment_amount: totalPrice,
       change_amount: 0,
-      items: [
-        {
-          name: selectedPackageName,
-          item_type: 'membership',
-          quantity: 1,
-          unit_price: totalPrice,
-          total_price: totalPrice,
-          discount_percent: discountType === 'percent' ? Number(discountValue) || 0 : 0,
-          discount_amount: discountAmount,
-        }
-      ],
+      items: [],
     };
 
     try {

@@ -221,17 +221,7 @@ export default function MemberRegistrationPage() {
         payment_method: paymentMethod || 'Tunai',
         payment_amount: totalPrice,
         change_amount: 0,
-        items: [
-          {
-            name: packageDesc,
-            item_type: 'membership',
-            quantity: 1,
-            unit_price: totalPrice,
-            total_price: totalPrice,
-            discount_percent: discountType === 'percent' ? Number(discountValue) || 0 : 0,
-            discount_amount: discountAmount,
-          }
-        ],
+        items: [],
       };
 
       const txRes = await api.post<any>('/admin/transactions', txBody);
