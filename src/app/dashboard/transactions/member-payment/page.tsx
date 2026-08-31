@@ -491,27 +491,55 @@ export default function MemberPaymentPage() {
       {/* Absolute CSS print layouts */}
       <style jsx global>{`
         @media print {
-          header, aside, button, .no-print {
+          @page {
+            size: auto;
+            margin: 3mm 5mm !important;
+          }
+          header, aside, nav, button, .no-print {
             display: none !important;
           }
           body, .min-h-screen, main, #print-renewal-receipt {
             background: white !important;
             color: black !important;
             padding: 0 !important;
-            margin: 0 !important;
+            margin: 0 auto !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow: visible !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
           #print-renewal-receipt {
             width: 100% !important;
+            max-width: 100% !important;
             display: block !important;
+            visibility: visible !important;
+            position: static !important;
+            margin: 0 auto !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
           table {
             border-collapse: collapse !important;
             width: 100% !important;
+            table-layout: fixed !important;
+          }
+          .receipt-meta-row span,
+          .receipt-table th,
+          .receipt-table td {
+            white-space: nowrap !important;
           }
           th, td {
-            border: 1px solid black !important;
-            padding: 6px 8px !important;
             color: black !important;
+            font-weight: 700 !important;
+          }
+          thead th {
+            background-color: #f8fafc !important;
+            color: black !important;
+            font-weight: 900 !important;
+          }
+          * {
+            font-weight: 700 !important;
           }
         }
       `}</style>
@@ -869,77 +897,77 @@ export default function MemberPaymentPage() {
           </div>
 
           {/* Struk Container */}
-          <div id="print-renewal-receipt" className="bg-white border border-black p-8 rounded text-black space-y-6 max-w-4xl mx-auto print:border-0 print:p-0">
+          <div id="print-renewal-receipt" className="bg-white border border-slate-200 p-6 md:p-8 rounded shadow-sm space-y-4 print:space-y-3 text-black max-w-4xl mx-auto print:border-0 print:p-0">
 
             {/* Header Box */}
-            <div className="grid grid-cols-[1.2fr_2fr] border border-black divide-x divide-black">
+            <div className="grid grid-cols-[1.1fr_2fr] border border-black divide-x divide-black">
               {/* Logo Box */}
-              <div className="p-4 flex flex-col items-center justify-center text-center">
+              <div className="p-3 print:p-2 flex flex-col items-center justify-center text-center">
                 <img
                   src="/logo-transparent.png"
                   alt="PRABU GYM Logo"
-                  className="h-14 w-auto object-contain"
+                  className="h-10 print:h-9 w-auto object-contain"
                 />
-                <div className="text-center leading-none mt-2">
-                  <h1 className="text-xl font-black tracking-widest font-heading">PRABU GYM</h1>
-                  <span className="text-[8px] uppercase font-bold text-slate-600 tracking-wider">Gym & Fitness Center</span>
+                <div className="text-center leading-none mt-1">
+                  <h1 className="text-lg print:text-base font-bold tracking-widest font-heading text-black">PRABU GYM</h1>
+                  <span className="text-[8px] print:text-[7.5px] uppercase font-bold text-black tracking-wider">Gym &amp; Fitness Center</span>
                 </div>
               </div>
 
               {/* Title Box */}
-              <div className="p-4 flex items-center justify-center text-center">
-                <h2 className="text-3xl font-black uppercase tracking-widest text-slate-900">
+              <div className="p-3 print:p-2 flex items-center justify-center text-center">
+                <h2 className="text-xl print:text-lg font-bold uppercase tracking-wider text-black">
                   PRABU OFFICIAL RECEIPT
                 </h2>
               </div>
             </div>
 
-            {/* Metadata Summary Row - Bold & Prominent */}
-            <div className="border border-black py-2.5 px-4 flex justify-between text-xs font-extrabold text-black uppercase tracking-wide">
-              <span>Tanggal : {formatDateLabel(new Date().toISOString())}</span>
-              <span>Kategori : Perpanjang</span>
-              <span>No Invoice : {successTx.txNumber}</span>
+            {/* Metadata Summary Row - Single line, zero wrapping */}
+            <div className="receipt-meta-row border-t border-b border-black py-2 print:py-1.5 px-3 flex justify-between items-center text-[11px] print:text-[9.5px] font-bold text-black uppercase tracking-tight whitespace-nowrap">
+              <span className="whitespace-nowrap">Tanggal : {formatDateLabel(new Date().toISOString())}</span>
+              <span className="whitespace-nowrap">Kategori : Perpanjang</span>
+              <span className="whitespace-nowrap">No Invoice : {successTx.txNumber}</span>
             </div>
 
             {/* Details Table - Bold Header Row */}
             <div className="border border-black overflow-hidden rounded-xs">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="receipt-table w-full text-left text-xs print:text-[9.5px] border-collapse table-fixed">
                 <thead>
-                  <tr className="bg-slate-100 border-b border-black font-black uppercase text-[11px] text-black">
-                    <th className="py-2.5 px-3 border-r border-black font-black">NOMOR ANGGOTA</th>
-                    <th className="py-2.5 px-3 border-r border-black font-black">NAMA ANGGOTA</th>
-                    <th className="py-2.5 px-3 border-r border-black font-black">PAKET ANGGOTA</th>
-                    <th className="py-2.5 px-3 border-r border-black font-black">MASA AKTIF</th>
-                    <th className="py-2.5 px-3 border-r border-black font-black">JENIS PEMBAYARAN</th>
-                    <th className="py-2.5 px-3 font-black">HARGA PAKET</th>
+                  <tr className="bg-slate-50 border-b border-black font-bold uppercase text-[10px] print:text-[8.5px] text-black">
+                    <th className="py-2 px-1.5 border-r border-black font-bold text-center w-[18%] whitespace-nowrap">NOMOR ANGGOTA</th>
+                    <th className="py-2 px-2 border-r border-black font-bold text-left w-[22%] whitespace-nowrap">NAMA ANGGOTA</th>
+                    <th className="py-2 px-2 border-r border-black font-bold text-center w-[18%] whitespace-nowrap">PAKET ANGGOTA</th>
+                    <th className="py-2 px-2 border-r border-black font-bold text-center w-[16%] whitespace-nowrap">MASA AKTIF</th>
+                    <th className="py-2 px-1.5 border-r border-black font-bold text-center w-[12%] whitespace-nowrap">METODE</th>
+                    <th className="py-2 px-2 font-bold text-right w-[14%] whitespace-nowrap">HARGA PAKET</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="font-bold text-slate-900">
-                    <td className="py-3 px-3 border-r border-black font-mono font-bold">{selectedMember.username}</td>
-                    <td className="py-3 px-3 border-r border-black font-extrabold">{selectedMember.full_name}</td>
-                    <td className="py-3 px-3 border-r border-black uppercase text-[10px] font-bold">{successTx.packageName}</td>
-                    <td className="py-3 px-3 border-r border-black font-mono text-[10px] font-bold">
+                  <tr className="font-bold text-black text-xs print:text-[9.5px]">
+                    <td className="py-2.5 px-1.5 border-r border-black font-bold text-center font-mono whitespace-nowrap truncate">{selectedMember.username}</td>
+                    <td className="py-2.5 px-2 border-r border-black font-bold text-left truncate">{selectedMember.full_name}</td>
+                    <td className="py-2.5 px-2 border-r border-black uppercase font-bold text-center whitespace-nowrap">{successTx.packageName}</td>
+                    <td className="py-2.5 px-2 border-r border-black font-bold text-center font-mono text-[10px] print:text-[8.5px] whitespace-nowrap">
                       {formatDateLabel(successTx.newStart)} s/d {formatDateLabel(successTx.newEnd)}
                     </td>
-                    <td className="py-3 px-3 border-r border-black uppercase font-bold">{successTx.paymentMethod}</td>
-                    <td className="py-3 px-3 font-extrabold">Rp. {successTx.totalAmount.toLocaleString('id-ID')}</td>
+                    <td className="py-2.5 px-1.5 border-r border-black uppercase font-bold text-center whitespace-nowrap">{successTx.paymentMethod}</td>
+                    <td className="py-2.5 px-2 font-bold text-right font-mono whitespace-nowrap">Rp. {successTx.totalAmount.toLocaleString('id-ID')}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
             {/* Signature Box */}
-            <div className="grid grid-cols-2 border border-black text-center text-xs font-bold divide-x divide-black">
+            <div className="grid grid-cols-2 border border-black text-center text-xs print:text-[9.5px] font-bold divide-x divide-black">
               <div>
-                <div className="py-2 border-b border-black uppercase tracking-wider bg-slate-50 text-[10px]">Member</div>
-                <div className="h-28" />
-                <div className="py-2 border-t border-black uppercase font-extrabold">{selectedMember.full_name}</div>
+                <div className="py-1.5 border-b border-black uppercase tracking-wider bg-slate-50 text-[10px] print:text-[8.5px] font-bold text-black">MEMBER</div>
+                <div className="h-20 print:h-16" />
+                <div className="py-1.5 border-t border-black uppercase font-bold text-black truncate px-1">{selectedMember.full_name}</div>
               </div>
               <div>
-                <div className="py-2 border-b border-black uppercase tracking-wider bg-slate-50 text-[10px]">Customer Service</div>
-                <div className="h-28" />
-                <div className="py-2 border-t border-black uppercase font-extrabold">{user?.full_name || 'Kasir PRABU GYM'}</div>
+                <div className="py-1.5 border-b border-black uppercase tracking-wider bg-slate-50 text-[10px] print:text-[8.5px] font-bold text-black">CUSTOMER SERVICE</div>
+                <div className="h-20 print:h-16" />
+                <div className="py-1.5 border-t border-black uppercase font-bold text-black truncate px-1">{user?.full_name || 'Kasir PRABU GYM'}</div>
               </div>
             </div>
 
