@@ -6,7 +6,7 @@ import api from './api';
  */
 export async function uploadToCloudflare(
   fileOrBase64: File | string,
-  folder = 'members'
+  folder = 'anggota'
 ): Promise<string> {
   if (!fileOrBase64) return '';
 

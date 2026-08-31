@@ -545,7 +545,7 @@ export default function OneClubMembersPanel() {
     let finalPhotoUrl = photoUrl;
     if (photoBase64 && photoBase64.startsWith('data:')) {
       try {
-        finalPhotoUrl = await uploadToCloudflare(photoBase64, 'members');
+        finalPhotoUrl = await uploadToCloudflare(photoBase64, 'anggota');
       } catch (err: any) {
         console.error('Cloudflare upload error:', err);
         setEditError('Gagal mengunggah foto ke Cloudflare R2: ' + (err.message || 'Error'));

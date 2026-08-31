@@ -194,7 +194,7 @@ export default function MemberRegistrationPage() {
       if (photoBase64) {
         try {
           setLoadingText('Proses Upload Foto ke Cloudflare R2...');
-          finalPhotoUrl = await uploadToCloudflare(photoBase64, 'members');
+          finalPhotoUrl = await uploadToCloudflare(photoBase64, 'anggota');
 
           if (finalPhotoUrl) {
             setLoadingText('Mengupdate Foto Anggota...');
