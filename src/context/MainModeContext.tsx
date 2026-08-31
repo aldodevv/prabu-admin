@@ -31,14 +31,21 @@ export function MainModeProvider({ children }: { children: React.ReactNode }) {
       const next = !prev;
       if (typeof window !== 'undefined') {
         localStorage.setItem('prabu_main_mode', String(next));
-        localStorage.removeItem('prabu_prod_mode');
-        localStorage.removeItem('prabu_pajak_mode');
+        localStorage.setItem('prabu_pajak_mode', String(next));
+        localStorage.setItem('prabu_prod_mode', String(next));
       }
       const msg = next
-        ? '🔒 Easter Egg Aktif! Mode Database Main (URL_DB_MAIN) diaktifkan.'
-        : '🏠 Mode Normal! Kembali ke Database Standard (URL_DB / URL_DB_DEV).';
+        ? '🔒 Mode Pajak Aktif! Menghubungkan ke Database Pajak & memuat ulang...'
+        : '🏠 Mode Normal Aktif! Menghubungkan ke Database Utama & memuat ulang...';
       setToastMessage(msg);
-      setTimeout(() => setToastMessage(null), 4000);
+      
+      // Auto-reload after a brief moment so user sees the transition toast
+      setTimeout(() => {
+        if (typeof window !== 'undefined') {
+          window.location.reload();
+        }
+      }, 500);
+
       return next;
     });
   };

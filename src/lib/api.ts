@@ -91,6 +91,8 @@ class ApiClient {
         localStorage.getItem('prabu_pajak_mode') === 'true';
       if (isMainMode) {
         headers['X-DB-Mode'] = 'main';
+        headers['X-Main-Mode'] = 'true';
+        headers['X-Pajak-Mode'] = 'true';
       }
     }
     return headers;
