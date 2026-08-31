@@ -371,9 +371,9 @@ export default function ProductsPage() {
       {/* Header Breadcrumb */}
       <div className="bg-white px-6 py-4 border-b border-slate-200 shadow-sm rounded-lg">
         <div className="text-xs text-slate-400 font-semibold flex items-center gap-1.5 uppercase tracking-wider">
-          <span>Transaction Cafe</span>
+          <span>Transaksi Penjualan</span>
           <span>&gt;</span>
-          <span className="text-[#DC3545]">Product</span>
+          <span className="text-[#DC3545]">Data Barang</span>
           {view === 'add' && (
             <>
               <span>&gt;</span>
@@ -393,9 +393,9 @@ export default function ProductsPage() {
             </>
           )}
         </div>
-        <h2 className="text-2xl font-bold text-slate-800 mt-1 uppercase tracking-tight select-none">
+        <h2 className="text-2xl font-bold text-slate-800 mt-1 uppercase tracking-tight select-none font-heading">
           {view === 'list'
-            ? 'Product Cafe'
+            ? 'Data Barang Retail & Suplemen'
             : view === 'add'
               ? 'Tambah Data Barang'
               : view === 'edit'
@@ -424,7 +424,7 @@ export default function ProductsPage() {
           {/* Card Table Product */}
           <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
             <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex justify-between items-center select-none">
-              <span className="text-sm uppercase tracking-wider">Product</span>
+              <span className="text-sm uppercase tracking-wider font-heading">Daftar Data Barang</span>
             </div>
             <div className="p-6 space-y-4">
               {canWrite && (
@@ -433,7 +433,7 @@ export default function ProductsPage() {
                   className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  Add Product
+                  Tambah Barang
                 </button>
               )}
 

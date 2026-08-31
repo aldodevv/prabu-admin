@@ -157,7 +157,7 @@ export default function BranchSelectPage() {
 
         {/* Footer */}
         <div className="text-center text-xs text-slate-400 font-semibold mt-8">
-          2020 © Ampaba Development
+          2026 © PRABU GYM ALL RIGHTS RESERVED
         </div>
       </div>
     </div>
