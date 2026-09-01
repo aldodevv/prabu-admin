@@ -179,6 +179,7 @@ export default function SummaryPage() {
   };
 
   const fetchRevenue = async (txType: string) => {
+    if (!canViewRevenue) return;
     setLoadingRevenue(true);
     try {
       const res = await dashboardApi.revenueAnalytics(activeBranchID || '', txType);
@@ -223,103 +224,102 @@ export default function SummaryPage() {
     {
       key: 'membership_end',
       header: 'Masa Aktif',
-      className: 'font-mono text-slate-500 select-none',
-      render: (m) => formatDateLabel(m.membership_end)
+      align: 'center',
+      className: 'whitespace-nowrap',
+      render: (m) => {
+        const days = getDaysRemaining(m.membership_end);
+        const isExpiringSoon = days <= 7;
+        return (
+          <div className="flex flex-col items-center gap-1">
+            <span className="font-mono text-xs font-semibold text-slate-700">
+              {formatDateLabel(m.membership_end)}
+            </span>
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${isExpiringSoon
+                ? 'bg-rose-100 text-rose-700 animate-pulse'
+                : 'bg-amber-100 text-amber-700'
+                }`}
+            >
+              {days} hari lagi
+            </span>
+          </div>
+        );
+      }
     },
     {
       key: 'username',
-      header: 'Nomor Anggota',
-      className: 'font-mono text-slate-800'
+      header: 'No. Anggota',
+      className: 'font-mono font-bold text-slate-800'
     },
     {
       key: 'full_name',
       header: 'Nama Anggota',
-      className: 'font-bold text-slate-800'
+      className: 'font-semibold text-slate-800'
     },
     {
-      key: 'phone',
-      header: 'Kontak',
-      className: 'font-mono text-slate-650',
-      render: (m) => m.phone || '-'
-    },
-    {
-      key: 'membership_type',
-      header: 'Paket Fitnes',
+      key: 'branch_name',
+      header: 'Cabang',
       className: 'text-slate-600'
     },
     {
-      key: 'days_remaining',
-      header: 'Sisa Hari',
-      align: 'center',
-      className: 'select-none w-24',
-      render: (m) => {
-        const daysLeft = getDaysRemaining(m.membership_end);
-        return (
-          <span className="inline-flex items-center justify-center w-8 h-8 rounded bg-[#007BFF] text-white font-mono font-black text-sm shadow-sm shadow-blue-500/10">
-            {daysLeft}
-          </span>
-        );
-      }
+      key: 'membership_type',
+      header: 'Paket',
+      render: (m) => (
+        <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-xs font-medium border border-slate-200">
+          {m.membership_type || '-'}
+        </span>
+      )
+    },
+    {
+      key: 'phone',
+      header: 'Telepon',
+      render: (m) => (
+        <span className="font-mono text-xs text-slate-600">
+          {m.phone || '-'}
+        </span>
+      )
     },
     {
       key: 'action',
       header: 'Aksi',
       align: 'center',
-      className: 'select-none w-28',
       render: (m) => (
         <button
-          onClick={() => router.push(`/dashboard/transactions/member-payment?pay_member_id=${m.id}`)}
-          className="inline-flex items-center gap-1 px-2.5 py-1.5 border border-[#28A745] hover:bg-[#28A745] text-[#28A745] hover:text-white font-bold uppercase tracking-wider text-[10px] rounded transition-all duration-150 cursor-pointer shadow-sm shadow-green-500/5"
+          onClick={() => router.push(`/dashboard/transactions/member-payment?username=${m.username}`)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#007BFF] hover:bg-[#0069d9] text-white text-xs font-bold rounded shadow-xs transition-all active:scale-95 cursor-pointer"
         >
           <PlusCircle className="w-3.5 h-3.5" />
-          <span>Pembayaran</span>
+          <span>Perpanjang</span>
         </button>
       )
     }
   ];
 
   return (
-    <div className="space-y-6 font-sans">
+    <div className="space-y-6">
       <PageHeader
-        title="Ringkasan Dashboard"
-        description="Monitoring Data Keanggotaan & Kehadiran Cabang"
-        action={
-          <button
-            onClick={fetchSummary}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-55 text-slate-600 font-bold text-xs uppercase tracking-wider rounded shadow-sm transition-all cursor-pointer"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Refresh Data</span>
-          </button>
-        }
+        title="Ringkasan Operasional"
+        description="Statistik performa real-time, aktivitas gym, dan peringatan masa aktif anggota"
       />
 
-      <FetchErrorAlert error={error} featureName="Ringkasan Dashboard" onRetry={fetchSummary} />
+      {error && <FetchErrorAlert error={error} featureName="Ringkasan Dashboard" onRetry={fetchSummary} />}
 
-      {/* Row 1 Metrics (Blue, Green, Red) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 select-none">
+      {/* Row 1 (Core Daily & Member Overview) - High contrast solid cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 select-none">
         <StatsCard
           label="Total Anggota"
           value={summary.total_members}
-          icon={TrendingUp}
-          bg="bg-[#007BFF]"
+          icon={User}
+          bg="bg-[#17A2B8]"
+          onViewMore={() => router.push('/dashboard/members/one-club')}
         />
         <StatsCard
-          label="Total Anggota Aktif"
+          label="Anggota Aktif"
           value={summary.active_members}
-          icon={TrendingUp}
+          icon={UserCheck}
           bg="bg-[#28A745]"
+          onViewMore={() => router.push('/dashboard/members/one-club')}
         />
-        <StatsCard
-          label="Total Anggota Tidak Aktif"
-          value={summary.expired_members}
-          icon={TrendingDown}
-          bg="bg-[#DC3545]"
-        />
-      </div>
-
-      {/* Row 2 Metrics (Orange, Purple) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5 select-none">
         <StatsCard
           label="Check In Hari Ini"
           value={summary.checkins_today}
@@ -336,164 +336,167 @@ export default function SummaryPage() {
         />
       </div>
 
-      {/* 📊 STATISTIK OMZET 12 BULAN & REVENUE ANALYTICS */}
-      <div className="space-y-4 select-none">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 border border-slate-200 rounded shadow-xs">
-          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest font-accent flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-[#17A2B8]" />
-            <span>Statistik Omzet 12 Bulan</span>
-            {loadingRevenue && (
-              <span className="w-3.5 h-3.5 border-2 border-slate-200 border-t-[#007BFF] rounded-full animate-spin ml-1" />
-            )}
-          </h3>
+      {/* 📊 STATISTIK OMZET 12 BULAN & REVENUE ANALYTICS (Hanya untuk Owner/Admin/Developer) */}
+      {canViewRevenue && (
+        <div className="space-y-4 select-none">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 border border-slate-200 rounded shadow-xs">
+            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest font-accent flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-[#17A2B8]" />
+              <span>Statistik Omzet 12 Bulan</span>
+              {loadingRevenue && (
+                <span className="w-3.5 h-3.5 border-2 border-slate-200 border-t-[#007BFF] rounded-full animate-spin ml-1" />
+              )}
+            </h3>
 
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-accent">Filter Jenis Transaksi:</span>
-            <select
-              disabled={loadingRevenue}
-              value={selectedTxType}
-              onChange={(e) => setSelectedTxType(e.target.value)}
-              className="bg-slate-50 hover:bg-white border border-slate-300 text-slate-800 text-xs font-bold rounded px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#007BFF] transition-all cursor-pointer shadow-xs disabled:opacity-50"
-            >
-              <option value="all">Semua Jenis Transaksi</option>
-              <option value="anggota">Pendaftaran / Keanggotaan Anggota</option>
-              <option value="pelatihan">Pelatihan (Personal Trainer / Sesi)</option>
-              <option value="kelas">Rekap / Komisi Kelas</option>
-              <option value="tunai">Transaksi Tunai / Penjualan Retail</option>
-            </select>
-          </div>
-        </div>
-
-        {revenueAnalytics && (
-          <div className={`transition-opacity duration-200 space-y-4 ${loadingRevenue ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
-            {/* KPI Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              {/* 1. Bulan Ini vs Bulan Lalu */}
-              <div className="bg-white border border-slate-200 p-4 rounded shadow-sm flex flex-col justify-between">
-                <div className="flex justify-between items-start">
-                  <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider font-accent">Bulan Ini vs Lalu</span>
-                  <span className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded ${revenueAnalytics.month_growth_percent >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                    }`}>
-                    {revenueAnalytics.month_growth_percent >= 0 ? '+' : ''}
-                    {revenueAnalytics.month_growth_percent.toFixed(1)}%
-                  </span>
-                </div>
-                <div className="mt-2">
-                  <div className="text-lg font-black font-mono text-slate-800">
-                    Rp. {revenueAnalytics.current_month_sales.toLocaleString('id-ID')}
-                  </div>
-                  <div className="text-[10px] text-slate-400 font-bold mt-0.5">
-                    Bulan Lalu: Rp. {revenueAnalytics.last_month_sales.toLocaleString('id-ID')}
-                  </div>
-                </div>
-              </div>
-
-              {/* 2. Tahun Ini vs Tahun Lalu */}
-              <div className="bg-white border border-slate-200 p-4 rounded shadow-sm flex flex-col justify-between">
-                <div className="flex justify-between items-start">
-                  <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider font-accent">Tahun Ini vs Lalu</span>
-                  <span className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded ${revenueAnalytics.year_growth_percent >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                    }`}>
-                    {revenueAnalytics.year_growth_percent >= 0 ? '+' : ''}
-                    {revenueAnalytics.year_growth_percent.toFixed(1)}%
-                  </span>
-                </div>
-                <div className="mt-2">
-                  <div className="text-lg font-black font-mono text-slate-800">
-                    Rp. {revenueAnalytics.current_year_sales.toLocaleString('id-ID')}
-                  </div>
-                  <div className="text-[10px] text-slate-400 font-bold mt-0.5">
-                    Tahun Lalu: Rp. {revenueAnalytics.last_year_sales.toLocaleString('id-ID')}
-                  </div>
-                </div>
-              </div>
-
-              {/* 3. Jumlah Transaksi */}
-              <div className="bg-white border border-slate-200 p-4 rounded shadow-sm flex flex-col justify-between">
-                <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider font-accent">Jumlah Transaksi</span>
-                <div className="mt-2">
-                  <div className="text-xl font-black font-mono text-[#007BFF]">
-                    {revenueAnalytics.total_transactions}
-                  </div>
-                  <div className="text-[10px] text-slate-400 font-bold mt-0.5">
-                    Total Transaksi Tercatat
-                  </div>
-                </div>
-              </div>
-
-              {/* 4. Average Transaction Value (ATV) */}
-              <div className="bg-white border border-slate-200 p-4 rounded shadow-sm flex flex-col justify-between">
-                <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider font-accent">Avg Transaction Value (ATV)</span>
-                <div className="mt-2">
-                  <div className="text-lg font-black font-mono text-[#28A745]">
-                    Rp. {Math.round(revenueAnalytics.average_tx_value).toLocaleString('id-ID')}
-                  </div>
-                  <div className="text-[10px] text-slate-400 font-bold mt-0.5">
-                    Rata-rata Nilai Transaksi
-                  </div>
-                </div>
-              </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-accent">Filter Jenis Transaksi:</span>
+              <select
+                disabled={loadingRevenue}
+                value={selectedTxType}
+                onChange={(e) => setSelectedTxType(e.target.value)}
+                className="bg-slate-50 hover:bg-white border border-slate-300 text-slate-800 text-xs font-bold rounded px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#007BFF] transition-all cursor-pointer shadow-xs disabled:opacity-50"
+              >
+                <option value="all">Semua Jenis Transaksi</option>
+                <option value="anggota">Pendaftaran / Keanggotaan Anggota</option>
+                <option value="pelatihan">Pelatihan (Personal Trainer / Sesi)</option>
+                <option value="kelas">Rekap / Komisi Kelas</option>
+                <option value="tunai">Transaksi Tunai / Penjualan Retail</option>
+              </select>
             </div>
+          </div>
 
-            {/* Monthly Omzet Bar Chart */}
-            <div className="bg-white border border-slate-200 p-5 rounded shadow-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider font-heading">
-                  📈 Grafik Omzet Bulanan (12 Bulan Terakhir)
-                </h4>
-                <span className="text-[10px] text-slate-400 font-mono">Dalam Rupiah (Rp)</span>
+          {revenueAnalytics && (
+            <div className={`transition-opacity duration-200 space-y-4 ${loadingRevenue ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
+              {/* KPI Summary Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                {/* 1. Bulan Ini vs Bulan Lalu */}
+                <div className="bg-white border border-slate-200 p-4 rounded shadow-sm flex flex-col justify-between">
+                  <div className="flex justify-between items-start">
+                    <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider font-accent">Bulan Ini vs Lalu</span>
+                    <span className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded ${revenueAnalytics.month_growth_percent >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      }`}>
+                      {revenueAnalytics.month_growth_percent >= 0 ? '+' : ''}
+                      {revenueAnalytics.month_growth_percent.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="mt-2">
+                    <div className="text-lg font-black font-mono text-slate-800">
+                      Rp. {revenueAnalytics.current_month_sales.toLocaleString('id-ID')}
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-bold mt-0.5">
+                      Bulan Lalu: Rp. {revenueAnalytics.last_month_sales.toLocaleString('id-ID')}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Tahun Ini vs Tahun Lalu */}
+                <div className="bg-white border border-slate-200 p-4 rounded shadow-sm flex flex-col justify-between">
+                  <div className="flex justify-between items-start">
+                    <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider font-accent">Tahun Ini vs Lalu</span>
+                    <span className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded ${revenueAnalytics.year_growth_percent >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      }`}>
+                      {revenueAnalytics.year_growth_percent >= 0 ? '+' : ''}
+                      {revenueAnalytics.year_growth_percent.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="mt-2">
+                    <div className="text-lg font-black font-mono text-slate-800">
+                      Rp. {revenueAnalytics.current_year_sales.toLocaleString('id-ID')}
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-bold mt-0.5">
+                      Tahun Lalu: Rp. {revenueAnalytics.last_year_sales.toLocaleString('id-ID')}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Jumlah Transaksi */}
+                <div className="bg-white border border-slate-200 p-4 rounded shadow-sm flex flex-col justify-between">
+                  <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider font-accent">Jumlah Transaksi</span>
+                  <div className="mt-2">
+                    <div className="text-xl font-black font-mono text-[#007BFF]">
+                      {revenueAnalytics.total_transactions}
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-bold mt-0.5">
+                      Total Transaksi Tercatat
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Average Transaction Value (ATV) */}
+                <div className="bg-white border border-slate-200 p-4 rounded shadow-sm flex flex-col justify-between">
+                  <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider font-accent">Avg Transaction Value (ATV)</span>
+                  <div className="mt-2">
+                    <div className="text-lg font-black font-mono text-[#28A745]">
+                      Rp. {Math.round(revenueAnalytics.average_tx_value).toLocaleString('id-ID')}
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-bold mt-0.5">
+                      Rata-rata Nilai Transaksi
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="h-44 flex items-end justify-between gap-1.5 pt-6 pb-2 px-2 border-b border-slate-200">
-                {revenueAnalytics.monthly_omzet.map((item, idx) => {
-                  const maxAmount = Math.max(...revenueAnalytics.monthly_omzet.map(m => m.amount), 1);
-                  const heightPercent = Math.max(Math.round((item.amount / maxAmount) * 100), 4);
+              {/* Monthly Omzet Bar Chart */}
+              <div className="bg-white border border-slate-200 p-5 rounded shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider font-heading flex items-center gap-1.5">
+                    <BarChart3 className="w-3.5 h-3.5 text-[#17A2B8]" />
+                    <span>Grafik Omzet Bulanan (12 Bulan Terakhir)</span>
+                  </h4>
+                  <span className="text-[10px] text-slate-400 font-mono">Dalam Rupiah (Rp)</span>
+                </div>
 
-                  return (
-                    <div key={idx} className="flex-1 flex flex-col items-center gap-1 group relative h-full justify-end">
-                      {/* Tooltip */}
-                      <div className="absolute -top-9 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[9px] font-mono px-2 py-1 rounded whitespace-nowrap z-10 pointer-events-none shadow-lg">
-                        {item.month_name}: Rp. {item.amount.toLocaleString('id-ID')}
+                <div className="h-44 flex items-end justify-between gap-1.5 pt-6 pb-2 px-2 border-b border-slate-200">
+                  {revenueAnalytics.monthly_omzet.map((item, idx) => {
+                    const maxAmount = Math.max(...revenueAnalytics.monthly_omzet.map(m => m.amount), 1);
+                    const heightPercent = Math.max(Math.round((item.amount / maxAmount) * 100), 4);
+
+                    return (
+                      <div key={idx} className="flex-1 flex flex-col items-center gap-1 group relative h-full justify-end">
+                        {/* Tooltip */}
+                        <div className="absolute -top-9 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[9px] font-mono px-2 py-1 rounded whitespace-nowrap z-10 pointer-events-none shadow-lg">
+                          {item.month_name}: Rp. {item.amount.toLocaleString('id-ID')}
+                        </div>
+                        {/* Bar */}
+                        <div
+                          style={{ height: `${heightPercent}%` }}
+                          className="w-full bg-brand-cyan hover:bg-[#138496] rounded-t transition-all duration-300 group-hover:scale-y-105 origin-bottom shadow-xs"
+                        />
+                        {/* X-axis Label */}
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter truncate w-full text-center mt-1">
+                          {item.month_name}
+                        </span>
                       </div>
-                      {/* Bar */}
-                      <div
-                        style={{ height: `${heightPercent}%` }}
-                        className="w-full bg-brand-cyan hover:bg-[#138496] rounded-t transition-all duration-300 group-hover:scale-y-105 origin-bottom shadow-xs"
-                      />
-                      {/* X-axis Label */}
-                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter truncate w-full text-center mt-1">
-                        {item.month_name}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
 
-              {/* Package Duration Breakdown Cards */}
-              <div className="pt-2">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-accent block mb-3">
-                  Omzet Berdasarkan Durasi Paket (1 / 3 / 6 / 12 Bulan)
-                </span>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {[
-                    { label: 'Paket 1 Bulan', value: revenueAnalytics.sales_by_duration_1m, bg: 'border-l-4 border-blue-500' },
-                    { label: 'Paket 3 Bulan', value: revenueAnalytics.sales_by_duration_3m, bg: 'border-l-4 border-teal-500' },
-                    { label: 'Paket 6 Bulan', value: revenueAnalytics.sales_by_duration_6m, bg: 'border-l-4 border-amber-500' },
-                    { label: 'Paket 12 Bulan', value: revenueAnalytics.sales_by_duration_12m, bg: 'border-l-4 border-emerald-500' },
-                  ].map((p, i) => (
-                    <div key={i} className={`bg-slate-50 border border-slate-200 p-3 rounded ${p.bg}`}>
-                      <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">{p.label}</span>
-                      <span className="text-sm font-black font-mono text-slate-800 mt-1 block">
-                        Rp. {p.value.toLocaleString('id-ID')}
-                      </span>
-                    </div>
-                  ))}
+                {/* Package Duration Breakdown Cards */}
+                <div className="pt-2">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-accent block mb-3">
+                    Omzet Berdasarkan Durasi Paket (1 / 3 / 6 / 12 Bulan)
+                  </span>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[
+                      { label: 'Paket 1 Bulan', value: revenueAnalytics.sales_by_duration_1m, bg: 'border-l-4 border-blue-500' },
+                      { label: 'Paket 3 Bulan', value: revenueAnalytics.sales_by_duration_3m, bg: 'border-l-4 border-teal-500' },
+                      { label: 'Paket 6 Bulan', value: revenueAnalytics.sales_by_duration_6m, bg: 'border-l-4 border-amber-500' },
+                      { label: 'Paket 12 Bulan', value: revenueAnalytics.sales_by_duration_12m, bg: 'border-l-4 border-emerald-500' },
+                    ].map((p, i) => (
+                      <div key={i} className={`bg-slate-50 border border-slate-200 p-3 rounded ${p.bg}`}>
+                        <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">{p.label}</span>
+                        <span className="text-sm font-black font-mono text-slate-800 mt-1 block">
+                          Rp. {p.value.toLocaleString('id-ID')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Row 3 (Gender Stats) - Light panels */}
       <div className="space-y-2 select-none">
