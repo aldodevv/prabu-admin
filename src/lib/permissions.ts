@@ -71,6 +71,7 @@ export const normalizeRole = (role?: string): Role => {
 export const permissions = {
   canSwitchBranch: (role?: string) => ROLE_CAPABILITIES[normalizeRole(role)]?.canSwitchBranch ?? false,
   isReadOnly: (role?: string) => ROLE_CAPABILITIES[normalizeRole(role)]?.isReadOnly ?? false,
+  canViewRevenueAnalytics: (role?: string) => normalizeRole(role) !== ROLES.CS,
   canAccessMenu: (role?: string, menuId?: string) => {
     if (!role || !menuId) return false;
     const r = normalizeRole(role);

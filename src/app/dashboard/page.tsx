@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { permissions } from '@/lib/permissions';
 import { dashboardApi, membersApi } from '@/core/api';
 import { formatDateLabel } from '@/core/constants';
 import { Member } from '@/core/types';
@@ -64,8 +65,9 @@ interface DashboardSummary {
 }
 
 export default function SummaryPage() {
-  const { activeBranchID, loading: authLoading } = useAuth();
+  const { user, activeBranchID, loading: authLoading } = useAuth();
   const router = useRouter();
+  const canViewRevenue = permissions.canViewRevenueAnalytics(user?.role);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [revenueAnalytics, setRevenueAnalytics] = useState<RevenueAnalytics | null>(null);
   const [expiringMembers, setExpiringMembers] = useState<Member[]>([]);
@@ -91,6 +93,7 @@ export default function SummaryPage() {
   }, [activeBranchID, expiringPage, expiringPerPage, authLoading]);
 
   useEffect(() => {
+    if (!canViewRevenue) return;
     if (activeBranchID !== undefined) {
       if (isInitialRevenueRef.current) {
         isInitialRevenueRef.current = false;
@@ -98,7 +101,7 @@ export default function SummaryPage() {
       }
       fetchRevenue(selectedTxType);
     }
-  }, [selectedTxType, activeBranchID]);
+  }, [selectedTxType, activeBranchID, canViewRevenue]);
 
   const fetchExpiring = async (page: number, perPage: number) => {
     if (!activeBranchID) return;
@@ -125,8 +128,10 @@ export default function SummaryPage() {
       const res = await dashboardApi.summary(activeBranchID || '');
       if (res.success && res.data) {
         setSummary(res.data);
-        if (res.data.revenue_analytics) {
+        if (canViewRevenue && res.data.revenue_analytics) {
           setRevenueAnalytics(res.data.revenue_analytics);
+        } else {
+          setRevenueAnalytics(null);
         }
       } else {
         if (res.error) setError(res.error);
