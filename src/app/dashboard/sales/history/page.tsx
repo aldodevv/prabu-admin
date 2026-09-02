@@ -243,9 +243,11 @@ export default function TransactionHistoryPage() {
       `}</style>
 
       {/* Header Breadcrumbs */}
-      <div className="bg-white px-6 py-4 border-b border-slate-200 shadow-sm rounded-lg flex items-center justify-between no-print">
+      <div className="bg-white px-6 py-4 border-b border-slate-200 shadow-sm rounded-lg no-print">
         <div className="text-xs text-slate-400 font-semibold flex items-center gap-1.5 uppercase tracking-wider">
-          <span>Riwayat Transaksi</span>
+          <span>Transaksi Penjualan</span>
+          <span>&gt;</span>
+          <span className="text-[#DC3545]">Riwayat Transaksi</span>
           {selectedTx && (
             <>
               <span>&gt;</span>
@@ -253,13 +255,9 @@ export default function TransactionHistoryPage() {
             </>
           )}
         </div>
-
-        {/* Dynamic Branch Tag */}
-        {activeBranch && (
-          <div className="px-3.5 py-1.5 border border-red-500 text-red-500 font-extrabold text-xs rounded-full uppercase tracking-wider bg-red-50/50 select-none">
-            Club {activeBranchName.replace('PRABU GYM ', '')}
-          </div>
-        )}
+        <h2 className="text-2xl font-bold text-slate-800 mt-1 uppercase tracking-tight select-none">
+          {selectedTx ? 'Rincian Riwayat Transaksi' : 'Daftar Riwayat Transaksi'}
+        </h2>
       </div>
 
       {error && (
