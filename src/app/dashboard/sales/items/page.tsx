@@ -169,7 +169,6 @@ export default function ProductsPage() {
   };
 
   const handleOpenAdd = () => {
-    if (!canManage) return;
     setSelectedProduct(null);
     setDistributorId('');
     setCode(`PRD-${Math.floor(1000 + Math.random() * 9000)}`);
@@ -215,7 +214,7 @@ export default function ProductsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canManage) return;
+    if (view === 'edit' && !canManage) return;
     if (!name.trim()) {
       setErrorMsg('Nama barang tidak boleh kosong');
       return;
@@ -328,23 +327,24 @@ export default function ProductsPage() {
     },
   ];
 
-  const columns: Column<Product>[] = canManage
-    ? [
-        ...baseColumns,
-        {
-          key: 'action',
-          header: 'Aksi',
-          align: 'center',
-          className: 'w-28',
-          render: (p) => (
-            <div className="flex items-center justify-center gap-1.5">
-              <button
-                onClick={() => handleOpenDetail(p.id)}
-                title="Lihat Detail Barang"
-                className="p-2 bg-[#6C7A89] hover:bg-[#5a6673] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
-              >
-                <Eye className="w-3.5 h-3.5" />
-              </button>
+  const columns: Column<Product>[] = [
+    ...baseColumns,
+    {
+      key: 'action',
+      header: 'Aksi',
+      align: 'center',
+      className: canManage ? 'w-28' : 'w-16',
+      render: (p) => (
+        <div className="flex items-center justify-center gap-1.5">
+          <button
+            onClick={() => handleOpenDetail(p.id)}
+            title="Lihat Detail Barang"
+            className="p-2 bg-[#6C7A89] hover:bg-[#5a6673] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
+          >
+            <Eye className="w-3.5 h-3.5" />
+          </button>
+          {canManage && (
+            <>
               <button
                 onClick={() => handleOpenEdit(p)}
                 title="Ubah Data Barang"
@@ -359,11 +359,12 @@ export default function ProductsPage() {
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
-            </div>
-          )
-        }
-      ]
-    : baseColumns;
+            </>
+          )}
+        </div>
+      ),
+    },
+  ];
 
   const columnOptions = [
     { label: 'Nama Barang', value: 'name' },
@@ -433,15 +434,13 @@ export default function ProductsPage() {
               <span className="text-sm uppercase tracking-wider font-heading">Daftar Data Barang</span>
             </div>
             <div className="p-6 space-y-4">
-              {canManage && (
-                <button
-                  onClick={handleOpenAdd}
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Tambah Barang
-                </button>
-              )}
+              <button
+                onClick={handleOpenAdd}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Tambah Barang
+              </button>
 
               <DataTable
                 data={filteredProducts}
@@ -612,13 +611,15 @@ export default function ProductsPage() {
           <div className="bg-brand-cyan px-5 py-3 text-white font-bold flex justify-between items-center select-none">
             <span className="text-sm uppercase tracking-wider">Detail Product</span>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleOpenEdit(selectedProduct)}
-                className="inline-flex items-center gap-1 px-3 py-1.5 bg-white text-slate-800 hover:bg-slate-100 text-xs font-bold rounded cursor-pointer transition-colors shadow-xs"
-              >
-                <Edit2 className="w-3.5 h-3.5 text-brand-cyan" />
-                Edit
-              </button>
+              {canManage && (
+                <button
+                  onClick={() => handleOpenEdit(selectedProduct)}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-white text-slate-800 hover:bg-slate-100 text-xs font-bold rounded cursor-pointer transition-colors shadow-xs"
+                >
+                  <Edit2 className="w-3.5 h-3.5 text-brand-cyan" />
+                  Edit
+                </button>
+              )}
               <button
                 onClick={() => setView('list')}
                 className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#DC3545] hover:bg-[#C82333] text-white text-xs font-semibold rounded cursor-pointer transition-colors"
