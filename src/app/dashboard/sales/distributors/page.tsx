@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { permissions } from '@/lib/permissions';
 import { distributorsApi } from '@/core/api';
 import { Distributor } from '@/core/types';
 import { Search, Plus, Edit2, Trash2, ArrowLeft, Save, FileSpreadsheet, RotateCcw } from 'lucide-react';
@@ -10,7 +11,8 @@ import { exportToExcel } from '@/lib/excelExport';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 
 export default function DistributorsPage() {
-  const { activeBranchID } = useAuth();
+  const { activeBranchID, user } = useAuth();
+  const canManage = permissions.canManageProducts(user?.role);
 
   // view: 'list' | 'add' | 'edit'
   const [view, setView] = useState<'list' | 'add' | 'edit'>('list');
@@ -120,6 +122,7 @@ export default function DistributorsPage() {
   };
 
   const handleOpenAdd = () => {
+    if (!canManage) return;
     setName('');
     setPhoneTelp('');
     setAddress('');
@@ -129,6 +132,7 @@ export default function DistributorsPage() {
   };
 
   const handleOpenEdit = (dist: Distributor) => {
+    if (!canManage) return;
     setSelectedDistributor(dist);
     setName(dist.name);
     setPhoneTelp(dist.phone_telp || '');
@@ -140,6 +144,7 @@ export default function DistributorsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManage) return;
     if (!name.trim()) {
       setErrorMsg('Nama distributor tidak boleh kosong');
       return;
@@ -186,6 +191,7 @@ export default function DistributorsPage() {
   };
 
   const handleDelete = async (id: string, distName: string) => {
+    if (!canManage) return;
     if (!confirm(`Apakah Anda yakin ingin menghapus distributor "${distName}"?`)) {
       return;
     }
@@ -256,13 +262,15 @@ export default function DistributorsPage() {
               <span className="text-sm uppercase tracking-wider">Data Distributor</span>
             </div>
             <div className="p-6 space-y-4">
-              <button
-                onClick={handleOpenAdd}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Tambah Distributor
-              </button>
+              {canManage && (
+                <button
+                  onClick={handleOpenAdd}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Tambah Distributor
+                </button>
+              )}
 
               {loading ? (
                 <div className="text-center py-10 text-slate-500 font-accent uppercase tracking-widest text-xs">
@@ -277,13 +285,13 @@ export default function DistributorsPage() {
                         <th className="py-3 px-4 border-r border-slate-300">Distributor</th>
                         <th className="py-3 px-4 border-r border-slate-300">Telepon</th>
                         <th className="py-3 px-4 border-r border-slate-300">Alamat</th>
-                        <th className="py-3 px-4 text-center w-24">Aksi</th>
+                        {canManage && <th className="py-3 px-4 text-center w-24">Aksi</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 text-slate-700 font-medium">
                       {filteredDistributors.length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="py-8 text-center text-slate-400 font-accent uppercase tracking-wider text-xs">
+                          <td colSpan={canManage ? 5 : 4} className="py-8 text-center text-slate-400 font-accent uppercase tracking-wider text-xs">
                             Tidak ada data distributor
                           </td>
                         </tr>
@@ -294,23 +302,25 @@ export default function DistributorsPage() {
                             <td className="py-3 px-4 border-r border-slate-100 font-bold text-slate-800">{d.name}</td>
                             <td className="py-3 px-4 border-r border-slate-100 font-mono text-slate-600">{d.phone_telp || '-'}</td>
                             <td className="py-3 px-4 border-r border-slate-100 text-xs text-slate-600">{d.address || '-'}</td>
-                            <td className="py-3 px-4 text-center flex items-center justify-center gap-1.5">
-                              {/* Icon-Only Action Buttons with Hover Tooltip */}
-                              <button
-                                onClick={() => handleOpenEdit(d)}
-                                title="Ubah Data Distributor"
-                                className="p-2 bg-brand-cyan hover:bg-[#138496] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => handleDelete(d.id, d.name)}
-                                title="Hapus Data Distributor"
-                                className="p-2 bg-[#DC3545] hover:bg-[#C82333] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </td>
+                            {canManage && (
+                              <td className="py-3 px-4 text-center flex items-center justify-center gap-1.5">
+                                {/* Icon-Only Action Buttons with Hover Tooltip */}
+                                <button
+                                  onClick={() => handleOpenEdit(d)}
+                                  title="Ubah Data Distributor"
+                                  className="p-2 bg-brand-cyan hover:bg-[#138496] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(d.id, d.name)}
+                                  title="Hapus Data Distributor"
+                                  className="p-2 bg-[#DC3545] hover:bg-[#C82333] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </td>
+                            )}
                           </tr>
                         ))
                       )}
