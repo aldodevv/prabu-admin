@@ -68,6 +68,14 @@ export const RC_DICTIONARY: Record<string, RCDetail> = {
     message: 'Terdapat kolom wajib (bertanda *) yang masih belum diisi.',
     actionAdvice: 'Lengkapi seluruh kolom bernota wajib sebelum mengklik tombol simpan.',
   },
+  'VAL06': {
+    code: 'VAL06',
+    category: 'HUMAN_ERROR',
+    categoryLabel: 'HUMAN ERROR (RELASI DATA TERIKAT)',
+    title: 'Data Masih Memiliki Relasi Aktif',
+    message: 'Data tidak dapat dihapus karena masih memiliki riwayat transaksi atau keterkaitan dengan data lain.',
+    actionAdvice: 'Gunakan opsi nonaktifkan data alih-alih menghapusnya secara permanen demi menjaga keutuhan riwayat finansial.',
+  },
   'HUM06': {
     code: 'HUM06',
     category: 'HUMAN_ERROR',
