@@ -276,7 +276,7 @@ export default function OneClubMembersPanel() {
     const headers = ['No', 'Nomor Anggota', 'Nama Anggota', 'Jenis Kelamin', 'Tanggal Lahir', 'Nomor HP', 'Email', 'Paket Anggota', 'Status'];
     const data = members.map((m, index) => [
       index + 1,
-      `@${m.username}`,
+      m.username,
       m.full_name,
       m.gender || 'Laki-laki',
       m.date_of_birth || '-',
@@ -647,7 +647,7 @@ export default function OneClubMembersPanel() {
       key: 'username',
       header: 'Nomor Anggota',
       className: 'font-mono text-slate-800',
-      render: (m) => `@${m.username}`
+      render: (m) => m.username
     },
     {
       key: 'full_name',
@@ -1189,7 +1189,7 @@ export default function OneClubMembersPanel() {
                       type="text"
                       readOnly
                       disabled
-                      value={`@${selectedMember.username}`}
+                      value={selectedMember.username}
                       className="bg-slate-100 border border-slate-300 text-slate-500 px-3.5 py-2.5 text-xs focus:outline-none rounded w-full font-mono font-bold"
                     />
                   </div>
@@ -1632,7 +1632,7 @@ export default function OneClubMembersPanel() {
                     Kelola Status & Hapus Anggota
                   </h3>
                   <p className="text-xs text-slate-500 font-medium mt-0.5">
-                    Pilih tindakan untuk data anggota <span className="font-bold text-slate-800">"{memberToDelete.full_name}"</span> (@{memberToDelete.username})
+                    Pilih tindakan untuk data anggota <span className="font-bold text-slate-800">"{memberToDelete.full_name}"</span> ({memberToDelete.username})
                   </p>
                 </div>
               </div>

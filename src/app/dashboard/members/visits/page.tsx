@@ -117,7 +117,7 @@ export default function CheckinsPage() {
         <div>
           <span>{c.member_name}</span>
           {(c as any).member_username && (
-            <span className="text-[10px] text-slate-400 font-mono block">@{(c as any).member_username}</span>
+            <span className="text-[10px] text-slate-400 font-mono block">{(c as any).member_username}</span>
           )}
         </div>
       )

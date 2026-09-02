@@ -933,7 +933,7 @@ export const WorkoutReportTemplate: React.FC<WorkoutReportProps> = ({ onClose, t
                       {r.transaction_number || `PRABU-PT-${r.id.substring(0, 7).toUpperCase()}`}
                     </td>
                     <td className="py-1.5 px-2.5 border-r border-slate-200 font-bold text-slate-900">
-                      {r.member_name} {r.member_username ? <span className="font-mono text-slate-600 font-bold">(@{r.member_username})</span> : ''}
+                      {r.member_name} {r.member_username ? <span className="font-mono text-slate-600 font-bold">({r.member_username})</span> : ''}
                     </td>
                     <td className="py-1.5 px-2.5 border-r border-slate-200 font-bold uppercase">{r.package_name}</td>
                     <td className="py-1.5 px-2.5 border-r border-slate-200 font-bold text-slate-900">{r.trainer_name}</td>

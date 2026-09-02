@@ -229,7 +229,7 @@ export default function TrainerSessionsPage() {
       key: 'member_username',
       header: 'Nomor Anggota',
       className: 'font-mono text-slate-800',
-      render: (r) => r.member_username ? `@${r.member_username}` : '-'
+      render: (r) => r.member_username || '-'
     },
     {
       key: 'member_name',

@@ -387,7 +387,7 @@ export default function ScanBarcodePage() {
                                 </tr>
                                 <tr className="border-b border-slate-200">
                                   <td className="bg-[#4f709c] text-white font-bold px-4 py-2 border border-slate-200 select-none">Username</td>
-                                  <td className="text-slate-800 px-4 py-2 border border-slate-200 bg-white font-mono">@{emp.username}</td>
+                                  <td className="text-slate-800 px-4 py-2 border border-slate-200 bg-white font-mono">{emp.username}</td>
                                 </tr>
                                 <tr>
                                   <td className="bg-[#4f709c] text-white font-bold px-4 py-2 border border-slate-200 select-none">Jam Shift</td>
