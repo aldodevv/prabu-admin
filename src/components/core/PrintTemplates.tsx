@@ -665,8 +665,12 @@ export const MemberLeaveReceiptTemplate: React.FC<MemberLeaveReceiptProps> = ({ 
               <tr className="font-bold text-black text-xs print:text-[9.5px]">
                 <td className="py-2.5 px-2 border-r border-black font-mono font-bold text-center whitespace-nowrap truncate">{data.memberCode}</td>
                 <td className="py-2.5 px-2 border-r border-black font-bold truncate">{data.memberName}</td>
-                <td className="py-2.5 px-2 border-r border-black font-mono text-[10px] print:text-[8.5px] font-bold text-center whitespace-nowrap">
-                  {data.startDate} s/d {data.endDate}
+                <td className="py-2 px-1 border-r border-black font-mono text-[9.5px] print:text-[8px] font-bold text-center leading-tight">
+                  <div className="flex flex-col items-center justify-center leading-tight">
+                    <span>{formatDateLabel(data.startDate)}</span>
+                    <span className="text-[7.5px] print:text-[7px] font-sans font-normal opacity-75">s/d</span>
+                    <span>{formatDateLabel(data.endDate)}</span>
+                  </div>
                 </td>
                 <td className="py-2.5 px-2 border-r border-black uppercase font-bold text-center whitespace-nowrap">{data.status}</td>
                 <td className="py-2.5 px-2 border-r border-black uppercase font-bold text-center whitespace-nowrap">{data.paymentMethod}</td>
