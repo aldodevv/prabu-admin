@@ -15,7 +15,7 @@ import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 export default function ProductsPage() {
   const { activeBranchID, user } = useAuth();
   const lastFetchedBranchRef = useRef<string | null>(null);
-  const canWrite = !permissions.isReadOnly(user?.role);
+  const canManage = permissions.canManageProducts(user?.role);
 
   // view: 'list' | 'add' | 'edit' | 'detail'
   const [view, setView] = useState<'list' | 'add' | 'edit' | 'detail'>('list');
@@ -169,6 +169,7 @@ export default function ProductsPage() {
   };
 
   const handleOpenAdd = () => {
+    if (!canManage) return;
     setSelectedProduct(null);
     setDistributorId('');
     setCode(`PRD-${Math.floor(1000 + Math.random() * 9000)}`);
@@ -183,6 +184,7 @@ export default function ProductsPage() {
   };
 
   const handleOpenEdit = (prod: Product) => {
+    if (!canManage) return;
     setSelectedProduct(prod);
     setDistributorId(prod.distributor_id || '');
     setCode(prod.code || '');
@@ -213,6 +215,7 @@ export default function ProductsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManage) return;
     if (!name.trim()) {
       setErrorMsg('Nama barang tidak boleh kosong');
       return;
@@ -263,6 +266,7 @@ export default function ProductsPage() {
   };
 
   const handleDelete = async (id: string, prodName: string) => {
+    if (!canManage) return;
     if (!confirm(`Apakah Anda yakin ingin menonaktifkan barang "${prodName}"?`)) {
       return;
     }
@@ -283,7 +287,7 @@ export default function ProductsPage() {
     return `Rp ${val.toLocaleString('id-ID')}`;
   };
 
-  const columns: Column<Product>[] = [
+  const baseColumns: Column<Product>[] = [
     {
       key: 'distributor_name',
       header: 'Distributor',
@@ -322,22 +326,25 @@ export default function ProductsPage() {
         <span className={p.stock <= 5 ? 'text-red-600' : 'text-slate-800'}>{p.stock}</span>
       )
     },
-    {
-      key: 'action',
-      header: 'Aksi',
-      align: 'center',
-      className: 'w-28',
-      render: (p) => (
-        <div className="flex items-center justify-center gap-1.5">
-          <button
-            onClick={() => handleOpenDetail(p.id)}
-            title="Lihat Detail Barang"
-            className="p-2 bg-[#6C7A89] hover:bg-[#5a6673] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
-          >
-            <Eye className="w-3.5 h-3.5" />
-          </button>
-          {canWrite && (
-            <>
+  ];
+
+  const columns: Column<Product>[] = canManage
+    ? [
+        ...baseColumns,
+        {
+          key: 'action',
+          header: 'Aksi',
+          align: 'center',
+          className: 'w-28',
+          render: (p) => (
+            <div className="flex items-center justify-center gap-1.5">
+              <button
+                onClick={() => handleOpenDetail(p.id)}
+                title="Lihat Detail Barang"
+                className="p-2 bg-[#6C7A89] hover:bg-[#5a6673] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
+              >
+                <Eye className="w-3.5 h-3.5" />
+              </button>
               <button
                 onClick={() => handleOpenEdit(p)}
                 title="Ubah Data Barang"
@@ -352,12 +359,11 @@ export default function ProductsPage() {
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
-            </>
-          )}
-        </div>
-      )
-    }
-  ];
+            </div>
+          )
+        }
+      ]
+    : baseColumns;
 
   const columnOptions = [
     { label: 'Nama Barang', value: 'name' },
@@ -427,7 +433,7 @@ export default function ProductsPage() {
               <span className="text-sm uppercase tracking-wider font-heading">Daftar Data Barang</span>
             </div>
             <div className="p-6 space-y-4">
-              {canWrite && (
+              {canManage && (
                 <button
                   onClick={handleOpenAdd}
                   className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"

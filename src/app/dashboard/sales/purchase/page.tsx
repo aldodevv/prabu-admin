@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { permissions } from '@/lib/permissions';
 import { purchaseTransactionsApi, distributorsApi, productsApi } from '@/core/api';
 import { PurchaseTransaction, Distributor, Product } from '@/core/types';
 import { Search, Plus, Eye, ArrowLeft, Printer, Trash2, Check, Edit2, FileSpreadsheet, RotateCcw } from 'lucide-react';
@@ -19,7 +20,7 @@ interface PurchaseItemInput {
 
 export default function PurchaseTransactionsPage() {
   const { activeBranchID, user } = useAuth();
-  const isOwner = user?.role === 'owner';
+  const canManage = permissions.canManageProducts(user?.role);
 
   // step: 'list' | 'create_meta' | 'add_items' | 'detail'
   const [step, setStep] = useState<'list' | 'create_meta' | 'add_items' | 'detail'>('list');
@@ -183,6 +184,7 @@ export default function PurchaseTransactionsPage() {
   };
 
   const handleOpenCreateMeta = async () => {
+    if (!canManage) return;
     const todayStr = new Date().toISOString().split('T')[0];
     setTransactionDate(todayStr);
     setInvoiceNumber('');
@@ -328,6 +330,7 @@ export default function PurchaseTransactionsPage() {
   };
 
   const handleDeleteOrder = async (id: string, txNum: string) => {
+    if (!canManage) return;
     if (!confirm(`Apakah Anda yakin ingin menghapus transaksi pembelian "${txNum}"? Stok akan dikembalikan.`)) {
       return;
     }
@@ -497,13 +500,15 @@ export default function PurchaseTransactionsPage() {
               <span className="text-sm uppercase tracking-wider">Transaksi Pembelian</span>
             </div>
             <div className="p-6 space-y-4">
-              <button
-                onClick={handleOpenCreateMeta}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Tambah Pembelian
-              </button>
+              {canManage && (
+                <button
+                  onClick={handleOpenCreateMeta}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded shadow-sm cursor-pointer transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Tambah Pembelian
+                </button>
+              )}
 
               {loading ? (
                 <div className="text-center py-10 text-slate-500 font-accent uppercase tracking-widest text-xs">
@@ -550,7 +555,7 @@ export default function PurchaseTransactionsPage() {
                               >
                                 <Eye className="w-3.5 h-3.5" />
                               </button>
-                              {isOwner && (
+                              {canManage && (
                                 <button
                                   onClick={() => handleDeleteOrder(o.id, o.transaction_number)}
                                   title="Hapus Transaksi Pembelian"
