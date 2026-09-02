@@ -17,13 +17,13 @@ export interface RoleCapability {
 export const ROLE_CAPABILITIES: Record<Role, RoleCapability> = {
   [ROLES.ADMIN]: {
     canSwitchBranch: true,
-    isReadOnly: true,
-    canAccessMenuStaff: false,
-    canAccessMenuSettings: false,
-    canDeleteMember: false,
-    canDeleteTransaction: false,
+    isReadOnly: false,
+    canAccessMenuStaff: true,
+    canAccessMenuSettings: true,
+    canDeleteMember: true,
+    canDeleteTransaction: true,
     canManageBranches: false,
-    description: 'Read-only semua cabang, bisa lihat data & detail, tidak ada data staff & pengaturan.',
+    description: 'Admin / Owner: Full CRUD operasional semua cabang, kelola Data Staff, dan Pengaturan.',
   },
   [ROLES.CS]: {
     canSwitchBranch: false,
@@ -90,6 +90,6 @@ export const permissions = {
     const curr = normalizeRole(currentRole);
     const target = normalizeRole(targetRole);
     if (target === ROLES.DEVELOPER) return curr === ROLES.DEVELOPER;
-    return curr === ROLES.DEVELOPER || curr === ROLES.OWNER;
+    return curr === ROLES.DEVELOPER || curr === ROLES.OWNER || curr === ROLES.ADMIN;
   },
 };
