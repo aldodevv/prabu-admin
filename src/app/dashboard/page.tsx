@@ -299,35 +299,46 @@ export default function SummaryPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Ringkasan Operasional"
-        description="Statistik performa real-time, aktivitas gym, dan peringatan masa aktif anggota"
+        title="Ringkasan Dashboard"
+        description="Monitoring data keanggotaan & kehadiran cabang"
+        action={
+          <button
+            onClick={fetchSummary}
+            disabled={loadingSummary}
+            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold uppercase tracking-wider rounded shadow-xs cursor-pointer transition-all active:scale-95 disabled:opacity-50 select-none"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loadingSummary ? 'animate-spin' : ''}`} />
+            <span>Refresh Data</span>
+          </button>
+        }
       />
 
       {error && <FetchErrorAlert error={error} featureName="Ringkasan Dashboard" onRetry={fetchSummary} />}
 
-      {/* Row 1 (Core Daily & Member Overview) - High contrast solid cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 select-none">
+      {/* Row 1: Member Summary (3 Cards - Total, Aktif, Tidak Aktif) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 select-none">
         <StatsCard
           label="Total Anggota"
           value={summary.total_members}
-          icon={User}
-          bg="bg-[#17A2B8]"
-          onViewMore={() => router.push('/dashboard/members/one-club')}
+          icon={TrendingUp}
+          bg="bg-[#007BFF]"
         />
         <StatsCard
-          label="Anggota Aktif"
+          label="Total Anggota Aktif"
           value={summary.active_members}
-          icon={UserCheck}
+          icon={TrendingUp}
           bg="bg-[#28A745]"
-          onViewMore={() => router.push('/dashboard/members/one-club')}
         />
         <StatsCard
-          label="Anggota Tidak Aktif"
+          label="Total Anggota Tidak Aktif"
           value={summary.expired_members}
-          icon={UserX}
+          icon={TrendingDown}
           bg="bg-[#DC3545]"
-          onViewMore={() => router.push('/dashboard/members/one-club')}
         />
+      </div>
+
+      {/* Row 2: Attendance Summary (2 Cards - Check In, Check In-Out) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 select-none">
         <StatsCard
           label="Check In Hari Ini"
           value={summary.checkins_today}
