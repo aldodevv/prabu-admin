@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { permissions } from '@/lib/permissions';
 import api from '@/lib/api';
 import { Save, Printer, ArrowLeft, UserCheck, Search, Check, X, Phone } from 'lucide-react';
 
@@ -43,7 +44,7 @@ export default function PTRegistrationPage() {
   const { activeBranchID, user } = useAuth();
 
   // Role permissions
-  const canEditTransactionDate = user?.role === 'owner' || user?.role === 'developer';
+  const canEditTransactionDate = permissions.canEditTransactionDate(user?.role);
 
   // Members & Trainers & Dynamic Packages
   const [members, setMembers] = useState<Member[]>([]);

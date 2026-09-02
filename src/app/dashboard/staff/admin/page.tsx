@@ -41,13 +41,11 @@ export default function AdminStaffManagementPage() {
     setError(null);
     try {
       const res = await employeesApi.list({ page, per_page: perPage });
-      const adminStaff = (res.data || []).filter(
-        (emp: any) => emp.role === 'admin' || emp.role === 'owner' || emp.role === 'developer'
-      );
-      setAdminList(adminStaff);
-      setTotal(res.meta?.total || adminStaff.length);
+      const staff = res.data || [];
+      setAdminList(staff);
+      setTotal(res.meta?.total || staff.length);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Gagal mengambil data Staff Admin');
+      setError(err.response?.data?.message || 'Gagal mengambil data Staff');
     } finally {
       setLoading(false);
     }
@@ -158,7 +156,7 @@ export default function AdminStaffManagementPage() {
     { key: 'username', header: 'Username', render: (row) => <span className="font-mono font-bold text-slate-800">{row.username}</span> },
     {
       key: 'password',
-      header: 'Password Admin',
+      header: 'Password',
       render: (row) => {
         if (row.role === 'developer') {
           return <span className="text-slate-400 font-bold font-mono text-xs select-none">••••••••</span>;
@@ -182,10 +180,10 @@ export default function AdminStaffManagementPage() {
         );
       }
     },
-    { key: 'full_name', header: 'Nama Admin', render: (row) => <span className="font-bold">{row.full_name}</span> },
-    { key: 'branch_name', header: 'Cabang Utama', render: (row) => <span className="uppercase text-[10px] font-bold text-[#DC3545]">{row.branch_name}</span> },
-    { key: 'phone', header: 'Nomor HP', render: (row) => <span className="font-mono">{row.phone || '-'}</span> },
-    { key: 'email', header: 'Email', render: (row) => row.email || '-' },
+    { key: 'full_name', header: 'Nama Lengkap', render: (row) => <span className="font-bold text-slate-800">{row.full_name}</span> },
+    { key: 'branch_name', header: 'Cabang Tugas', render: (row) => <span className="uppercase text-[10px] font-bold text-[#DC3545]">{row.branch_name}</span> },
+    { key: 'phone', header: 'Nomor HP', render: (row) => <span className="font-mono text-slate-700">{row.phone || '-'}</span> },
+    { key: 'email', header: 'Email', render: (row) => <span className="text-slate-600">{row.email || '-'}</span> },
     {
       key: 'role',
       header: 'Role / Hak Akses',
@@ -193,7 +191,7 @@ export default function AdminStaffManagementPage() {
         if (row.role === 'developer') return <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-800">Developer</span>;
         if (row.role === 'owner') return <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800">Owner</span>;
         if (row.role === 'admin') return <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-800">Admin (Read-Only)</span>;
-        return <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-800">Karyawan</span>;
+        return <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800">CS / Kasir</span>;
       }
     },
     {
@@ -230,8 +228,8 @@ export default function AdminStaffManagementPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Data Admin System"
-        description="Data Staff"
+        title="Data Staff System"
+        description="Manajemen Akun Admin, Owner, & CS Seluruh Cabang"
         action={
           step === 'list' ? (
             <button
@@ -239,7 +237,7 @@ export default function AdminStaffManagementPage() {
               className="inline-flex items-center gap-2 px-4 py-2 bg-brand-cyan hover:bg-[#138496] text-white text-xs font-bold uppercase tracking-wider rounded cursor-pointer transition-colors shadow-sm"
             >
               <UserPlus className="w-4 h-4" />
-              <span>+ Tambah Admin</span>
+              <span>+ Tambah Staff</span>
             </button>
           ) : (
             <button
@@ -253,7 +251,7 @@ export default function AdminStaffManagementPage() {
         }
       />
 
-      <FetchErrorAlert error={error} featureName="Data Staff Admin" onRetry={fetchAdminList} />
+      <FetchErrorAlert error={error} featureName="Data Staff" onRetry={fetchAdminList} />
 
       {error && (
         <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-bold uppercase tracking-wider">
@@ -272,7 +270,7 @@ export default function AdminStaffManagementPage() {
           <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
             <ShieldCheck className="w-5 h-5 text-[#DC3545]" />
             <h3 className="font-heading text-base font-bold text-slate-800 uppercase tracking-wider">
-              Daftar Akun Admin / Owner System
+              Daftar Seluruh Akun Staff &amp; CS System
             </h3>
           </div>
 
@@ -288,7 +286,7 @@ export default function AdminStaffManagementPage() {
               setPerPage(val);
               setPage(1);
             }}
-            emptyMessage="Belum ada data Admin."
+            emptyMessage="Belum ada data Staff."
           />
         </div>
       )}
@@ -298,7 +296,7 @@ export default function AdminStaffManagementPage() {
           <div className="bg-[#DC3545] px-5 py-3 text-white font-bold select-none flex items-center gap-2">
             <ShieldCheck className="w-4 h-4" />
             <span className="text-sm uppercase tracking-wider font-heading">
-              {step === 'create' ? 'Tambah Admin Baru' : 'Ubah Data Admin'}
+              {step === 'create' ? 'Tambah Staff Baru' : 'Ubah Data Staff'}
             </span>
           </div>
 
@@ -314,6 +312,7 @@ export default function AdminStaffManagementPage() {
                 {user?.role === 'developer' && <option value="developer">Developer (Akses Penuh + Kelola Cabang)</option>}
                 <option value="owner">Owner (Full Features)</option>
                 <option value="admin">Admin (Read-Only Semua Cabang)</option>
+                <option value="cs">CS / Kasir Cabang</option>
               </select>
             </div>
 
