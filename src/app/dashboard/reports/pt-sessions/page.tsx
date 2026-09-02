@@ -72,39 +72,79 @@ export default function PTSessionReportsPage() {
 
         rawRegs.forEach(reg => {
           const tName = (reg.trainer_name || '').trim();
-
-          // Filter by selected trainer
-          if (selectedTrainer && selectedTrainer !== 'Semua' && selectedTrainer !== '-Pilih-') {
-            if (tName.toLowerCase() !== selectedTrainer.toLowerCase()) {
-              return;
-            }
-          }
-
-          const txDate = reg.registration_date || (reg.created_at ? reg.created_at.split('T')[0] : '');
-
-          // Filter by Date Range (client-side safety check)
-          if (startDate && txDate && txDate < startDate) return;
-          if (endDate && txDate && txDate > endDate) return;
-
-          let count = getSessionCountFromPackage(reg.package_name || '');
+          let parsedNotes: any = null;
           if (reg.notes) {
             try {
-              const parsed = JSON.parse(reg.notes);
-              if (parsed.total_sessions && parsed.total_sessions > 0) {
-                count = parsed.total_sessions;
+              if (reg.notes.startsWith('{') || reg.notes.startsWith('[')) {
+                parsedNotes = JSON.parse(reg.notes);
               }
             } catch { }
           }
 
-          items.push({
-            id: reg.id,
-            transaction_date: txDate || new Date().toISOString().split('T')[0],
-            member_name: reg.member_name || 'Member',
-            member_username: reg.member_username || '',
-            package_name: reg.package_name || 'Paket Personal Trainer',
-            session_count: count,
-            trainer_name: tName || 'Pelatih',
-          });
+          // Case 1: If session logs exist in notes JSON, expand each session log entry
+          if (parsedNotes && Array.isArray(parsedNotes.logs) && parsedNotes.logs.length > 0) {
+            parsedNotes.logs.forEach((log: any, logIdx: number) => {
+              const logTrainer = (log.trainer_name || tName || '').trim();
+
+              // Filter by selected trainer
+              if (selectedTrainer && selectedTrainer !== 'Semua' && selectedTrainer !== '-Pilih-') {
+                const sel = selectedTrainer.toLowerCase();
+                const logT = logTrainer.toLowerCase();
+                if (!logT.includes(sel) && !sel.includes(logT)) {
+                  return;
+                }
+              }
+
+              const logDate = log.date || (reg.registration_date ? reg.registration_date.split('T')[0] : '');
+
+              // Filter by Date Range
+              if (startDate && logDate && logDate < startDate) return;
+              if (endDate && logDate && logDate > endDate) return;
+
+              items.push({
+                id: `${reg.id}-log-${logIdx}`,
+                transaction_date: logDate || new Date().toISOString().split('T')[0],
+                member_name: reg.member_name || 'Member',
+                member_username: reg.member_username || '',
+                package_name: reg.package_name || 'PT Sesi',
+                session_count: Number(log.used_sessions) || 1,
+                trainer_name: logTrainer || 'Pelatih',
+              });
+            });
+          } else {
+            // Case 2: Fallback for records where logs were not yet itemized individually in JSON
+            if (selectedTrainer && selectedTrainer !== 'Semua' && selectedTrainer !== '-Pilih-') {
+              const sel = selectedTrainer.toLowerCase();
+              const logT = tName.toLowerCase();
+              if (!logT.includes(sel) && !sel.includes(logT)) {
+                return;
+              }
+            }
+
+            const txDate = reg.registration_date || (reg.created_at ? reg.created_at.split('T')[0] : '');
+
+            // Filter by Date Range
+            if (startDate && txDate && txDate < startDate) return;
+            if (endDate && txDate && txDate > endDate) return;
+
+            // In Rekap Sesi, each session conducted is represented with count 1
+            const usedCount = parsedNotes && parsedNotes.total_sessions && parsedNotes.remaining_sessions !== undefined
+              ? (parsedNotes.total_sessions - parsedNotes.remaining_sessions)
+              : 1;
+
+            const safeUsedCount = Math.max(1, usedCount);
+            for (let i = 0; i < safeUsedCount; i++) {
+              items.push({
+                id: `${reg.id}-s-${i}`,
+                transaction_date: txDate || new Date().toISOString().split('T')[0],
+                member_name: reg.member_name || 'Member',
+                member_username: reg.member_username || '',
+                package_name: reg.package_name || 'PT Sesi',
+                session_count: 1,
+                trainer_name: tName || 'Pelatih',
+              });
+            }
+          }
         });
 
         // Sort by transaction date descending
