@@ -971,7 +971,11 @@ export default function OneClubMembersPanel() {
                                   <td className="py-2.5 px-3 border-r border-slate-100 font-mono font-bold text-slate-800">{tx.transaction_number}</td>
                                   <td className="py-2.5 px-3 border-r border-slate-100 uppercase text-[10px]">{pkg}</td>
                                   <td className="py-2.5 px-3 border-r border-slate-100 font-mono text-[10px]">
-                                    {formatDateLabel(selectedMember.membership_start)} s/d {formatDateLabel(selectedMember.membership_end)}
+                                    <div className="flex flex-col items-center justify-center leading-tight">
+                                      <span>{formatDateLabel(selectedMember.membership_start)}</span>
+                                      <span className="text-[8px] font-sans opacity-70">s/d</span>
+                                      <span>{formatDateLabel(selectedMember.membership_end)}</span>
+                                    </div>
                                   </td>
                                   <td className="py-2.5 px-3 border-r border-slate-100 text-right text-slate-800 font-black">{formatIDR(tx.total_amount)}</td>
                                   <td className="py-2.5 px-3 border-r border-slate-100 text-slate-500 font-normal leading-relaxed">{tx.notes || '-'}</td>

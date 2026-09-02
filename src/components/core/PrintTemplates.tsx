@@ -201,8 +201,12 @@ export const OfficialReceiptTemplate: React.FC<OfficialReceiptProps> = ({ onClos
                 <td className="py-2.5 px-1.5 border-r border-black font-bold text-center font-mono whitespace-nowrap truncate">{data.memberUsername}</td>
                 <td className="py-2.5 px-2 border-r border-black font-bold text-left truncate">{data.memberName}</td>
                 <td className="py-2.5 px-2 border-r border-black uppercase font-bold text-center whitespace-nowrap">{data.packageName}</td>
-                <td className="py-2.5 px-2 border-r border-black font-bold text-center font-mono text-[10px] print:text-[8.5px] whitespace-nowrap">
-                  {formatDateLabel(data.membershipStart)} s/d {formatDateLabel(data.membershipEnd)}
+                <td className="py-2 px-1 border-r border-black font-bold text-center font-mono text-[9.5px] print:text-[8px] leading-tight">
+                  <div className="flex flex-col items-center justify-center leading-tight">
+                    <span>{formatDateLabel(data.membershipStart)}</span>
+                    <span className="text-[7.5px] print:text-[7px] font-sans font-normal opacity-75">s/d</span>
+                    <span>{formatDateLabel(data.membershipEnd)}</span>
+                  </div>
                 </td>
                 <td className="py-2.5 px-1.5 border-r border-black uppercase font-bold text-center whitespace-nowrap">{data.paymentMethod}</td>
                 <td className="py-2.5 px-2 font-bold text-right font-mono whitespace-nowrap">{formatIDR(data.price)}</td>

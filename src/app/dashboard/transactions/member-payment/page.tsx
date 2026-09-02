@@ -947,8 +947,12 @@ export default function MemberPaymentPage() {
                     <td className="py-2.5 px-1.5 border-r border-black font-bold text-center font-mono whitespace-nowrap truncate">{selectedMember.username}</td>
                     <td className="py-2.5 px-2 border-r border-black font-bold text-left truncate">{selectedMember.full_name}</td>
                     <td className="py-2.5 px-2 border-r border-black uppercase font-bold text-center whitespace-nowrap">{successTx.packageName}</td>
-                    <td className="py-2.5 px-2 border-r border-black font-bold text-center font-mono text-[10px] print:text-[8.5px] whitespace-nowrap">
-                      {formatDateLabel(successTx.newStart)} s/d {formatDateLabel(successTx.newEnd)}
+                    <td className="py-2 px-1 border-r border-black font-bold text-center font-mono text-[9.5px] print:text-[8px] leading-tight">
+                      <div className="flex flex-col items-center justify-center leading-tight">
+                        <span>{formatDateLabel(successTx.newStart)}</span>
+                        <span className="text-[7.5px] print:text-[7px] font-sans font-normal opacity-75">s/d</span>
+                        <span>{formatDateLabel(successTx.newEnd)}</span>
+                      </div>
                     </td>
                     <td className="py-2.5 px-1.5 border-r border-black uppercase font-bold text-center whitespace-nowrap">{successTx.paymentMethod}</td>
                     <td className="py-2.5 px-2 font-bold text-right font-mono whitespace-nowrap">Rp. {successTx.totalAmount.toLocaleString('id-ID')}</td>

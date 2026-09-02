@@ -434,8 +434,12 @@ export default function MemberRegistrationPage() {
                       <td className="py-2.5 px-1.5 border-r border-black font-bold text-center font-mono whitespace-nowrap truncate">{successData.username}</td>
                       <td className="py-2.5 px-2 border-r border-black font-bold text-left truncate">{successData.member.full_name}</td>
                       <td className="py-2.5 px-2 border-r border-black uppercase font-bold text-center whitespace-nowrap">{successData.packageName}</td>
-                      <td className="py-2.5 px-2 border-r border-black font-bold text-center font-mono text-[10px] print:text-[8.5px] whitespace-nowrap">
-                        {formatDateLabel(successData.membershipStart)} s/d {formatDateLabel(successData.membershipEnd)}
+                      <td className="py-2 px-1 border-r border-black font-bold text-center font-mono text-[9.5px] print:text-[8px] leading-tight">
+                        <div className="flex flex-col items-center justify-center leading-tight">
+                          <span>{formatDateLabel(successData.membershipStart)}</span>
+                          <span className="text-[7.5px] print:text-[7px] font-sans font-normal opacity-75">s/d</span>
+                          <span>{formatDateLabel(successData.membershipEnd)}</span>
+                        </div>
                       </td>
                       <td className="py-2.5 px-1.5 border-r border-black uppercase font-bold text-center whitespace-nowrap">{successData.paymentMethod}</td>
                       <td className="py-2.5 px-2 font-bold text-right font-mono whitespace-nowrap">Rp. {successData.price.toLocaleString('id-ID')}</td>

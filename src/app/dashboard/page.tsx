@@ -15,6 +15,7 @@ import {
   TrendingUp,
   TrendingDown,
   UserCheck,
+  UserX,
   Clock,
   Calendar,
   User,
@@ -305,7 +306,7 @@ export default function SummaryPage() {
       {error && <FetchErrorAlert error={error} featureName="Ringkasan Dashboard" onRetry={fetchSummary} />}
 
       {/* Row 1 (Core Daily & Member Overview) - High contrast solid cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 select-none">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 select-none">
         <StatsCard
           label="Total Anggota"
           value={summary.total_members}
@@ -318,6 +319,13 @@ export default function SummaryPage() {
           value={summary.active_members}
           icon={UserCheck}
           bg="bg-[#28A745]"
+          onViewMore={() => router.push('/dashboard/members/one-club')}
+        />
+        <StatsCard
+          label="Anggota Tidak Aktif"
+          value={summary.expired_members}
+          icon={UserX}
+          bg="bg-[#DC3545]"
           onViewMore={() => router.push('/dashboard/members/one-club')}
         />
         <StatsCard
