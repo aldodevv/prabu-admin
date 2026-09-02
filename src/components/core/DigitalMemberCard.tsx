@@ -3,6 +3,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { toPng } from 'html-to-image';
 import { Download, Mail, Check, Copy } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 import { getBranchAddress, getBranchDisplayName, toDataURL } from '@/utils';
 
 export interface DigitalMemberCardProps {
@@ -17,6 +18,7 @@ export interface DigitalMemberCardProps {
   };
   branchCodeOrName?: string;
   branchName?: string;
+  branchAddress?: string;
 }
 
 function InstagramIcon({ className = 'w-4 h-4' }: { className?: string }) {
@@ -37,15 +39,28 @@ function WhatsAppIcon({ className = 'w-3.5 h-3.5' }: { className?: string }) {
   );
 }
 
-export function DigitalMemberCard({ member, branchCodeOrName, branchName }: DigitalMemberCardProps) {
+export function DigitalMemberCard({ member, branchCodeOrName, branchName, branchAddress }: DigitalMemberCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
   const [copiedTemplate, setCopiedTemplate] = useState(false);
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
-  const displayBranch = getBranchDisplayName(branchName || branchCodeOrName);
-  const address = getBranchAddress(branchCodeOrName || branchName);
+  const { branches, activeBranchID } = useAuth();
+
+  // Robust branch lookup
+  const matchedBranch = branches.find(
+    (b) =>
+      b.id === branchCodeOrName ||
+      b.code.toUpperCase() === (branchCodeOrName || '').toUpperCase() ||
+      b.name.toUpperCase() === (branchName || branchCodeOrName || '').toUpperCase()
+  ) || (activeBranchID ? branches.find((b) => b.id === activeBranchID) : undefined);
+
+  const finalBranchName = branchName || matchedBranch?.name || branchCodeOrName;
+  const displayBranch = getBranchDisplayName(finalBranchName);
+  const address =
+    branchAddress ||
+    getBranchAddress(matchedBranch?.code || matchedBranch?.name || finalBranchName);
 
   // Format username with spaces for card display e.g. 1 6 5 1 2 0 0 4
   const formattedCode = (member.username || '').split('').join(' ');

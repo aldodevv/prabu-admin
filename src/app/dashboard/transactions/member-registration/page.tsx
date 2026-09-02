@@ -26,7 +26,8 @@ interface SuccessData {
 }
 
 export default function MemberRegistrationPage() {
-  const { activeBranchID, user } = useAuth();
+  const { activeBranchID, branches, user } = useAuth();
+  const activeBranch = branches.find((b) => b.id === activeBranchID);
   const canEditTransactionDate = permissions.canEditTransactionDate(user?.role);
   const canEditMemberNumber = permissions.canEditMemberNumber(user?.role);
   const [packages, setPackages] = useState<{ name: string; price: number; days: number }[]>([]);
@@ -480,8 +481,8 @@ export default function MemberRegistrationPage() {
                     membership_start: successData.membershipStart,
                     membership_end: successData.membershipEnd,
                   }}
-                  branchCodeOrName={activeBranchID || undefined}
-                  branchName={user?.branch_name}
+                  branchCodeOrName={activeBranch?.code || activeBranchID || undefined}
+                  branchName={activeBranch?.name || user?.branch_name}
                 />
               </div>
             </div>
