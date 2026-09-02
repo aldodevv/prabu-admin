@@ -46,12 +46,42 @@ export default function MemberReportsPage() {
         txsList = [];
       }
 
-      // Filter transactions to only those belonging to member transactions
-      let filtered = txsList.filter(tx =>
-        tx.member_id ||
-        tx.member_name ||
-        (tx.notes && (tx.notes.toLowerCase().includes('anggota') || tx.notes.toLowerCase().includes('member') || tx.notes.toLowerCase().includes('pembayaran')))
-      );
+      // Filter transactions to only those belonging to gym membership registration & renewal
+      let filtered = txsList.filter(tx => {
+        const notes = (tx.notes || '').toLowerCase();
+        const txNum = (tx.transaction_number || '').toUpperCase();
+
+        // Explicitly EXCLUDE non-membership reports (PT / Latihan, Class, Card, Leave, POS Retail)
+        const isPT =
+          notes.includes('personal trainer') ||
+          notes.includes('pendaftaran latihan') ||
+          notes.includes('paket pt') ||
+          notes.includes('sesi pelatih') ||
+          notes.includes('latihan') ||
+          txNum.includes('-TRA-') ||
+          txNum.includes('-PTX-') ||
+          txNum.startsWith('PRABU-PT');
+
+        const isLeave = notes.includes('cuti') || txNum.includes('-CUT-');
+        const isCardReplacement = notes.includes('ganti kartu') || notes.includes('pergantian kartu') || txNum.includes('-KRT-');
+        const isBranchTransfer = notes.includes('pergantian cabang') || txNum.includes('-CBG-');
+        const isClass = notes.includes('kelas') || txNum.includes('-CLS-') || txNum.includes('-REC-');
+        const isPOS = notes.includes('pos retail') || txNum.includes('-POS-');
+
+        if (isPT || isLeave || isCardReplacement || isBranchTransfer || isClass || isPOS) {
+          return false;
+        }
+
+        // Must be a valid member registration or payment transaction
+        return (
+          tx.member_id ||
+          tx.member_name ||
+          notes.includes('anggota') ||
+          notes.includes('pendaftaran') ||
+          notes.includes('perpanjang') ||
+          notes.includes('pembayaran')
+        );
+      });
 
       // Filter by Date Range
       if (startDate) {
