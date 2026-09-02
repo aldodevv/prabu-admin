@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { permissions } from '@/lib/permissions';
 import api from '@/lib/api';
 import { membersApi, packagesApi } from '@/core/api';
 import { Member } from '@/core/types';
@@ -152,11 +153,17 @@ export default function MemberPaymentPage() {
 
   const handleOpenPayment = (m: Member) => {
     if (m.branch_id !== activeBranchID) {
-      const confirmChange = window.confirm(
-        `Pembayaran tidak diperkenankan. Member tersebut terdaftar di cabang ${m.branch_name || 'lain'}.\n\nApakah Anda ingin melakukan Pergantian Cabang untuk member ini?`
-      );
-      if (confirmChange) {
-        router.push('/dashboard/transactions/card-replacement');
+      if (permissions.canManageBranchTransfer(user?.role)) {
+        const confirmChange = window.confirm(
+          `Pembayaran tidak diperkenankan. Member tersebut terdaftar di cabang ${m.branch_name || 'lain'}.\n\nApakah Anda ingin melakukan Pergantian Cabang untuk member ini?`
+        );
+        if (confirmChange) {
+          router.push('/dashboard/transactions/card-replacement');
+        }
+      } else {
+        alert(
+          `Pembayaran tidak diperkenankan. Member tersebut terdaftar di cabang ${m.branch_name || 'lain'}.\n\nPergantian cabang hanya dapat diproses oleh Owner, Admin, atau Developer.`
+        );
       }
       return;
     }

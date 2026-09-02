@@ -30,7 +30,16 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   };
 
   // Filter navigation menu based on role and Pajak mode
-  const filteredNavigation = NAVIGATION_MENU.filter((group) => {
+  const filteredNavigation = NAVIGATION_MENU.map((group) => {
+    const filteredItems = group.items.filter((item) => {
+      // Pergantian Cabang hanya bisa diakses oleh Owner, Admin, Developer
+      if (item.href === ROUTES.CARD_REPLACEMENT && !permissions.canManageBranchTransfer(user?.role)) {
+        return false;
+      }
+      return true;
+    });
+    return { ...group, items: filteredItems };
+  }).filter((group) => {
     if (isPajakMode) {
       if (group.id === 'data-staff' || group.id === 'pengaturan') {
         return false;
@@ -44,12 +53,15 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     return true;
   });
 
-  // Guard access to staff and settings pages when Pajak Mode is active
+  // Guard access to staff, settings, and card replacement pages based on role & mode
   useEffect(() => {
     if (isPajakMode && (pathname.startsWith('/dashboard/staff') || pathname.startsWith('/dashboard/settings'))) {
       router.push(ROUTES.DASHBOARD);
     }
-  }, [isPajakMode, pathname, router]);
+    if (user && pathname.startsWith(ROUTES.CARD_REPLACEMENT) && !permissions.canManageBranchTransfer(user.role)) {
+      router.push(ROUTES.DASHBOARD);
+    }
+  }, [isPajakMode, pathname, router, user]);
 
   // Auto-expand menu group on page load/navigation based on pathname
   useEffect(() => {

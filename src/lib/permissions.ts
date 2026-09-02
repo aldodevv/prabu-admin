@@ -11,6 +11,7 @@ export interface RoleCapability {
   canDeleteMember: boolean;
   canDeleteTransaction: boolean;
   canManageBranches: boolean;
+  canManageBranchTransfer: boolean;
   description: string;
 }
 
@@ -23,6 +24,7 @@ export const ROLE_CAPABILITIES: Record<Role, RoleCapability> = {
     canDeleteMember: true,
     canDeleteTransaction: true,
     canManageBranches: false,
+    canManageBranchTransfer: true,
     description: 'Admin / Owner: Full CRUD operasional semua cabang, kelola Data Staff, dan Pengaturan.',
   },
   [ROLES.CS]: {
@@ -33,7 +35,8 @@ export const ROLE_CAPABILITIES: Record<Role, RoleCapability> = {
     canDeleteMember: false,
     canDeleteTransaction: false,
     canManageBranches: false,
-    description: 'Operational CRUD cabang sendiri, tanpa delete transaksi & anggota, tanpa data staff & pengaturan, tanpa pindah cabang.',
+    canManageBranchTransfer: false,
+    description: 'Operational CRUD cabang sendiri, tanpa delete transaksi & anggota, tanpa data staff & pengaturan, tanpa pindah cabang & mutasi.',
   },
   [ROLES.OWNER]: {
     canSwitchBranch: true,
@@ -43,6 +46,7 @@ export const ROLE_CAPABILITIES: Record<Role, RoleCapability> = {
     canDeleteMember: true,
     canDeleteTransaction: true,
     canManageBranches: false,
+    canManageBranchTransfer: true,
     description: 'Full CRUD operasional, Data Staff (kecuali developer), dan Pengaturan di semua cabang.',
   },
   [ROLES.DEVELOPER]: {
@@ -53,6 +57,7 @@ export const ROLE_CAPABILITIES: Record<Role, RoleCapability> = {
     canDeleteMember: true,
     canDeleteTransaction: true,
     canManageBranches: true,
+    canManageBranchTransfer: true,
     description: 'Super Admin: Akses penuh CRUD ke semua fitur, staff, pengaturan, dan kelola cabang.',
   },
 };
@@ -86,6 +91,7 @@ export const permissions = {
   canManageStaff: (role?: string) => ROLE_CAPABILITIES[normalizeRole(role)]?.canAccessMenuStaff ?? false,
   canManageSettings: (role?: string) => ROLE_CAPABILITIES[normalizeRole(role)]?.canAccessMenuSettings ?? false,
   canManageBranches: (role?: string) => ROLE_CAPABILITIES[normalizeRole(role)]?.canManageBranches ?? false,
+  canManageBranchTransfer: (role?: string) => ROLE_CAPABILITIES[normalizeRole(role)]?.canManageBranchTransfer ?? false,
   canModifyStaffWithRole: (currentRole?: string, targetRole?: string) => {
     const curr = normalizeRole(currentRole);
     const target = normalizeRole(targetRole);

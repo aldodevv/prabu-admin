@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { permissions } from '@/lib/permissions';
 import { membersApi, transactionsApi } from '@/core/api';
 import { formatDateLabel, formatIDR } from '@/core/constants';
 import { Member, CardReplacementLog, Transaction } from '@/core/types';
@@ -9,13 +11,21 @@ import { PageHeader } from '@/components/core/PageHeader';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 import { DataTable, Column } from '@/components/core/DataTable';
 import { OfficialReceiptTemplate } from '@/components/core/PrintTemplates';
-import { Plus, Printer, ArrowLeft, Save, FileText, CreditCard } from 'lucide-react';
+import { Plus, Printer, ArrowLeft, Save, FileText, CreditCard, ShieldAlert } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { exportToExcel } from '@/lib/excelExport';
 
 export default function CardReplacementPage() {
+  const router = useRouter();
   const { activeBranchID, user, loading: authLoading } = useAuth();
+  const canAccess = permissions.canManageBranchTransfer(user?.role);
   const lastFetchedBranchRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!authLoading && user && !canAccess) {
+      router.push('/dashboard');
+    }
+  }, [authLoading, user, canAccess, router]);
 
   // Navigation steps: 'list' | 'add'
   const [step, setStep] = useState<'list' | 'add'>('list');
@@ -360,6 +370,22 @@ export default function CardReplacementPage() {
   ];
 
   const filteredLogs = getFilteredLogs();
+
+  if (!authLoading && !canAccess) {
+    return (
+      <div className="min-h-[400px] flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mb-4">
+          <ShieldAlert className="w-6 h-6" />
+        </div>
+        <h2 className="text-lg font-bold text-slate-800 uppercase tracking-wider font-heading mb-2">
+          Akses Terbatas
+        </h2>
+        <p className="text-sm text-slate-500 max-w-md">
+          Fitur Pergantian Cabang / Mutasi Anggota hanya dapat diakses oleh Owner, Admin, dan Developer.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 font-sans">
