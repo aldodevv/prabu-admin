@@ -80,10 +80,25 @@ export default function TransactionHistoryPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await api.get<any>(`/admin/transactions?branch_id=${activeBranchID}&per_page=200`);
+      const res = await api.get<any>(`/admin/transactions?branch_id=${activeBranchID}&pos_only=true&per_page=200`);
       if (res.success && res.data) {
-        setTransactions(res.data);
-        setFilteredTransactions(res.data);
+        // Ensure only retail sales (POS) transactions are displayed
+        const posOnlyData = res.data.filter((tx: any) => {
+          const notes = tx.notes || '';
+          if (notes.startsWith('POS Retail')) return true;
+          if (tx.items && tx.items.length > 0) return true;
+          const isGymMembershipTx =
+            notes.startsWith('Pendaftaran') ||
+            notes.startsWith('Perpanjang') ||
+            notes.startsWith('Personal Trainer') ||
+            notes.startsWith('Pembayaran Cuti') ||
+            notes.startsWith('Cuti') ||
+            notes.startsWith('Pergantian Cabang') ||
+            notes.startsWith('Ganti Kartu');
+          return !isGymMembershipTx && !tx.member_id;
+        });
+        setTransactions(posOnlyData);
+        setFilteredTransactions(posOnlyData);
       } else {
         setError(res.error || 'Gagal mengambil data riwayat transaksi');
       }
