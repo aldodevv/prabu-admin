@@ -562,25 +562,19 @@ export default function MemberRegistrationPage() {
                       required
                       value={memberNumber}
                       onChange={(e) => setMemberNumber(e.target.value)}
-                      disabled={!canEditMemberNumber}
-                      readOnly={!canEditMemberNumber}
                       placeholder="Contoh: 16770001"
-                      className={`w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-mono font-bold ${
-                        !canEditMemberNumber ? 'bg-slate-100 cursor-not-allowed text-slate-600 select-none' : ''
-                      }`}
+                      className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-mono font-bold"
                     />
-                    {canEditMemberNumber && (
-                      <button
-                        type="button"
-                        onClick={fetchNextMemberCode}
-                        disabled={loadingMemberNumber}
-                        title="Generate nomor anggota otomatis berikutnya"
-                        className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-xs font-semibold rounded cursor-pointer transition-colors shrink-0 inline-flex items-center gap-1"
-                      >
-                        <RotateCcw className={`w-3.5 h-3.5 ${loadingMemberNumber ? 'animate-spin' : ''}`} />
-                        <span>Auto</span>
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={fetchNextMemberCode}
+                      disabled={loadingMemberNumber}
+                      title="Generate nomor anggota otomatis berikutnya"
+                      className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-xs font-semibold rounded cursor-pointer transition-colors shrink-0 inline-flex items-center gap-1"
+                    >
+                      <RotateCcw className={`w-3.5 h-3.5 ${loadingMemberNumber ? 'animate-spin' : ''}`} />
+                      <span>Auto</span>
+                    </button>
                   </div>
                 </div>
 
