@@ -177,11 +177,12 @@ export default function MemberPaymentPage() {
     setErrorMsg('');
     setSuccessTx(null);
 
-    // Calculate start date: if expired, start today. If active, start day after expiry
+    // Calculate start date: if expired or inactive, start today. If active, start day after expiry
     const today = new Date();
     const expiry = m.membership_end ? new Date(m.membership_end) : null;
     let start = today;
-    if (expiry && expiry >= today) {
+    const isStillActive = m.is_active && expiry && expiry >= today;
+    if (isStillActive && expiry) {
       start = new Date(expiry);
       start.setDate(start.getDate() + 1);
     }
@@ -374,7 +375,7 @@ export default function MemberPaymentPage() {
       formatDateLabel(m.membership_end),
       m.phone || '-',
       m.membership_type || '-',
-      isMemberActive(m.membership_end) ? 'Aktif' : 'Tidak Aktif',
+      (m.is_active && isMemberActive(m.membership_end)) ? 'Aktif' : 'Tidak Aktif',
     ]);
 
     exportToExcel({
@@ -449,7 +450,7 @@ export default function MemberPaymentPage() {
       align: 'center',
       className: 'border-r border-slate-100 text-center select-none',
       render: (m) => {
-        const active = isMemberActive(m.membership_end);
+        const active = m.is_active && isMemberActive(m.membership_end);
         return active ? (
           <span className="inline-block px-2.5 py-1 bg-[#28A745] text-white text-[9px] font-accent uppercase tracking-wider rounded font-bold">
             Aktif

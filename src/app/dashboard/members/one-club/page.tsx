@@ -113,9 +113,14 @@ export default function OneClubMembersPanel() {
         is_active: newStatus,
       });
       if (res.success) {
+        const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
         setMembers((prev) =>
           prev.map((m) =>
-            m.id === memberToDelete.id ? { ...m, is_active: newStatus } : m
+            m.id === memberToDelete.id ? { 
+              ...m, 
+              is_active: newStatus,
+              membership_end: newStatus ? m.membership_end : yesterdayStr
+            } : m
           )
         );
         setMemberToDelete(null);
@@ -493,11 +498,26 @@ export default function OneClubMembersPanel() {
     setDeletingTx(true);
     setDeleteTxError('');
 
+    const isRegTx = txToDelete.notes?.startsWith('Pendaftaran Anggota:') || txToDelete.notes?.includes('(DAFTAR)');
+    const isOnlyTx = memberTransactions.length <= 1;
+
     try {
       const res = await transactionsApi.delete(txToDelete.id);
       if (res.success) {
-        setMemberTransactions(prev => prev.filter(item => item.id !== txToDelete.id));
-        setTxToDelete(null);
+        if (isRegTx || isOnlyTx) {
+          // Pendaftaran dibatalkan & akun anggota dibersihkan dari sistem
+          if (selectedMember) {
+            setMembers(prev => prev.filter(m => m.id !== selectedMember.id));
+          }
+          setTxToDelete(null);
+          setStep('list');
+          setSelectedMember(null);
+          alert('Transaksi pendaftaran berhasil dihapus. Data anggota terkait telah dibersihkan secara total dari sistem.');
+        } else {
+          setMemberTransactions(prev => prev.filter(item => item.id !== txToDelete.id));
+          setTxToDelete(null);
+          fetchMembers();
+        }
       } else {
         setDeleteTxError(res.error || 'Gagal menghapus transaksi pembayaran.');
       }
@@ -1585,6 +1605,18 @@ export default function OneClubMembersPanel() {
               )}
             </div>
 
+            {txToDelete.notes && (txToDelete.notes.startsWith('Pendaftaran Anggota:') || txToDelete.notes.includes('(DAFTAR)') || memberTransactions.length <= 1) && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 font-semibold space-y-1">
+                <div className="font-bold flex items-center gap-1.5 text-red-800">
+                  <AlertTriangle className="w-4 h-4 text-red-600" />
+                  <span>Perhatian: Transaksi Pendaftaran Anggota</span>
+                </div>
+                <p>
+                  Menghapus transaksi pendaftaran ini akan membatalkan status anggota dan menghapus akun anggota ini dari sistem agar tidak meninggalkan data sampah di laporan transaksi.
+                </p>
+              </div>
+            )}
+
             <p className="text-xs text-slate-600 font-semibold leading-relaxed">
               Apakah Anda yakin ingin menghapus transaksi pembayaran ini? Tindakan ini tidak dapat dibatalkan.
             </p>
@@ -1659,21 +1691,21 @@ export default function OneClubMembersPanel() {
                 </div>
                 <p className="text-xs text-slate-600 leading-relaxed pl-4">
                   {memberToDelete.is_active
-                    ? 'Status keanggotaan diubah menjadi Nonaktif. Profil dan seluruh riwayat transaksi keuangan tetap tersimpan utuh di sistem.'
-                    : 'Mengaktifkan kembali status keanggotaan anggota agar dapat melakukan transaksi & check-in.'}
+                    ? 'Status keanggotaan diubah menjadi Nonaktif dan masa aktif dihentikan. Riwayat transaksi keuangan tetap tersimpan utuh di sistem untuk pembukuan.'
+                    : 'Mengaktifkan kembali status keanggotaan anggota.'}
                 </p>
               </div>
 
-              {/* Option 2 Box: Hapus Permanen */}
+              {/* Option 2 Box: Hapus Total */}
               <div className="p-3.5 rounded-xl border border-red-200 bg-red-50/60 space-y-1">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-red-500"></div>
                   <span className="text-xs font-bold uppercase tracking-wider text-red-800">
-                    Opsi 2: Hapus Permanen (Total Data Loss)
+                    Opsi 2: Hapus Total (Salah Input / Batal Daftar)
                   </span>
                 </div>
                 <p className="text-xs text-slate-600 leading-relaxed pl-4">
-                  Menghapus akun anggota secara permanen beserta seluruh riwayat transaksi (Pendaftaran, Perpanjang, Cuti, Ganti Cabang), presensi check-in, dan data PT. <span className="font-bold text-red-700">Data tidak dapat dikembalikan</span>.
+                  Menghapus akun anggota secara permanen beserta seluruh riwayat transaksi (Pendaftaran, Perpanjang, Cuti, Ganti Cabang), presensi check-in, dan data PT. <span className="font-bold text-red-700">Data dibersihkan total tanpa meninggalkan sampah transaksi</span>. Nomor anggota akan langsung bebas dan dapat digunakan kembali.
                 </p>
               </div>
             </div>
@@ -1716,7 +1748,7 @@ export default function OneClubMembersPanel() {
                 ) : (
                   <>
                     <Trash2 className="w-4 h-4" />
-                    <span>Hapus Permanen</span>
+                    <span>Hapus Total (Bersihkan Data)</span>
                   </>
                 )}
               </button>
