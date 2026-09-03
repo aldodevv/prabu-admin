@@ -33,6 +33,7 @@ interface DataTableProps<T> {
   onItemsPerPageChange?: (perPage: number) => void;
   // Custom styles
   className?: string;
+  minWidth?: string;
 }
 
 function getPageNumbers(current: number, total: number) {
@@ -68,7 +69,8 @@ export function DataTable<T extends { id: string | number }>({
   itemsPerPage = 50,
   onPageChange,
   onItemsPerPageChange,
-  className = ''
+  className = '',
+  minWidth = 'min-w-[750px]'
 }: DataTableProps<T>) {
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
   const startItem = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
@@ -86,8 +88,8 @@ export function DataTable<T extends { id: string | number }>({
         <CyanHeaderBar title={title} action={headerAction} />
       )}
 
-      <div className="overflow-x-auto w-full">
-        <table className="w-full text-left text-sm text-slate-650 border-collapse min-w-[600px]">
+      <div className="overflow-x-auto w-full custom-scrollbar pb-1">
+        <table className={`w-full text-left text-sm text-slate-650 border-collapse ${minWidth}`}>
           <thead className="bg-[#6C7A89] text-white text-[10px] uppercase tracking-wider font-bold select-none">
             <tr>
               {columns.map((col, idx) => (

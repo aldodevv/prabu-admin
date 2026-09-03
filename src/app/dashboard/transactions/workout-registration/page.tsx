@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { permissions } from '@/lib/permissions';
 import api from '@/lib/api';
-import { Save, Printer, ArrowLeft, UserCheck, Search, Check, X, Phone } from 'lucide-react';
+import { Save, Printer, ArrowLeft, UserCheck, Search, Check, X, Phone, AlertCircle } from 'lucide-react';
 
 import { packagesApi } from '@/core/api';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -512,7 +512,8 @@ export default function PTRegistrationPage() {
                     {packageFetchError && (
                       <div className="flex items-center justify-between gap-2 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-xs animate-fadeIn">
                         <span className="flex items-center gap-1.5 font-medium">
-                          ⚠️ {packageFetchError}
+                          <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                          {packageFetchError}
                         </span>
                         <button
                           type="button"

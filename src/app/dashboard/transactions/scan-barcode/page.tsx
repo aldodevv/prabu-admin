@@ -150,6 +150,14 @@ export default function ScanBarcodePage() {
     if (!result || result.type !== 'member') return;
     const member = result.data as MemberData;
 
+    if (!member.is_active) {
+      triggerCheckinModal(
+        `Anggota ${member.full_name} (${member.username}) berstatus Nonaktif. Silakan aktifkan kembali status anggota di menu Data Anggota untuk dapat melakukan presensi check-in.`,
+        member
+      );
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await checkinsApi.checkin(memberId);
@@ -195,9 +203,24 @@ export default function ScanBarcodePage() {
     return diffDays;
   };
 
-  const getMemberStatusText = (endDateStr: string) => {
-    const daysLeft = getDaysRemaining(endDateStr);
-    return daysLeft >= 0 ? 'Aktif' : 'Tidak Aktif';
+  const getMemberStatus = (member: MemberData) => {
+    if (!member.is_active) {
+      return {
+        label: 'Nonaktif',
+        badgeClass: 'bg-slate-100 text-slate-600 border-slate-200',
+      };
+    }
+    const daysLeft = getDaysRemaining(member.membership_end);
+    if (daysLeft >= 0) {
+      return {
+        label: 'Aktif',
+        badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      };
+    }
+    return {
+      label: 'Expired',
+      badgeClass: 'bg-red-50 text-red-700 border-red-200',
+    };
   };
 
   // Find if there is an active checkin (no checkout time)
@@ -245,8 +268,9 @@ export default function ScanBarcodePage() {
           </form>
 
           {errorMsg && (
-            <div className="p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-bold uppercase tracking-wider rounded">
-              ⚠️ {errorMsg}
+            <div className="p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-bold uppercase tracking-wider rounded flex items-center gap-2">
+              <Icons.AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+              <span>{errorMsg}</span>
             </div>
           )}
 
@@ -260,12 +284,29 @@ export default function ScanBarcodePage() {
                 const isOnLeave = (result as any).on_leave;
                 const leaveInfo = (result as any).leave_info;
 
+                if (!member.is_active) {
+                  return (
+                    <div className="w-full bg-slate-100 border-2 border-slate-400 text-slate-800 px-4 py-5 rounded text-center relative font-sans text-lg font-bold uppercase tracking-wider select-none shadow-sm">
+                      <div className="flex items-center justify-center gap-2 text-red-650">
+                        <Icons.AlertCircle className="w-6 h-6 shrink-0" />
+                        <span>STATUS ANGGOTA: NONAKTIF</span>
+                      </div>
+                      <div className="text-xs font-semibold text-slate-600 mt-1 normal-case tracking-normal">
+                        Akun anggota ini telah dinonaktifkan di sistem. Presensi check-in diblokir.
+                      </div>
+                    </div>
+                  );
+                }
+
                 if (isOnLeave) {
                   return (
                     <div className="w-full bg-amber-50 border border-amber-300 text-amber-900 px-4 py-5 rounded text-center relative font-sans text-lg font-bold uppercase tracking-wider select-none shadow-sm">
-                      ⚠️ ANGGOTA SEDANG DALAM MASA CUTI ({leaveInfo?.start_date || '-'} s/d {leaveInfo?.end_date || '-'})
-                      <div className="text-xs font-semibold text-amber-700 mt-1 lowercase">
-                        * presensi check-in & check-out dibekukan selama periode cuti
+                      <div className="flex items-center justify-center gap-2 text-amber-800">
+                        <Icons.Calendar className="w-6 h-6 shrink-0 text-amber-600" />
+                        <span>ANGGOTA SEDANG DALAM MASA CUTI ({leaveInfo?.start_date || '-'} s/d {leaveInfo?.end_date || '-'})</span>
+                      </div>
+                      <div className="text-xs font-semibold text-amber-700 mt-1 normal-case tracking-normal">
+                        Presensi check-in & check-out dibekukan selama periode cuti.
                       </div>
                     </div>
                   );
@@ -360,8 +401,15 @@ export default function ScanBarcodePage() {
                                 </tr>
                                 <tr>
                                   <td className="bg-[#4f709c] text-white font-bold px-4 py-2 border border-slate-200 select-none">Status Anggota</td>
-                                  <td className="text-slate-800 px-4 py-2 border border-slate-200 bg-white font-semibold">
-                                    {getMemberStatusText(member.membership_end)}
+                                  <td className="px-4 py-2 border border-slate-200 bg-white font-semibold">
+                                    {(() => {
+                                      const st = getMemberStatus(member);
+                                      return (
+                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold border ${st.badgeClass}`}>
+                                          {st.label}
+                                        </span>
+                                      );
+                                    })()}
                                   </td>
                                 </tr>
                               </tbody>
@@ -389,9 +437,17 @@ export default function ScanBarcodePage() {
                                   <td className="bg-[#4f709c] text-white font-bold px-4 py-2 border border-slate-200 select-none">Username</td>
                                   <td className="text-slate-800 px-4 py-2 border border-slate-200 bg-white font-mono">{emp.username}</td>
                                 </tr>
-                                <tr>
+                                <tr className="border-b border-slate-200">
                                   <td className="bg-[#4f709c] text-white font-bold px-4 py-2 border border-slate-200 select-none">Jam Shift</td>
                                   <td className="text-slate-800 px-4 py-2 border border-slate-200 bg-white font-mono">{emp.work_start_time || '08:00'}</td>
+                                </tr>
+                                <tr>
+                                  <td className="bg-[#4f709c] text-white font-bold px-4 py-2 border border-slate-200 select-none">Status</td>
+                                  <td className="px-4 py-2 border border-slate-200 bg-white font-semibold">
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold border ${emp.is_active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                                      {emp.is_active ? 'Aktif' : 'Nonaktif'}
+                                    </span>
+                                  </td>
                                 </tr>
                               </tbody>
                             </table>
@@ -422,6 +478,20 @@ export default function ScanBarcodePage() {
                         <Icons.LogOut className="w-4 h-4" />
                         <span>Check Out</span>
                       </button>
+                    ) : !(result.data as MemberData).is_active ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          triggerCheckinModal(
+                            `Anggota ${(result.data as MemberData).full_name} (${(result.data as MemberData).username}) berstatus Nonaktif. Silakan aktifkan kembali status anggota di menu Data Anggota untuk dapat melakukan presensi check-in.`,
+                            result.data as MemberData
+                          )
+                        }
+                        className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-500 border border-slate-300 text-xs font-bold uppercase tracking-wider rounded flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+                      >
+                        <Icons.Ban className="w-4 h-4 text-red-500" />
+                        <span>Check In Diblokir (Nonaktif)</span>
+                      </button>
                     ) : (
                       <button
                         type="button"
@@ -436,8 +506,8 @@ export default function ScanBarcodePage() {
                   </div>
 
                   {/* Visit Log Table */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse border border-slate-200 text-xs text-slate-800">
+                  <div className="overflow-x-auto custom-scrollbar pb-1">
+                    <table className="w-full border-collapse border border-slate-200 text-xs text-slate-800 min-w-[600px]">
                       <thead>
                         <tr className="bg-[#4f709c] text-white text-left font-bold select-none">
                           <th className="py-2.5 px-3 border border-slate-200 w-12 text-center">No</th>

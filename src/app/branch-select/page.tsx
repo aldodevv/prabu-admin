@@ -120,8 +120,8 @@ export default function BranchSelectPage() {
               <span>Menghubungkan ke database pusat...</span>
             </div>
           ) : (
-            <div className="border border-slate-100 rounded overflow-hidden shadow-sm">
-              <table className="w-full text-left text-sm border-collapse">
+            <div className="border border-slate-100 rounded overflow-x-auto shadow-sm custom-scrollbar pb-1">
+              <table className="w-full text-left text-sm border-collapse min-w-[450px]">
                 <thead>
                   <tr className="bg-[#4F5B66] text-white uppercase text-[11px] tracking-wider font-semibold">
                     <th className="py-3.5 px-4 w-16 text-center">No</th>

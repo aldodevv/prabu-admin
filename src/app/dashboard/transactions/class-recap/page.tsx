@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import { packagesApi, trainersApi, contentsApi } from '@/core/api';
 import { GymClass, Trainer } from '@/core/types';
 import { Plus, Minus, Save, ArrowLeft, ClipboardCheck, Search, FileText } from 'lucide-react';
+import { CurrencyInput } from '@/components/core/CurrencyInput';
 import Link from 'next/link';
 
 interface SessionLog {
@@ -299,8 +300,8 @@ export default function ClassRecapPage() {
                 <span className="text-sm uppercase tracking-wider font-heading">Riwayat Rekap Kelas</span>
               </div>
               <div className="p-6">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm text-slate-650 border border-slate-200">
+                <div className="overflow-x-auto custom-scrollbar pb-1">
+                  <table className="w-full text-left text-sm text-slate-650 border border-slate-200 min-w-[850px]">
                     <thead className="bg-[#6C7A89] text-white text-[10px] uppercase tracking-wider font-bold select-none">
                       <tr>
                         <th className="py-3 px-4 border-r border-slate-350/40 w-12 text-center">No</th>
@@ -501,12 +502,11 @@ export default function ClassRecapPage() {
                 <label className="text-xs font-semibold text-right max-sm:text-left uppercase tracking-wider text-slate-500 font-accent">
                   Komisi Kelas
                 </label>
-                <input
-                  type="text"
+                <CurrencyInput
                   value={classCommission}
-                  onChange={(e) => setClassCommission(e.target.value)}
-                  placeholder="Masukan Komisi Kelas"
-                  className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#DC3545] rounded w-full"
+                  onChangeValue={(_, raw) => setClassCommission(raw)}
+                  placeholder="mis. 50.000"
+                  className="font-mono font-semibold"
                 />
               </div>
 

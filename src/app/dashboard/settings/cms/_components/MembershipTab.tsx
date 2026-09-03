@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import api from '@/lib/api';
-import { Edit, Link as LinkIcon, Type, Sparkles } from 'lucide-react';
+import { Edit, Link as LinkIcon, Type, Sparkles, Tag } from 'lucide-react';
+import { CurrencyInput } from '@/components/core/CurrencyInput';
 import { MembershipPlanItem } from './types';
 
 interface MembershipTabProps {
@@ -162,32 +163,32 @@ export const MembershipTab: React.FC<MembershipTabProps> = ({ onSuccess, onError
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Harga (Rp)</label>
-                  <input
-                    type="number"
-                    required
+                  <CurrencyInput
                     value={editingMemPlan.price}
-                    onChange={(e) => setEditingMemPlan({ ...editingMemPlan, price: Number(e.target.value) })}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-xs text-slate-800 font-semibold focus:outline-none focus:border-brand-cyan"
+                    onChangeValue={(num) => setEditingMemPlan({ ...editingMemPlan, price: num })}
+                    placeholder="mis. 250.000"
+                    className="font-semibold"
+                    required
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Harga Asli / Sebelum Promo (Rp)</label>
-                  <input
-                    type="number"
-                    value={editingMemPlan.original_price || ''}
-                    onChange={(e) =>
-                      setEditingMemPlan({ ...editingMemPlan, original_price: e.target.value ? Number(e.target.value) : undefined })
+                  <CurrencyInput
+                    value={editingMemPlan.original_price}
+                    onChangeValue={(num, raw) =>
+                      setEditingMemPlan({ ...editingMemPlan, original_price: raw ? num : undefined })
                     }
-                    placeholder="mis. 750000 (opsional)"
-                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-xs text-slate-800 font-semibold focus:outline-none focus:border-brand-cyan"
+                    placeholder="mis. 750.000 (opsional)"
+                    className="font-semibold"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-[#17A2B8] uppercase mb-1 flex items-center gap-1">
-                    <span>🏷️ PROMO BADGE / STATUS CARD</span>
+                  <label className="block text-xs font-bold text-[#17A2B8] uppercase mb-1 flex items-center gap-1.5">
+                    <Tag className="w-3.5 h-3.5 text-[#17A2B8]" />
+                    <span>PROMO BADGE / STATUS CARD</span>
                   </label>
                   <input
                     type="text"

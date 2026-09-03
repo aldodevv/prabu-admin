@@ -54,8 +54,8 @@ export default function CardReplacementReportsPage() {
             <span className="text-sm uppercase tracking-wider">Rekapitulasi Administrasi Kartu Anggota</span>
           </div>
           <div className="p-6">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-650">
+            <div className="overflow-x-auto custom-scrollbar pb-1">
+              <table className="w-full text-left text-sm text-slate-650 min-w-[600px]">
                 <thead className="bg-[#6C7A89] text-white text-[10px] uppercase tracking-wider font-bold select-none">
                   <tr>
                     <th className="py-3 px-4 border-r border-slate-300/40">Bulan & Periode</th>

@@ -512,8 +512,8 @@ export default function PurchaseTransactionsPage() {
                   Loading data transaksi pembelian...
                 </div>
               ) : (
-                <div className="overflow-x-auto border border-slate-200 rounded">
-                  <table className="w-full text-left text-sm text-slate-650 border-collapse">
+                <div className="overflow-x-auto border border-slate-200 rounded custom-scrollbar pb-1">
+                  <table className="w-full text-left text-sm text-slate-650 border-collapse min-w-[850px]">
                     <thead className="bg-[#6C7A89] text-white text-[11px] uppercase tracking-wider font-bold select-none border-b border-slate-350">
                       <tr>
                         <th className="py-3 px-4 border-r border-slate-300 w-12 text-center">No</th>
@@ -746,8 +746,8 @@ export default function PurchaseTransactionsPage() {
             </div>
 
             {/* Purchase Items Table */}
-            <div className="overflow-x-auto border border-slate-200 rounded">
-              <table className="w-full text-left text-sm text-slate-650 border-collapse">
+            <div className="overflow-x-auto border border-slate-200 rounded custom-scrollbar pb-1">
+              <table className="w-full text-left text-sm text-slate-650 border-collapse min-w-[650px]">
                 <thead className="bg-[#6C7A89] text-white text-[11px] uppercase tracking-wider font-bold select-none border-b border-slate-350">
                   <tr>
                     <th className="py-3 px-4 border-r border-slate-300 w-12 text-center">No</th>
@@ -862,8 +862,8 @@ export default function PurchaseTransactionsPage() {
             </div>
 
             {/* Item Table */}
-            <div className="overflow-x-auto border border-slate-200 rounded">
-              <table className="w-full text-left text-sm text-slate-650 border-collapse">
+            <div className="overflow-x-auto border border-slate-200 rounded custom-scrollbar pb-1">
+              <table className="w-full text-left text-sm text-slate-650 border-collapse min-w-[600px]">
                 <thead className="bg-[#6C7A89] text-white text-[11px] uppercase tracking-wider font-bold select-none border-b border-slate-350">
                   <tr>
                     <th className="py-3 px-4 border-r border-slate-300 w-12 text-center">No</th>

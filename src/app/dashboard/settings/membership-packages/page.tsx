@@ -7,6 +7,7 @@ import { MembershipPackage } from '@/core/types';
 import { formatIDR } from '@/core/constants';
 import { PageHeader } from '@/components/core/PageHeader';
 import { DataTable, Column } from '@/components/core/DataTable';
+import { CurrencyInput } from '@/components/core/CurrencyInput';
 import { List, Plus, Edit, Trash2, Save, ArrowLeft, Search, RotateCcw } from 'lucide-react';
 
 export default function MembershipPackagesPage() {
@@ -26,7 +27,7 @@ export default function MembershipPackagesPage() {
   // Form fields
   const [name, setName] = useState('');
   const [durationDays, setDurationDays] = useState(30);
-  const [price, setPrice] = useState<number>(0);
+  const [price, setPrice] = useState<number | string>('');
 
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(50);
@@ -59,7 +60,7 @@ export default function MembershipPackagesPage() {
     setEditingId(null);
     setName('');
     setDurationDays(30);
-    setPrice(0);
+    setPrice('');
     setError(null);
     setSuccess(null);
     setStep('create');
@@ -69,7 +70,7 @@ export default function MembershipPackagesPage() {
     setEditingId(pkg.id);
     setName(pkg.name);
     setDurationDays(pkg.duration_days);
-    setPrice(pkg.price);
+    setPrice(pkg.price ? String(pkg.price) : '');
     setError(null);
     setSuccess(null);
     setStep('edit');
@@ -271,11 +272,11 @@ export default function MembershipPackagesPage() {
 
             <div className="space-y-1.5">
               <label className="font-bold text-slate-800 block">Harga Paket (Rp) *</label>
-              <input
-                type="number"
+              <CurrencyInput
                 value={price}
-                onChange={(e) => setPrice(Number(e.target.value))}
-                className="w-full bg-slate-50 border border-slate-300 p-2.5 rounded font-mono font-bold"
+                onChangeValue={(_, raw) => setPrice(raw)}
+                placeholder="mis. 250.000"
+                className="font-mono font-bold"
                 required
               />
             </div>

@@ -322,8 +322,8 @@ export default function PTSessionReportsPage() {
                 </div>
 
                 {/* Main Data Table */}
-                <div className="overflow-x-auto border border-slate-200 rounded">
-                  <table className="w-full text-left text-xs border-collapse">
+                <div className="overflow-x-auto border border-slate-200 rounded custom-scrollbar pb-1">
+                  <table className="w-full text-left text-xs border-collapse min-w-[700px]">
                     <thead>
                       <tr className="bg-[#6C7A89] text-white text-[10px] uppercase tracking-wider font-bold select-none">
                         <th className="py-2.5 px-4 border-r border-slate-400 w-12 text-center">No</th>

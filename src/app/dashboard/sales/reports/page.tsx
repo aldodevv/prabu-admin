@@ -318,8 +318,8 @@ export default function LaporanPenjualanPage() {
               </div>
 
               {/* Detailed Report Table */}
-              <div className="border border-slate-200 rounded overflow-hidden">
-                <table className="w-full text-left text-xs border-collapse">
+              <div className="border border-slate-200 rounded overflow-x-auto custom-scrollbar pb-1">
+                <table className="w-full text-left text-xs border-collapse min-w-[1200px]">
                   <thead>
                     <tr className="bg-[#6C7A89] text-white text-[10px] uppercase tracking-wider font-bold select-none border-b border-slate-350">
                       <th className="py-2.5 px-3 border-r border-slate-350 w-10 text-center">No</th>

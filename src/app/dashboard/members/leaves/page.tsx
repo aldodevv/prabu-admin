@@ -23,6 +23,7 @@ import { exportToExcel } from '@/lib/excelExport';
 import { formatIDR } from '@/utils';
 import { permissions } from '@/lib/permissions';
 import { MemberLeaveReceiptTemplate } from '@/components/core/PrintTemplates';
+import { CurrencyInput } from '@/components/core/CurrencyInput';
 
 export default function MemberLeavesPage() {
   const { activeBranchID, user } = useAuth();
@@ -48,7 +49,7 @@ export default function MemberLeavesPage() {
   // Form Fields
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [feeAmount, setFeeAmount] = useState<number>(100000);
+  const [feeAmount, setFeeAmount] = useState<number | string>('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -132,7 +133,7 @@ export default function MemberLeavesPage() {
     setMemberSearch('');
     setStartDate(new Date().toISOString().split('T')[0]);
     setEndDate('');
-    setFeeAmount(100000);
+    setFeeAmount('');
     setPaymentMethod('cash');
     setNotes('Cuti Anggota');
     setFormError('');
@@ -163,7 +164,7 @@ export default function MemberLeavesPage() {
         branch_id: activeBranchID || selectedMember.branch_id,
         start_date: startDate,
         end_date: endDate,
-        fee_amount: Number(feeAmount),
+        fee_amount: feeAmount !== '' ? Number(feeAmount) : 100000,
         payment_method: paymentMethod,
         notes: notes || 'Cuti Anggota',
       });
@@ -420,6 +421,7 @@ export default function MemberLeavesPage() {
             }}
             loadingMessage="Loading data cuti anggota..."
             emptyMessage="Belum ada riwayat cuti anggota."
+            minWidth="min-w-[900px]"
           />
         </div>
       )}
@@ -591,15 +593,13 @@ export default function MemberLeavesPage() {
 
                 <div className="space-y-1.5">
                   <label className="font-semibold text-slate-700 block">Biaya Cuti (Rp) *</label>
-                  <input
-                    type="number"
+                  <CurrencyInput
                     value={feeAmount}
-                    onChange={(e) => setFeeAmount(Number(e.target.value))}
-                    placeholder="100000"
-                    className="w-full bg-slate-50 border border-slate-300 p-2.5 rounded font-bold font-mono text-slate-800 focus:outline-none focus:border-brand-cyan"
-                    required
+                    onChangeValue={(_, raw) => setFeeAmount(raw)}
+                    placeholder="100.000"
+                    className="font-bold font-mono"
                   />
-                  <div className="text-[10px] text-slate-400">Default Rp 100.000 (dapat disesuaikan)</div>
+                  <div className="text-[10px] text-slate-400">Default Rp 100.000 jika dikosongkan (dapat disesuaikan)</div>
                 </div>
               </div>
             </div>

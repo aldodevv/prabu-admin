@@ -587,8 +587,8 @@ export default function TrainerSessionsPage() {
                 Log Kehadiran Sesi Latihan
               </h3>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border border-slate-200 border-collapse">
+              <div className="overflow-x-auto custom-scrollbar pb-1">
+                <table className="w-full text-left text-xs border border-slate-200 border-collapse min-w-[700px]">
                   <thead className="bg-[#6C7A89] text-white text-[10px] uppercase font-bold tracking-wider">
                     <tr>
                       <th className="py-2.5 px-3 border-r border-slate-250 w-10 text-center">No</th>

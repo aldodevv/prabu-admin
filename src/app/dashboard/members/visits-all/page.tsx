@@ -116,8 +116,8 @@ export default function AllVisitsPage() {
           </div>
 
           {/* Key-Value Summary Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse border border-slate-200 text-xs text-slate-800">
+          <div className="overflow-x-auto custom-scrollbar pb-1">
+            <table className="w-full border-collapse border border-slate-200 text-xs text-slate-800 min-w-[450px]">
               <tbody>
                 <tr className="border-b border-slate-200">
                   <td className="bg-slate-50 font-bold px-4 py-2.5 w-1/3 border border-slate-200 select-none">Tanggal Kunjungan</td>
@@ -142,8 +142,8 @@ export default function AllVisitsPage() {
             <h3 className="text-slate-700 font-bold text-sm select-none border-b border-slate-200 pb-2">
               List Check In
             </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse border border-slate-200 text-xs text-slate-800">
+            <div className="overflow-x-auto custom-scrollbar pb-1">
+              <table className="w-full border-collapse border border-slate-200 text-xs text-slate-800 min-w-[750px]">
                 <thead>
                   <tr className="bg-[#4f709c] text-white text-left font-bold select-none">
                     <th className="py-2.5 px-3 border border-slate-200 w-12 text-center">No</th>
@@ -205,8 +205,8 @@ export default function AllVisitsPage() {
             <h3 className="text-slate-700 font-bold text-sm select-none border-b border-slate-200 pb-2">
               List Check In - Check Out
             </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse border border-slate-200 text-xs text-slate-800">
+            <div className="overflow-x-auto custom-scrollbar pb-1">
+              <table className="w-full border-collapse border border-slate-200 text-xs text-slate-800 min-w-[750px]">
                 <thead>
                   <tr className="bg-[#4f709c] text-white text-left font-bold select-none">
                     <th className="py-2.5 px-3 border border-slate-200 w-12 text-center">No</th>

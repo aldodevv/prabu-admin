@@ -787,6 +787,7 @@ export default function OneClubMembersPanel() {
                 setPerPage(val);
                 setPage(1);
               }}
+              minWidth="min-w-[850px]"
             />
           </div>
         )}
@@ -945,8 +946,8 @@ export default function OneClubMembersPanel() {
 
                 if (detailTab === 'anggota') {
                   return (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs border border-slate-200 border-collapse">
+                    <div className="overflow-x-auto custom-scrollbar pb-1">
+                      <table className="w-full text-left text-xs border border-slate-200 border-collapse min-w-[850px]">
                         <thead className="bg-[#6C7A89] text-white text-[10px] font-bold uppercase tracking-wider">
                           <tr>
                             <th className="py-2.5 px-3 border-r border-slate-200 w-10 text-center">No</th>
@@ -1036,8 +1037,8 @@ export default function OneClubMembersPanel() {
                   );
                 } else {
                   return (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs border border-slate-200 border-collapse">
+                    <div className="overflow-x-auto custom-scrollbar pb-1">
+                      <table className="w-full text-left text-xs border border-slate-200 border-collapse min-w-[850px]">
                         <thead className="bg-brand-cyan text-white text-[10px] font-bold uppercase tracking-wider">
                           <tr>
                             <th className="py-2.5 px-3 border-r border-slate-200 w-10 text-center">No</th>

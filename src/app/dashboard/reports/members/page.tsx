@@ -300,8 +300,8 @@ export default function MemberReportsPage() {
               <span>Ringkasan Laporan Fitnes Anggota</span>
             </div>
             <div className="p-4">
-              <div className="border border-slate-200 rounded overflow-hidden">
-                <table className="w-full text-left text-xs border-collapse">
+              <div className="border border-slate-200 rounded overflow-x-auto custom-scrollbar pb-1">
+                <table className="w-full text-left text-xs border-collapse min-w-[500px]">
                   <tbody>
                     <tr className="border-b border-slate-200">
                       <td className="py-2 px-3 font-bold bg-slate-50 border-r border-slate-200 w-1/3 text-slate-700">Tanggal Transaksi</td>
@@ -331,8 +331,8 @@ export default function MemberReportsPage() {
               <List className="w-4 h-4" />
               <span>Transaksi Anggota</span>
             </div>
-            <div className="p-4 overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse font-bold">
+            <div className="p-4 overflow-x-auto custom-scrollbar pb-1">
+              <table className="w-full text-left text-xs border-collapse font-bold min-w-[950px]">
                 <thead>
                   <tr className="bg-slate-100 border-b border-slate-200 text-slate-700 font-extrabold uppercase text-[11px]">
                     <th className="py-2.5 px-2 border-r border-slate-200 text-center w-10">No</th>

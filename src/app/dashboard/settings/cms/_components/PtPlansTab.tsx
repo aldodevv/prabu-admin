@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import api from '@/lib/api';
-import { Edit, X, Link as LinkIcon, Type, Sparkles } from 'lucide-react';
+import { Edit, X, Link as LinkIcon, Type, Sparkles, Tag } from 'lucide-react';
+import { CurrencyInput } from '@/components/core/CurrencyInput';
 import { PTPlanItem } from './types';
 
 interface PtPlansTabProps {
@@ -242,31 +243,31 @@ export const PtPlansTab: React.FC<PtPlansTabProps> = ({ onSuccess, onError, read
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Harga Promo (Rp)</label>
-                  <input
-                    type="number"
+                  <CurrencyInput
                     value={editingPtPlan.price}
-                    onChange={(e) => setEditingPtPlan({ ...editingPtPlan, price: Number(e.target.value) })}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-xs text-slate-800 font-semibold focus:outline-none focus:border-brand-cyan"
+                    onChangeValue={(num) => setEditingPtPlan({ ...editingPtPlan, price: num })}
+                    placeholder="mis. 150.000"
+                    className="font-semibold"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Harga Asli / Sebelum Promo (Rp)</label>
-                  <input
-                    type="number"
-                    value={editingPtPlan.original_price || ''}
-                    onChange={(e) =>
-                      setEditingPtPlan({ ...editingPtPlan, original_price: e.target.value ? Number(e.target.value) : undefined })
+                  <CurrencyInput
+                    value={editingPtPlan.original_price}
+                    onChangeValue={(num, raw) =>
+                      setEditingPtPlan({ ...editingPtPlan, original_price: raw ? num : undefined })
                     }
-                    placeholder="mis. 900000 (opsional)"
-                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-xs text-slate-800 font-semibold focus:outline-none focus:border-brand-cyan"
+                    placeholder="mis. 900.000 (opsional)"
+                    className="font-semibold"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-brand-cyan uppercase mb-1 flex items-center gap-1">
-                    <span>🏷️ PROMO BADGE / STATUS CARD</span>
+                  <label className="text-xs font-bold text-brand-cyan uppercase mb-1 flex items-center gap-1.5">
+                    <Tag className="w-3.5 h-3.5 text-brand-cyan" />
+                    <span>PROMO BADGE / STATUS CARD</span>
                   </label>
                   <input
                     type="text"

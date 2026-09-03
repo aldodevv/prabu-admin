@@ -284,8 +284,8 @@ export default function WorkoutReportsPage() {
                 </div>
 
                 {/* Table Component */}
-                <div className="overflow-x-auto border border-slate-200 rounded">
-                  <table className="w-full text-left text-xs border-collapse font-sans">
+                <div className="overflow-x-auto border border-slate-200 rounded custom-scrollbar pb-1">
+                  <table className="w-full text-left text-xs border-collapse font-sans min-w-[900px]">
                     <thead>
                       <tr className="bg-[#6C7A89] text-white text-[11px] uppercase tracking-wider font-bold select-none">
                         <th className="py-2.5 px-3 border-r border-slate-400 w-12 text-center">No</th>

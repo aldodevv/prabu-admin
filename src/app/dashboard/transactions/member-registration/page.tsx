@@ -749,7 +749,10 @@ export default function MemberRegistrationPage() {
                   <div className="flex gap-2 items-center w-full">
                     <select
                       value={discountType}
-                      onChange={(e) => setDiscountType(e.target.value as 'nominal' | 'percent')}
+                      onChange={(e) => {
+                        setDiscountType(e.target.value as 'nominal' | 'percent');
+                        setDiscountValue('');
+                      }}
                       className="bg-slate-50 border border-slate-300 text-slate-800 px-3 py-2.5 text-xs focus:outline-none focus:border-brand-cyan rounded font-semibold shrink-0 cursor-pointer"
                     >
                       <option value="nominal">Nominal (Rp)</option>
@@ -757,16 +760,30 @@ export default function MemberRegistrationPage() {
                     </select>
                     <div className="relative flex-1">
                       <input
-                        type="number"
-                        min="0"
-                        max={discountType === 'percent' ? 100 : undefined}
-                        value={discountValue}
-                        onChange={(e) => setDiscountValue(e.target.value)}
-                        placeholder={discountType === 'percent' ? 'Contoh: 10 (untuk diskon 10%)' : 'Contoh: 50000 (untuk diskon Rp 50.000)'}
-                        className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-mono font-semibold"
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        value={
+                          discountType === 'nominal'
+                            ? (discountValue ? Number(discountValue).toLocaleString('id-ID') : '')
+                            : discountValue
+                        }
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/\D/g, '');
+                          if (discountType === 'percent') {
+                            const num = Number(raw);
+                            setDiscountValue(raw === '' ? '' : String(Math.min(100, num)));
+                          } else {
+                            setDiscountValue(raw);
+                          }
+                        }}
+                        placeholder={discountType === 'percent' ? 'Contoh: 10 (untuk diskon 10%)' : 'mis. 50.000 (untuk diskon Rp 50.000)'}
+                        className={`w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-mono font-semibold ${
+                          discountAmount > 0 ? 'pr-28' : ''
+                        }`}
                       />
                       {discountAmount > 0 && (
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-emerald-600">
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-emerald-600 pointer-events-none">
                           -Rp {discountAmount.toLocaleString('id-ID')}
                         </span>
                       )}

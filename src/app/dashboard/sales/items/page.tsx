@@ -9,6 +9,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { exportToExcel } from '@/lib/excelExport';
 import { DataTable, Column } from '@/components/core/DataTable';
 import { FetchErrorAlert } from '@/components/core/FetchErrorAlert';
+import { CurrencyInput } from '@/components/core/CurrencyInput';
 import { permissions } from '@/lib/permissions';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 
@@ -39,8 +40,8 @@ export default function ProductsPage() {
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [jenisBarang, setJenisBarang] = useState('bukan Suplemen');
-  const [buyPrice, setBuyPrice] = useState<number | string>(0);
-  const [price, setPrice] = useState<number | string>(0);
+  const [buyPrice, setBuyPrice] = useState<number | string>('');
+  const [price, setPrice] = useState<number | string>('');
   const [stock, setStock] = useState<number | string>(0);
 
   const [loading, setLoading] = useState(true);
@@ -174,8 +175,8 @@ export default function ProductsPage() {
     setCode(`PRD-${Math.floor(1000 + Math.random() * 9000)}`);
     setName('');
     setJenisBarang('bukan Suplemen');
-    setBuyPrice(0);
-    setPrice(0);
+    setBuyPrice('');
+    setPrice('');
     setStock(0);
     setErrorMsg('');
     setSuccessMsg('');
@@ -189,8 +190,8 @@ export default function ProductsPage() {
     setCode(prod.code || '');
     setName(prod.name);
     setJenisBarang(prod.jenis_barang || 'bukan Suplemen');
-    setBuyPrice(prod.buy_price || 0);
-    setPrice(prod.price);
+    setBuyPrice(prod.buy_price ? String(prod.buy_price) : '');
+    setPrice(prod.price ? String(prod.price) : '');
     setStock(prod.stock);
     setErrorMsg('');
     setSuccessMsg('');
@@ -545,12 +546,11 @@ export default function ProductsPage() {
                 {/* Harga Beli */}
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left">Harga Beli (IDR) *</label>
-                  <input
-                    type="number"
+                  <CurrencyInput
                     value={buyPrice}
-                    onChange={(e) => setBuyPrice(e.target.value)}
-                    placeholder="0"
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono font-semibold"
+                    onChangeValue={(_, raw) => setBuyPrice(raw)}
+                    placeholder="mis. 50.000"
+                    className="font-mono font-semibold"
                     required
                   />
                 </div>
@@ -558,12 +558,11 @@ export default function ProductsPage() {
                 {/* Harga Jual */}
                 <div className="grid grid-cols-[240px_1fr] gap-6 items-center max-sm:grid-cols-1">
                   <label className="text-sm font-bold text-slate-700 text-left">Harga Jual (IDR) *</label>
-                  <input
-                    type="number"
+                  <CurrencyInput
                     value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    placeholder="0"
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan focus:outline-none text-slate-800 px-3.5 py-2.5 text-xs transition-all rounded font-mono font-bold"
+                    onChangeValue={(_, raw) => setPrice(raw)}
+                    placeholder="mis. 75.000"
+                    className="font-mono font-bold"
                     required
                   />
                 </div>
@@ -670,8 +669,8 @@ export default function ProductsPage() {
               <h3 className="font-heading text-lg text-slate-800 uppercase tracking-tight">
                 Riwayat Perubahan Unit
               </h3>
-              <div className="overflow-x-auto border border-slate-200 rounded">
-                <table className="w-full text-left text-sm text-slate-650 border-collapse">
+              <div className="overflow-x-auto border border-slate-200 rounded custom-scrollbar pb-1">
+                <table className="w-full text-left text-sm text-slate-650 border-collapse min-w-[700px]">
                   <thead className="bg-[#6C7A89] text-white text-[11px] uppercase tracking-wider font-bold select-none border-b border-slate-350">
                     <tr>
                       <th className="py-3 px-4 border-r border-slate-300 w-12 text-center">No</th>
