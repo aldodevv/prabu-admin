@@ -9,7 +9,7 @@ import { Member, Transaction, MembershipPackage, PTPackage } from '@/core/types'
 import { PageHeader } from '@/components/core/PageHeader';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 import { DataTable, Column } from '@/components/core/DataTable';
-import { Search, Eye, Edit, Trash2, ArrowLeft, Save, Printer, FileText, FileSpreadsheet, RotateCcw, Download, CreditCard, X, AlertTriangle, UserX } from 'lucide-react';
+import { Search, Eye, Edit, Trash2, ArrowLeft, Save, Printer, FileText, FileSpreadsheet, RotateCcw, Download, CreditCard, X, AlertTriangle, UserX, Info } from 'lucide-react';
 import { exportToExcel } from '@/lib/excelExport';
 import { compressImage } from '@/utils/imageCompressor';
 import { uploadToCloudflare } from '@/lib/cloudflare';
@@ -129,24 +129,6 @@ export default function OneClubMembersPanel() {
       }
     } catch (err: any) {
       alert(err.message || 'Terjadi kesalahan saat mengubah status anggota');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handlePermanentDeleteMember = async () => {
-    if (!memberToDelete) return;
-    setActionLoading('delete');
-    try {
-      const res = await membersApi.delete(memberToDelete.id);
-      if (res.success) {
-        setMembers((prev) => prev.filter((m) => m.id !== memberToDelete.id));
-        setMemberToDelete(null);
-      } else {
-        alert(res.error || 'Gagal menghapus data anggota');
-      }
-    } catch (err: any) {
-      alert(err.message || 'Terjadi kesalahan saat menghapus data anggota');
     } finally {
       setActionLoading(null);
     }
@@ -494,27 +476,63 @@ export default function OneClubMembersPanel() {
   };
 
   const handleConfirmDeleteTx = async () => {
-    if (!txToDelete) return;
+    if (!txToDelete || !selectedMember) return;
     setDeletingTx(true);
     setDeleteTxError('');
 
-    const isRegTx = txToDelete.notes?.startsWith('Pendaftaran Anggota:') || txToDelete.notes?.includes('(DAFTAR)');
     const isOnlyTx = memberTransactions.length <= 1;
 
     try {
       const res = await transactionsApi.delete(txToDelete.id);
       if (res.success) {
-        if (isRegTx || isOnlyTx) {
-          // Pendaftaran dibatalkan & akun anggota dibersihkan dari sistem
-          if (selectedMember) {
-            setMembers(prev => prev.filter(m => m.id !== selectedMember.id));
-          }
+        if (isOnlyTx) {
+          // Hanya ada 1 transaksi dan dihapus oleh admin -> akun anggota ikut dibersihkan
+          setMembers(prev => prev.filter(m => m.id !== selectedMember.id));
           setTxToDelete(null);
           setStep('list');
           setSelectedMember(null);
-          alert('Transaksi pendaftaran berhasil dihapus. Data anggota terkait telah dibersihkan secara total dari sistem.');
+          alert('Transaksi pembayaran berhasil dihapus. Karena tidak ada transaksi lain, akun anggota terkait telah dibersihkan dari sistem.');
         } else {
-          setMemberTransactions(prev => prev.filter(item => item.id !== txToDelete.id));
+          // Masih ada transaksi pembayaran lain:
+          // HANYA hapus transaksi ini, dan perbarui masa aktif ke transaksi pembayaran paling akhir yang tersisa
+          const remainingTxs = memberTransactions.filter(item => item.id !== txToDelete.id);
+          setMemberTransactions(remainingTxs);
+
+          // Cari transaksi yang paling akhir berdasarkan transaction_date
+          const sortedRemaining = [...remainingTxs].sort((a, b) => {
+            const dateA = new Date(a.transaction_date || 0).getTime();
+            const dateB = new Date(b.transaction_date || 0).getTime();
+            return dateB - dateA;
+          });
+
+          if (sortedRemaining.length > 0) {
+            const latestTx = sortedRemaining[0];
+            const pkgName = getMembershipTypeFromNotes(latestTx.notes || '') || selectedMember.membership_type;
+            const txStartDate = latestTx.transaction_date ? latestTx.transaction_date.split('T')[0] : (selectedMember.membership_start ? selectedMember.membership_start.split('T')[0] : '');
+            const newEndDate = calculateEndDateFromPackage(txStartDate, pkgName, membershipPackages) || selectedMember.membership_end;
+
+            if (newEndDate) {
+              const today = new Date().toISOString().split('T')[0];
+              const isActive = newEndDate >= today;
+              try {
+                await membersApi.update(selectedMember.id, {
+                  membership_end: newEndDate,
+                  membership_type: pkgName,
+                  is_active: isActive
+                });
+              } catch (e) {
+                console.error('Error updating member active dates:', e);
+              }
+
+              setSelectedMember(prev => prev ? {
+                ...prev,
+                membership_end: newEndDate,
+                membership_type: pkgName,
+                is_active: isActive
+              } : null);
+            }
+          }
+
           setTxToDelete(null);
           fetchMembers();
         }
@@ -993,9 +1011,17 @@ export default function OneClubMembersPanel() {
                                   <td className="py-2.5 px-3 border-r border-slate-100 uppercase text-[10px]">{pkg}</td>
                                   <td className="py-2.5 px-3 border-r border-slate-100 font-mono text-[10px]">
                                     <div className="flex flex-col items-center justify-center leading-tight">
-                                      <span>{formatDateLabel(selectedMember.membership_start)}</span>
+                                      <span>{formatDateLabel(tx.transaction_date ? tx.transaction_date.split('T')[0] : selectedMember.membership_start)}</span>
                                       <span className="text-[8px] font-sans opacity-70">s/d</span>
-                                      <span>{formatDateLabel(selectedMember.membership_end)}</span>
+                                      <span>
+                                        {formatDateLabel(
+                                          calculateEndDateFromPackage(
+                                            tx.transaction_date ? tx.transaction_date.split('T')[0] : (selectedMember.membership_start ? selectedMember.membership_start.split('T')[0] : ''),
+                                            pkg,
+                                            membershipPackages
+                                          ) || selectedMember.membership_end
+                                        )}
+                                      </span>
                                     </div>
                                   </td>
                                   <td className="py-2.5 px-3 border-r border-slate-100 text-right text-slate-800 font-black">{formatIDR(tx.total_amount)}</td>
@@ -1605,14 +1631,24 @@ export default function OneClubMembersPanel() {
               )}
             </div>
 
-            {txToDelete.notes && (txToDelete.notes.startsWith('Pendaftaran Anggota:') || txToDelete.notes.includes('(DAFTAR)') || memberTransactions.length <= 1) && (
+            {memberTransactions.length <= 1 ? (
               <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 font-semibold space-y-1">
                 <div className="font-bold flex items-center gap-1.5 text-red-800">
                   <AlertTriangle className="w-4 h-4 text-red-600" />
-                  <span>Perhatian: Transaksi Pendaftaran Anggota</span>
+                  <span>Perhatian: Satu-satunya Transaksi Pembayaran</span>
                 </div>
                 <p>
-                  Menghapus transaksi pendaftaran ini akan membatalkan status anggota dan menghapus akun anggota ini dari sistem agar tidak meninggalkan data sampah di laporan transaksi.
+                  Ini adalah satu-satunya data transaksi pembayaran anggota ini. Menghapus transaksi ini akan membatalkan pendaftaran dan membersihkan akun anggota ini dari sistem.
+                </p>
+              </div>
+            ) : (
+              <div className="p-3 bg-sky-50 border border-sky-200 rounded-lg text-xs text-sky-800 font-semibold space-y-1">
+                <div className="font-bold flex items-center gap-1.5 text-sky-900">
+                  <Info className="w-4 h-4 text-sky-600" />
+                  <span>Informasi: Penyesuaian Masa Aktif</span>
+                </div>
+                <p>
+                  Anggota masih memiliki {memberTransactions.length - 1} transaksi pembayaran lainnya. Menghapus transaksi ini hanya akan membatalkan pembayaran ini, dan masa aktif anggota akan otomatis disesuaikan ke transaksi pembayaran terakhir yang tersisa.
                 </p>
               </div>
             )}
@@ -1641,7 +1677,7 @@ export default function OneClubMembersPanel() {
                 ) : (
                   <>
                     <Trash2 className="w-3.5 h-3.5" />
-                    <span>Hapus Transaksi</span>
+                    <span>{memberTransactions.length <= 1 ? 'Hapus Transaksi & Anggota' : 'Hapus Pembayaran Ini'}</span>
                   </>
                 )}
               </button>
@@ -1650,10 +1686,10 @@ export default function OneClubMembersPanel() {
         </div>
       )}
 
-      {/* Delete & Status Confirmation Modal */}
+      {/* Status Confirmation Modal (Batal & Nonaktifkan saja) */}
       {memberToDelete && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-5 border border-slate-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-5 border border-slate-200">
             {/* Modal Header */}
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
@@ -1662,10 +1698,10 @@ export default function OneClubMembersPanel() {
                 </div>
                 <div>
                   <h3 className="font-heading font-extrabold text-lg text-slate-900">
-                    Kelola Status & Hapus Anggota
+                    Kelola Status Anggota
                   </h3>
                   <p className="text-xs text-slate-500 font-medium mt-0.5">
-                    Pilih tindakan untuk data anggota <span className="font-bold text-slate-800">"{memberToDelete.full_name}"</span> ({memberToDelete.username})
+                    Ubah status aktif anggota <span className="font-bold text-slate-800">"{memberToDelete.full_name}"</span> ({memberToDelete.username})
                   </p>
                 </div>
               </div>
@@ -1679,44 +1715,28 @@ export default function OneClubMembersPanel() {
               </button>
             </div>
 
-            {/* Explanation Boxes */}
-            <div className="space-y-3">
-              {/* Option 1 Box: Nonaktifkan Status */}
-              <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/60 space-y-1">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-amber-500"></div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-amber-800">
-                    Opsi 1: {memberToDelete.is_active ? 'Nonaktifkan Status (Soft Deactivate)' : 'Aktifkan Kembali Status'}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed pl-4">
-                  {memberToDelete.is_active
-                    ? 'Status keanggotaan diubah menjadi Nonaktif dan masa aktif dihentikan. Riwayat transaksi keuangan tetap tersimpan utuh di sistem untuk pembukuan.'
-                    : 'Mengaktifkan kembali status keanggotaan anggota.'}
-                </p>
+            {/* Explanation Box */}
+            <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/60 space-y-1">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-800">
+                  {memberToDelete.is_active ? 'Nonaktifkan Status' : 'Aktifkan Kembali Status'}
+                </span>
               </div>
-
-              {/* Option 2 Box: Hapus Total */}
-              <div className="p-3.5 rounded-xl border border-red-200 bg-red-50/60 space-y-1">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-red-800">
-                    Opsi 2: Hapus Total (Salah Input / Batal Daftar)
-                  </span>
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed pl-4">
-                  Menghapus akun anggota secara permanen beserta seluruh riwayat transaksi (Pendaftaran, Perpanjang, Cuti, Ganti Cabang), presensi check-in, dan data PT. <span className="font-bold text-red-700">Data dibersihkan total tanpa meninggalkan sampah transaksi</span>. Nomor anggota akan langsung bebas dan dapat digunakan kembali.
-                </p>
-              </div>
+              <p className="text-xs text-slate-600 leading-relaxed pl-4">
+                {memberToDelete.is_active
+                  ? 'Status keanggotaan diubah menjadi Nonaktif dan masa aktif dihentikan. Riwayat transaksi keuangan tetap tersimpan utuh di sistem untuk pembukuan.'
+                  : 'Mengaktifkan kembali status keanggotaan anggota.'}
+              </p>
             </div>
 
             {/* Actions Buttons */}
-            <div className="flex flex-col sm:flex-row items-center gap-2.5 justify-end pt-2 border-t border-slate-100">
+            <div className="flex items-center gap-2.5 justify-end pt-2 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setMemberToDelete(null)}
                 disabled={actionLoading !== null}
-                className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold uppercase transition-colors cursor-pointer"
+                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold uppercase transition-colors cursor-pointer"
               >
                 Batal
               </button>
@@ -1725,7 +1745,7 @@ export default function OneClubMembersPanel() {
                 type="button"
                 onClick={handleToggleMemberStatus}
                 disabled={actionLoading !== null}
-                className="w-full sm:w-auto px-4 py-2.5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white rounded-xl text-xs font-bold uppercase shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2"
+                className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white rounded-xl text-xs font-bold uppercase shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2"
               >
                 {actionLoading === 'deactivate' ? (
                   <span>Memproses...</span>
@@ -1733,22 +1753,6 @@ export default function OneClubMembersPanel() {
                   <>
                     <UserX className="w-4 h-4" />
                     <span>{memberToDelete.is_active ? 'Nonaktifkan' : 'Aktifkan'}</span>
-                  </>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={handlePermanentDeleteMember}
-                disabled={actionLoading !== null}
-                className="w-full sm:w-auto px-4 py-2.5 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-xl text-xs font-bold uppercase shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2"
-              >
-                {actionLoading === 'delete' ? (
-                  <span>Menghapus...</span>
-                ) : (
-                  <>
-                    <Trash2 className="w-4 h-4" />
-                    <span>Hapus Total (Bersihkan Data)</span>
                   </>
                 )}
               </button>

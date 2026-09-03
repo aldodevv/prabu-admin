@@ -73,7 +73,7 @@ export default function SummaryPage() {
   const [revenueAnalytics, setRevenueAnalytics] = useState<RevenueAnalytics | null>(null);
   const [expiringMembers, setExpiringMembers] = useState<Member[]>([]);
   const [expiringPage, setExpiringPage] = useState(1);
-  const [expiringPerPage, setExpiringPerPage] = useState(50);
+  const [expiringPerPage, setExpiringPerPage] = useState(20);
   const [totalExpiring, setTotalExpiring] = useState(0);
   const [loadingExpiring, setLoadingExpiring] = useState(false);
   const [loadingSummary, setLoadingSummary] = useState(true);
@@ -219,37 +219,19 @@ export default function SummaryPage() {
       key: 'no',
       header: 'No',
       align: 'center',
-      className: 'text-slate-400 select-none w-12',
+      className: 'text-slate-400 select-none w-10',
       render: (_, idx) => idx + 1
     },
     {
       key: 'membership_end',
       header: 'Masa Aktif',
       align: 'center',
-      className: 'whitespace-nowrap',
-      render: (m) => {
-        const days = getDaysRemaining(m.membership_end);
-        const isExpiringSoon = days <= 7;
-        return (
-          <div className="flex flex-col items-center gap-1">
-            <span className="font-mono text-xs font-semibold text-slate-700">
-              {formatDateLabel(m.membership_end)}
-            </span>
-            <span
-              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${isExpiringSoon
-                ? 'bg-rose-100 text-rose-700 animate-pulse'
-                : 'bg-amber-100 text-amber-700'
-                }`}
-            >
-              {days} hari lagi
-            </span>
-          </div>
-        );
-      }
+      className: 'whitespace-nowrap font-mono text-xs',
+      render: (m) => formatDateLabel(m.membership_end)
     },
     {
       key: 'username',
-      header: 'No. Anggota',
+      header: 'Nomor Anggota',
       className: 'font-mono font-bold text-slate-800'
     },
     {
@@ -258,27 +240,39 @@ export default function SummaryPage() {
       className: 'font-semibold text-slate-800'
     },
     {
-      key: 'branch_name',
-      header: 'Cabang',
-      className: 'text-slate-600'
+      key: 'phone',
+      header: 'Kontak',
+      className: 'font-mono text-xs text-slate-600',
+      render: (m) => m.phone || '-'
     },
     {
       key: 'membership_type',
-      header: 'Paket',
+      header: 'Paket Fitnes',
       render: (m) => (
-        <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-xs font-medium border border-slate-200">
+        <span className="text-xs font-medium text-slate-700">
           {m.membership_type || '-'}
         </span>
       )
     },
     {
-      key: 'phone',
-      header: 'Telepon',
-      render: (m) => (
-        <span className="font-mono text-xs text-slate-600">
-          {m.phone || '-'}
-        </span>
-      )
+      key: 'days_remaining',
+      header: 'Sisa Hari',
+      align: 'center',
+      render: (m) => {
+        const days = getDaysRemaining(m.membership_end);
+        if (days <= 0) {
+          return (
+            <span className="inline-block px-2 py-0.5 bg-[#d9534f] text-white text-[10px] font-bold rounded">
+              Tidak Aktif
+            </span>
+          );
+        }
+        return (
+          <span className="inline-block px-2 py-0.5 bg-[#d9534f] text-white text-[10px] font-bold rounded">
+            {days}
+          </span>
+        );
+      }
     },
     {
       key: 'action',
@@ -287,10 +281,10 @@ export default function SummaryPage() {
       render: (m) => (
         <button
           onClick={() => router.push(`/dashboard/transactions/member-payment?username=${m.username}`)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#007BFF] hover:bg-[#0069d9] text-white text-xs font-bold rounded shadow-xs transition-all active:scale-95 cursor-pointer"
+          className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#26C281] hover:bg-[#21a870] text-white text-[10px] font-bold rounded shadow-xs transition-colors cursor-pointer"
         >
-          <PlusCircle className="w-3.5 h-3.5" />
-          <span>Perpanjang</span>
+          <PlusCircle className="w-3 h-3" />
+          <span>+ Pembayaran</span>
         </button>
       )
     }
