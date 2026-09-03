@@ -287,14 +287,6 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             </div>
           )}
 
-          {/* Read-Only Badge for Admin */}
-          {user?.role === 'admin' && !isPajakMode && (
-            <div className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-300 text-amber-700 font-bold text-[10px] rounded-full uppercase tracking-wider shadow-xs no-print shrink-0">
-              <Icons.Eye className="w-3.5 h-3.5 text-amber-600" />
-              <span>Akses Membaca (Read-Only)</span>
-            </div>
-          )}
-
           <div className="flex items-center gap-2 sm:gap-4 lg:gap-6 ml-auto shrink-0">
             {/* Branch Selector Dropdown */}
             {branches.length > 0 && (

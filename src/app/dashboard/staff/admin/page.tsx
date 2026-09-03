@@ -208,7 +208,7 @@ export default function AdminStaffManagementPage() {
       render: (row) => {
         if (row.role === 'developer') return <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-800">Developer</span>;
         if (row.role === 'owner') return <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800">Owner</span>;
-        if (row.role === 'admin') return <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-800">Admin (Read-Only)</span>;
+        if (row.role === 'admin') return <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-800">Admin Cabang</span>;
         return <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800">CS / Kasir</span>;
       }
     },
