@@ -8,6 +8,7 @@ import { compressAndConvertToWebP } from './utils';
 interface PromoTabProps {
   onSuccess: (msg: string) => void;
   onError: (msg: string) => void;
+  readOnly?: boolean;
 }
 
 export interface PromoSlideData {
@@ -23,7 +24,7 @@ const EMPTY_SLIDES: PromoSlideData[] = [
   { image: '', buttonText: '', buttonLink: '' },
 ];
 
-export const PromoTab: React.FC<PromoTabProps> = ({ onSuccess, onError }) => {
+export const PromoTab: React.FC<PromoTabProps> = ({ onSuccess, onError, readOnly = false }) => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [slides, setSlides] = useState<PromoSlideData[]>(EMPTY_SLIDES);
@@ -192,23 +193,26 @@ export const PromoTab: React.FC<PromoTabProps> = ({ onSuccess, onError }) => {
                         <input
                           type="text"
                           required
+                          disabled={readOnly}
                           value={slides[idx]?.image || ''}
                           onChange={(e) => updateSlideField(idx, 'image', e.target.value)}
                           placeholder={`/images/promo-slide-${idx + 1}.webp`}
-                          className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-xs text-slate-800 focus:outline-none focus:border-brand-cyan font-mono font-semibold"
+                          className={`w-full bg-white border border-slate-300 rounded-lg p-2.5 text-xs text-slate-800 focus:outline-none focus:border-brand-cyan font-mono font-semibold ${readOnly ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''}`}
                         />
 
-                        <label className="mt-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 w-full border border-slate-300 transition-colors">
-                          <Upload size={14} />
-                          <span>{uploading ? 'Compressing...' : 'Upload & Compress WebP'}</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => handlePromoFileUpload(e, idx)}
-                            disabled={uploading}
-                          />
-                        </label>
+                        {!readOnly && (
+                          <label className="mt-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 w-full border border-slate-300 transition-colors">
+                            <Upload size={14} />
+                            <span>{uploading ? 'Compressing...' : 'Upload & Compress WebP'}</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => handlePromoFileUpload(e, idx)}
+                              disabled={uploading || readOnly}
+                            />
+                          </label>
+                        )}
                       </div>
 
                       {/* Button Text */}
@@ -220,10 +224,11 @@ export const PromoTab: React.FC<PromoTabProps> = ({ onSuccess, onError }) => {
                         <input
                           type="text"
                           required
+                          disabled={readOnly}
                           value={slides[idx]?.buttonText || ''}
                           onChange={(e) => updateSlideField(idx, 'buttonText', e.target.value)}
                           placeholder="KLAIM PROMO SEKARANG →"
-                          className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs text-slate-800 focus:outline-none focus:border-brand-cyan font-semibold"
+                          className={`w-full bg-white border border-slate-300 rounded-lg p-2 text-xs text-slate-800 focus:outline-none focus:border-brand-cyan font-semibold ${readOnly ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''}`}
                         />
                       </div>
 
@@ -236,10 +241,11 @@ export const PromoTab: React.FC<PromoTabProps> = ({ onSuccess, onError }) => {
                         <input
                           type="text"
                           required
+                          disabled={readOnly}
                           value={slides[idx]?.buttonLink || ''}
                           onChange={(e) => updateSlideField(idx, 'buttonLink', e.target.value)}
                           placeholder="/membership atau https://wa.me/..."
-                          className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs text-slate-800 focus:outline-none focus:border-brand-cyan font-mono"
+                          className={`w-full bg-white border border-slate-300 rounded-lg p-2 text-xs text-slate-800 focus:outline-none focus:border-brand-cyan font-mono ${readOnly ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''}`}
                         />
                       </div>
                     </div>
@@ -260,16 +266,18 @@ export const PromoTab: React.FC<PromoTabProps> = ({ onSuccess, onError }) => {
               ))}
             </div>
 
-            <div className="pt-2 flex justify-end">
-              <button
-                type="submit"
-                disabled={loading}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-brand-cyan hover:bg-[#138496] text-white rounded-lg font-bold text-xs uppercase shadow-sm transition-all cursor-pointer"
-              >
-                <Save size={16} />
-                <span>{loading ? 'Menyimpan...' : 'Simpan 4 Card Banner Promo'}</span>
-              </button>
-            </div>
+            {!readOnly && (
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-brand-cyan hover:bg-[#138496] text-white rounded-lg font-bold text-xs uppercase shadow-sm transition-all cursor-pointer"
+                >
+                  <Save size={16} />
+                  <span>{loading ? 'Menyimpan...' : 'Simpan 4 Card Banner Promo'}</span>
+                </button>
+              </div>
+            )}
           </form>
         )}
       </div>

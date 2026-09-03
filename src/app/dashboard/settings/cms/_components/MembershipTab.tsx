@@ -8,9 +8,10 @@ import { MembershipPlanItem } from './types';
 interface MembershipTabProps {
   onSuccess: (msg: string) => void;
   onError: (msg: string) => void;
+  readOnly?: boolean;
 }
 
-export const MembershipTab: React.FC<MembershipTabProps> = ({ onSuccess, onError }) => {
+export const MembershipTab: React.FC<MembershipTabProps> = ({ onSuccess, onError, readOnly = false }) => {
   const [loading, setLoading] = useState(false);
   const [membershipPlans, setMembershipPlans] = useState<MembershipPlanItem[]>([]);
   const [editingMemPlan, setEditingMemPlan] = useState<MembershipPlanItem | null>(null);
@@ -353,13 +354,15 @@ export const MembershipTab: React.FC<MembershipTabProps> = ({ onSuccess, onError
                 {plan.tagline && <p className="text-xs text-slate-500 font-body">{plan.tagline}</p>}
               </div>
 
-              <button
-                onClick={() => setEditingMemPlan(plan)}
-                className="w-full py-2.5 bg-slate-100 hover:bg-brand-cyan text-slate-700 hover:text-white border border-slate-200 rounded-lg font-bold text-xs uppercase transition-colors flex items-center justify-center gap-2 mt-4 cursor-pointer"
-              >
-                <Edit size={14} />
-                <span>Edit Content & Promo Card</span>
-              </button>
+              {!readOnly && (
+                <button
+                  onClick={() => setEditingMemPlan(plan)}
+                  className="w-full py-2.5 bg-slate-100 hover:bg-brand-cyan text-slate-700 hover:text-white border border-slate-200 rounded-lg font-bold text-xs uppercase transition-colors flex items-center justify-center gap-2 mt-4 cursor-pointer"
+                >
+                  <Edit size={14} />
+                  <span>Edit Content & Promo Card</span>
+                </button>
+              )}
             </div>
           ))}
         </div>

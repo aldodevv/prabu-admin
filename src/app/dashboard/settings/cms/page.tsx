@@ -1,12 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { permissions } from '@/lib/permissions';
 import { PageHeader } from '@/components/core/PageHeader';
 import {
   Image as ImageIcon,
   CreditCard,
   Dumbbell,
   AlertCircle,
+  Eye,
 } from 'lucide-react';
 import { CMSTab } from './_components/types';
 import { SuccessModal } from './_components/SuccessModal';
@@ -15,6 +18,9 @@ import { MembershipTab } from './_components/MembershipTab';
 import { PtPlansTab } from './_components/PtPlansTab';
 
 export default function CMSManagementPage() {
+  const { user } = useAuth();
+  const canEdit = permissions.canManageCMS(user?.role);
+
   const [activeTab, setActiveTab] = useState<CMSTab>('promo');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -30,6 +36,16 @@ export default function CMSManagementPage() {
         title="CONTENT MANAGEMENT SYSTEM (CMS)"
         description="PENGATURAN BANNER PROMO, PAKET MEMBERSHIP, DAN PAKET PERSONAL TRAINER"
       />
+
+      {/* VIEW-ONLY NOTICE FOR ADMIN ROLE */}
+      {!canEdit && (
+        <div className="p-3.5 bg-blue-50/90 border border-blue-200 text-blue-850 text-xs font-semibold rounded-xl flex items-center gap-2.5 shadow-xs animate-fadeIn">
+          <Eye className="w-4 h-4 text-blue-600 shrink-0" />
+          <span>
+            <strong>Mode Tinjau (View-Only):</strong> Role Admin hanya memiliki hak akses melihat pengaturan CMS. Pengubahan banner promo dan paket kartu hanya dapat dilakukan oleh Owner atau Developer.
+          </span>
+        </div>
+      )}
 
       {/* ALERT NOTIFICATIONS */}
       {error && (
@@ -73,13 +89,13 @@ export default function CMSManagementPage() {
 
       {/* TAB CONTENT COMPONENTS */}
       {activeTab === 'promo' && (
-        <PromoTab onSuccess={setSuccess} onError={setError} />
+        <PromoTab onSuccess={setSuccess} onError={setError} readOnly={!canEdit} />
       )}
       {activeTab === 'membership' && (
-        <MembershipTab onSuccess={setSuccess} onError={setError} />
+        <MembershipTab onSuccess={setSuccess} onError={setError} readOnly={!canEdit} />
       )}
       {activeTab === 'pt' && (
-        <PtPlansTab onSuccess={setSuccess} onError={setError} />
+        <PtPlansTab onSuccess={setSuccess} onError={setError} readOnly={!canEdit} />
       )}
     </div>
   );

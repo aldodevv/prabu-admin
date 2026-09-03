@@ -8,9 +8,10 @@ import { PTPlanItem } from './types';
 interface PtPlansTabProps {
   onSuccess: (msg: string) => void;
   onError: (msg: string) => void;
+  readOnly?: boolean;
 }
 
-export const PtPlansTab: React.FC<PtPlansTabProps> = ({ onSuccess, onError }) => {
+export const PtPlansTab: React.FC<PtPlansTabProps> = ({ onSuccess, onError, readOnly = false }) => {
   const [loading, setLoading] = useState(false);
   const [ptPlans, setPtPlans] = useState<PTPlanItem[]>([
     {
@@ -418,13 +419,15 @@ export const PtPlansTab: React.FC<PtPlansTabProps> = ({ onSuccess, onError }) =>
                 {plan.tagline && <p className="text-xs text-slate-500 font-body">{plan.tagline}</p>}
               </div>
 
-              <button
-                onClick={() => setEditingPtPlan(plan)}
-                className="w-full py-2.5 bg-slate-100 hover:bg-brand-cyan text-slate-700 hover:text-white border border-slate-200 rounded-lg font-bold text-xs uppercase transition-colors flex items-center justify-center gap-2 mt-4 cursor-pointer"
-              >
-                <Edit size={14} />
-                <span>Edit Content & Promo Card</span>
-              </button>
+              {!readOnly && (
+                <button
+                  onClick={() => setEditingPtPlan(plan)}
+                  className="w-full py-2.5 bg-slate-100 hover:bg-brand-cyan text-slate-700 hover:text-white border border-slate-200 rounded-lg font-bold text-xs uppercase transition-colors flex items-center justify-center gap-2 mt-4 cursor-pointer"
+                >
+                  <Edit size={14} />
+                  <span>Edit Content & Promo Card</span>
+                </button>
+              )}
             </div>
           ))}
         </div>

@@ -98,6 +98,10 @@ export const permissions = {
   canManageBranches: (role?: string) => ROLE_CAPABILITIES[normalizeRole(role)]?.canManageBranches ?? false,
   canManageBranchTransfer: (role?: string) => ROLE_CAPABILITIES[normalizeRole(role)]?.canManageBranchTransfer ?? false,
   canManageProducts: (role?: string) => ROLE_CAPABILITIES[normalizeRole(role)]?.canManageProducts ?? false,
+  canManageCMS: (role?: string) => {
+    const r = normalizeRole(role);
+    return r === ROLES.DEVELOPER || r === ROLES.OWNER;
+  },
   canModifyStaffWithRole: (currentRole?: string, targetRole?: string) => {
     const curr = normalizeRole(currentRole);
     const target = normalizeRole(targetRole);
