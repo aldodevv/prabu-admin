@@ -307,7 +307,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                     disabled={!permissions.canSwitchBranch(user?.role)}
                     onChange={(e) => selectBranch(e.target.value)}
                     className="bg-transparent focus:outline-none uppercase text-slate-800 font-extrabold pr-1 max-w-[120px] sm:max-w-none truncate cursor-pointer disabled:cursor-not-allowed disabled:opacity-75"
-                    title={!permissions.canSwitchBranch(user?.role) ? "Cabang dedicated khusus untuk CS / Karyawan" : "Pilih Cabang Operasional"}
+                    title={!permissions.canSwitchBranch(user?.role) ? "Cabang dedicated khusus untuk CS / Admin Cabang" : "Pilih Cabang Operasional"}
                   >
                     {branches.map((b) => (
                       <option key={b.id} value={b.id}>

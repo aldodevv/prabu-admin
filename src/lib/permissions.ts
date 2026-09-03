@@ -18,16 +18,16 @@ export interface RoleCapability {
 
 export const ROLE_CAPABILITIES: Record<Role, RoleCapability> = {
   [ROLES.ADMIN]: {
-    canSwitchBranch: true,
+    canSwitchBranch: false,
     isReadOnly: false,
     canAccessMenuStaff: true,
     canAccessMenuSettings: true,
     canDeleteMember: true,
     canDeleteTransaction: true,
     canManageBranches: false,
-    canManageBranchTransfer: true,
+    canManageBranchTransfer: false,
     canManageProducts: true,
-    description: 'Admin / Owner: Full CRUD operasional semua cabang, kelola Data Staff, dan Pengaturan.',
+    description: 'Admin Cabang: Akses operasional cabang sendiri (tidak bisa pindah cabang), kelola Data Staff, dan Pengaturan.',
   },
   [ROLES.CS]: {
     canSwitchBranch: false,
