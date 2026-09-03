@@ -158,15 +158,33 @@ export default function AdminStaffManagementPage() {
       key: 'password',
       header: 'Password',
       render: (row) => {
+        // 1. Akun developer selalu diproteksi (tidak bisa dilihat siapapun)
         if (row.role === 'developer') {
           return <span className="text-slate-400 font-bold font-mono text-xs select-none">••••••••</span>;
         }
+
+        // 2. Developer & Owner dapat melihat password semua akun (kecuali developer)
+        // 3. Role Admin HANYA bisa melihat password CS / Kasir di cabangnya sendiri
+        const isCsRole = row.role === 'cs' || row.role === 'karyawan';
+        const isSameBranch =
+          Boolean((row.branch_id && user?.branch_id && row.branch_id === user?.branch_id) ||
+          (row.branch_name && user?.branch_name && row.branch_name.toLowerCase() === user?.branch_name.toLowerCase()));
+
+        const canView =
+          user?.role === 'developer' ? true :
+          user?.role === 'owner' ? true :
+          user?.role === 'admin' ? (isCsRole && isSameBranch) :
+          false;
+
+        if (!canView || !row.password) {
+          return <span className="text-slate-400 font-bold font-mono text-xs select-none">••••••••</span>;
+        }
+
         const isVisible = !!showPasswordMap[row.id];
-        const displayPass = row.password || 'admin123';
         return (
           <div className="flex items-center gap-1.5 font-mono text-xs select-none">
             <span className={`font-bold ${isVisible ? 'text-slate-900 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200' : 'text-slate-400'}`}>
-              {isVisible ? displayPass : '••••••••'}
+              {isVisible ? row.password : '••••••••'}
             </span>
             <button
               type="button"
