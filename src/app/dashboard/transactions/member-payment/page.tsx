@@ -61,6 +61,10 @@ export default function MemberPaymentPage() {
   // Date calculations
   const [newStartDate, setNewStartDate] = useState('');
   const [newEndDate, setNewEndDate] = useState('');
+  const [txDate, setTxDate] = useState(new Date().toISOString().split('T')[0]);
+
+  // Tanggal Transaksi: hanya developer, owner, dan admin yang bisa edit (CS disabled)
+  const canEditTxDate = user?.role === 'developer' || user?.role === 'owner' || user?.role === 'admin';
 
   // UI status
   const [submitting, setSubmitting] = useState(false);
@@ -179,6 +183,7 @@ export default function MemberPaymentPage() {
 
     // Calculate start date: if expired or inactive, start today. If active, start day after expiry
     const today = new Date();
+    setTxDate(today.toISOString().split('T')[0]);
     const expiry = m.membership_end ? new Date(m.membership_end) : null;
     let start = today;
     const isStillActive = m.is_active && expiry && expiry >= today;
@@ -264,9 +269,10 @@ export default function MemberPaymentPage() {
     const discountInfo = discountAmount > 0
       ? ` - Diskon: ${discountType === 'percent' ? `${discountValue}%` : `Rp ${discountAmount.toLocaleString('id-ID')}`} (-Rp ${discountAmount.toLocaleString('id-ID')})`
       : '';
-    const txNotes = `Perpanjang Paket: ${selectedPackageName}${discountInfo} - Metode: ${paymentMethod}.${notes ? ` Catatan: ${notes}` : ''}`;
+    const txNotes = `Perpanjang Paket: ${selectedPackageName}${discountInfo} [Masa Aktif: ${newStartDate} s/d ${newEndDate}] - Metode: ${paymentMethod}.${notes ? ` Catatan: ${notes}` : ''}`;
     const txBody = {
       member_id: selectedMember.id,
+      transaction_date: txDate ? new Date(txDate + 'T12:00:00+07:00').toISOString() : undefined,
       notes: txNotes.trim(),
       total_amount: totalPrice,
       payment_method: paymentMethod || 'Tunai',
@@ -328,22 +334,22 @@ export default function MemberPaymentPage() {
 
   const handleDeletePayment = async (m: Member) => {
     if (user?.role === 'cs' || user?.role === 'karyawan') {
-      alert('Anda tidak memiliki izin untuk menghapus data pembayaran.');
+      alert('Anda tidak memiliki izin untuk menghapus data anggota.');
       return;
     }
     if (
       !confirm(
-        `Apakah Anda yakin ingin membatalkan dan menghapus data pembayaran terakhir untuk anggota:\n${m.full_name} (${m.username})?\n\nCatatan: Data akun anggota TIDAK akan terhapus, hanya riwayat transaksi pembayaran terakhir yang dibatalkan.`
+        `Apakah Anda yakin ingin menghapus data anggota:\n${m.full_name} (${m.username}) beserta SELURUH riwayat transaksi dan data relasinya?\n\nPERINGATAN: Tindakan ini akan menghapus permanen data anggota dan seluruh riwayat transaksi dari sistem.`
       )
     ) {
       return;
     }
     try {
-      const res = await api.delete<any>(`/admin/members/${m.id}/last-payment`);
+      const res = await membersApi.delete(m.id);
       if (res.success) {
         fetchMembers();
       } else {
-        alert(res.error || 'Gagal menghapus data pembayaran.');
+        alert(res.error || 'Gagal menghapus data anggota.');
       }
     } catch (err: any) {
       console.error(err);
@@ -481,7 +487,7 @@ export default function MemberPaymentPage() {
             {canDelete && (
               <button
                 onClick={() => handleDeletePayment(m)}
-                title="Hapus Data Pembayaran Terakhir (Akun Anggota Tidak Dihapus)"
+                title="Hapus Anggota Beserta Seluruh Data Relasi"
                 className="p-2 bg-[#DC3545] hover:bg-[#C82333] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
               >
                 <Trash className="w-4 h-4" />
@@ -622,12 +628,11 @@ export default function MemberPaymentPage() {
                     <label className="text-sm font-bold text-slate-700 text-left inline-flex items-center">
                       Tanggal Transaksi
                     </label>
-                    <input
-                      type="text"
-                      readOnly
-                      disabled
-                      value={todayFormatted}
-                      className="w-full bg-slate-100 border border-slate-300 text-slate-600 px-3.5 py-2.5 text-xs focus:outline-none rounded font-mono font-bold"
+                    <DatePicker
+                      value={txDate}
+                      onChange={setTxDate}
+                      placeholder="Pilih Tanggal Transaksi"
+                      disabled={!canEditTxDate}
                     />
                   </div>
 
@@ -804,6 +809,7 @@ export default function MemberPaymentPage() {
                       value={newEndDate}
                       onChange={setNewEndDate}
                       placeholder="Pilih Tanggal Berakhir"
+                      disabled={true}
                     />
                   </div>
 

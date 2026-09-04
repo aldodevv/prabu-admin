@@ -67,6 +67,87 @@ function calculateEndDateFromPackage(startDateStr: string, pkgName: string, pack
   return d.toISOString().split('T')[0];
 }
 
+function addDays(dateStr: string, days: number): string {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d.getTime())) return '';
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split('T')[0];
+}
+
+function getTxMembershipPeriods(
+  txs: Transaction[],
+  member: Member | null,
+  packagesList: MembershipPackage[]
+): Map<string, { start: string; end: string }> {
+  const result = new Map<string, { start: string; end: string }>();
+  if (!txs || txs.length === 0) return result;
+
+  let prevEnd = '';
+
+  txs.forEach((tx, idx) => {
+    // 1. Prioritaskan jika notes memiliki format eksplisit [Masa Aktif: YYYY-MM-DD s/d YYYY-MM-DD]
+    if (tx.notes) {
+      const match = tx.notes.match(/\[Masa Aktif:\s*(\d{4}-\d{2}-\d{2})\s*s\/d\s*(\d{4}-\d{2}-\d{2})\]/i);
+      if (match) {
+        result.set(tx.id, { start: match[1], end: match[2] });
+        prevEnd = match[2];
+        return;
+      }
+    }
+
+    const pkg = getMembershipTypeFromNotes(tx.notes || '');
+
+    // Kasus hanya 1 transaksi
+    if (txs.length === 1) {
+      const start = member?.membership_start
+        ? member.membership_start.split('T')[0]
+        : (tx.transaction_date ? tx.transaction_date.split('T')[0] : '');
+      const end = member?.membership_end
+        ? member.membership_end.split('T')[0]
+        : calculateEndDateFromPackage(start, pkg, packagesList);
+      result.set(tx.id, { start, end });
+      return;
+    }
+
+    // Kasus berantai (multiple transactions)
+    let start = '';
+    let end = '';
+
+    if (idx === 0) {
+      // Transaksi pertama (paling lama): mulai dari created_at atau transaction_date
+      start = member?.created_at
+        ? member.created_at.split('T')[0]
+        : (tx.transaction_date ? tx.transaction_date.split('T')[0] : (member?.membership_start ? member.membership_start.split('T')[0] : ''));
+      end = calculateEndDateFromPackage(start, pkg, packagesList);
+    } else {
+      // Transaksi perpanjangan berikutnya: mulai 1 hari setelah transaksi sebelumnya berakhir
+      if (prevEnd) {
+        start = addDays(prevEnd, 1);
+      } else {
+        start = tx.transaction_date ? tx.transaction_date.split('T')[0] : '';
+      }
+
+      // Jika baris terakhir (paling baru) dan membership_end anggota diketahui dan setelah start
+      if (idx === txs.length - 1 && member?.membership_end) {
+        const memEnd = member.membership_end.split('T')[0];
+        if (memEnd >= start) {
+          end = memEnd;
+        } else {
+          end = calculateEndDateFromPackage(start, pkg, packagesList);
+        }
+      } else {
+        end = calculateEndDateFromPackage(start, pkg, packagesList);
+      }
+    }
+
+    result.set(tx.id, { start, end });
+    prevEnd = end;
+  });
+
+  return result;
+}
+
 export default function OneClubMembersPanel() {
   const { activeBranchID, user, branches, loading: authLoading } = useAuth();
 
@@ -323,12 +404,23 @@ export default function OneClubMembersPanel() {
       const pkgName = matchedPkg ? matchedPkg.name : (parsedPkg || selectedMember?.membership_type || '');
       setEditTxPackage(pkgName);
 
-      const start = selectedMember?.membership_start ? selectedMember.membership_start.split('T')[0] : txDate;
-      setEditTxStartDate(start);
+      const periods = getTxMembershipPeriods(
+        memberTransactions
+          .filter(t => !isPtTransaction(t))
+          .sort((a, b) => {
+            const timeA = new Date(a.transaction_date || a.created_at || 0).getTime();
+            const timeB = new Date(b.transaction_date || b.created_at || 0).getTime();
+            if (timeA !== timeB) return timeA - timeB;
+            return (a.id || '').localeCompare(b.id || '');
+          }),
+        selectedMember,
+        membershipPackages
+      );
+      const period = periods.get(tx.id);
+      const start = period?.start || (selectedMember?.membership_start ? selectedMember.membership_start.split('T')[0] : txDate);
+      const end = period?.end || (selectedMember?.membership_end ? selectedMember.membership_end.split('T')[0] : calculateEndDateFromPackage(start, pkgName, membershipPackages));
 
-      const end = selectedMember?.membership_end
-        ? selectedMember.membership_end.split('T')[0]
-        : calculateEndDateFromPackage(start, pkgName, membershipPackages);
+      setEditTxStartDate(start);
       setEditTxEndDate(end);
 
       if (matchedPkg && Number(tx.total_amount) === 0) {
@@ -752,15 +844,6 @@ export default function OneClubMembersPanel() {
               <Edit className="w-3.5 h-3.5" />
             </button>
           )}
-          {permissions.canDeleteMember(user?.role) && (
-            <button
-              onClick={() => setMemberToDelete(m)}
-              title="Hapus Anggota"
-              className="p-2 bg-[#DC3545] hover:bg-[#c82333] text-white rounded shadow-xs cursor-pointer transition-all hover:scale-105"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          )}
         </div>
       )
     }
@@ -979,8 +1062,25 @@ export default function OneClubMembersPanel() {
                   Loading history transaksi...
                 </div>
               ) : (() => {
-                const anggotaTxs = memberTransactions.filter(tx => !isPtTransaction(tx));
-                const latihanTxs = memberTransactions.filter(tx => isPtTransaction(tx));
+                const anggotaTxs = memberTransactions
+                  .filter(tx => !isPtTransaction(tx))
+                  .sort((a, b) => {
+                    const timeA = new Date(a.transaction_date || a.created_at || 0).getTime();
+                    const timeB = new Date(b.transaction_date || b.created_at || 0).getTime();
+                    if (timeA !== timeB) return timeA - timeB;
+                    return (a.id || '').localeCompare(b.id || '');
+                  });
+
+                const latihanTxs = memberTransactions
+                  .filter(tx => isPtTransaction(tx))
+                  .sort((a, b) => {
+                    const timeA = new Date(a.transaction_date || a.created_at || 0).getTime();
+                    const timeB = new Date(b.transaction_date || b.created_at || 0).getTime();
+                    if (timeA !== timeB) return timeA - timeB;
+                    return (a.id || '').localeCompare(b.id || '');
+                  });
+
+                const txPeriods = getTxMembershipPeriods(anggotaTxs, selectedMember, membershipPackages);
 
                 if (detailTab === 'anggota') {
                   return (
@@ -1003,6 +1103,10 @@ export default function OneClubMembersPanel() {
                           {anggotaTxs.length > 0 ? (
                             anggotaTxs.map((tx, idx) => {
                               const pkg = getMembershipTypeFromNotes(tx.notes || '');
+                              const period = txPeriods.get(tx.id) || {
+                                start: tx.transaction_date ? tx.transaction_date.split('T')[0] : (selectedMember?.membership_start ? selectedMember.membership_start.split('T')[0] : ''),
+                                end: selectedMember?.membership_end ? selectedMember.membership_end.split('T')[0] : ''
+                              };
                               return (
                                 <tr key={tx.id}>
                                   <td className="py-2.5 px-3 border-r border-slate-100 text-center">{idx + 1}</td>
@@ -1011,17 +1115,9 @@ export default function OneClubMembersPanel() {
                                   <td className="py-2.5 px-3 border-r border-slate-100 uppercase text-[10px]">{pkg}</td>
                                   <td className="py-2.5 px-3 border-r border-slate-100 font-mono text-[10px]">
                                     <div className="flex flex-col items-center justify-center leading-tight">
-                                      <span>{formatDateLabel(tx.transaction_date ? tx.transaction_date.split('T')[0] : selectedMember.membership_start)}</span>
+                                      <span>{formatDateLabel(period.start)}</span>
                                       <span className="text-[8px] font-sans opacity-70">s/d</span>
-                                      <span>
-                                        {formatDateLabel(
-                                          calculateEndDateFromPackage(
-                                            tx.transaction_date ? tx.transaction_date.split('T')[0] : (selectedMember.membership_start ? selectedMember.membership_start.split('T')[0] : ''),
-                                            pkg,
-                                            membershipPackages
-                                          ) || selectedMember.membership_end
-                                        )}
-                                      </span>
+                                      <span>{formatDateLabel(period.end)}</span>
                                     </div>
                                   </td>
                                   <td className="py-2.5 px-3 border-r border-slate-100 text-right text-slate-800 font-black">{formatIDR(tx.total_amount)}</td>
