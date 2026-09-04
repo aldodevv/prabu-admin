@@ -847,6 +847,7 @@ interface WorkoutReportProps {
     registrations: {
       id: string;
       created_at: string;
+      registration_date?: string;
       transaction_number?: string;
       member_name: string;
       member_username?: string;
@@ -928,7 +929,7 @@ export const WorkoutReportTemplate: React.FC<WorkoutReportProps> = ({ onClose, t
                 data.registrations.map((r, idx) => (
                   <tr key={r.id} className="hover:bg-slate-50/50">
                     <td className="py-1.5 px-2 text-center border-r border-slate-200 font-mono text-slate-700 font-bold">{idx + 1}</td>
-                    <td className="py-1.5 px-2 border-r border-slate-200 text-center font-mono font-bold">{formatDateLabel(r.created_at)}</td>
+                    <td className="py-1.5 px-2 border-r border-slate-200 text-center font-mono font-bold">{formatDateLabel(r.registration_date || r.created_at)}</td>
                     <td className="py-1.5 px-2.5 border-r border-slate-200 font-mono font-bold text-slate-900">
                       {r.transaction_number || `PRABU-PT-${r.id.substring(0, 7).toUpperCase()}`}
                     </td>
@@ -1124,6 +1125,7 @@ export interface WorkoutRegistrationReportPrintProps {
     registrations: {
       id: string;
       created_at: string;
+      registration_date?: string;
       transaction_number?: string;
       member_name: string;
       member_username?: string;
@@ -1216,7 +1218,7 @@ export const WorkoutRegistrationReportPrintTemplate: React.FC<WorkoutRegistratio
                 data.registrations.map((r, idx) => (
                   <tr key={r.id} className="hover:bg-slate-50/50">
                     <td className="py-1.5 px-2 text-center border-r border-slate-200 font-mono text-slate-700 font-bold">{idx + 1}</td>
-                    <td className="py-1.5 px-2 border-r border-slate-200 text-center font-mono font-bold">{formatDateLabel(r.created_at)}</td>
+                    <td className="py-1.5 px-2 border-r border-slate-200 text-center font-mono font-bold">{formatDateLabel(r.registration_date || r.created_at)}</td>
                     <td className="py-1.5 px-2.5 border-r border-slate-200 font-mono font-bold text-slate-900">
                       {r.transaction_number || `PRABU-PT-${r.id.substring(0, 7).toUpperCase()}`}
                     </td>

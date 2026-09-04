@@ -22,12 +22,24 @@ interface PTRegistrationReportItem {
   total_amount: number;
   notes?: string;
   created_at: string;
+  registration_date?: string;
   admin_name?: string;
   sessions_count?: number;
 }
 
 export default function WorkoutReportsPage() {
   const { activeBranchID, user, loading: authLoading } = useAuth();
+
+  const formatDateLabel = (dateStr: string) => {
+    if (!dateStr) return '-';
+    const cleanDate = dateStr.split('T')[0];
+    const parts = cleanDate.split('-');
+    if (parts.length === 3 && parts[0].length === 4) {
+      return `${parts[2].padStart(2, '0')}-${parts[1].padStart(2, '0')}-${parts[0]}`;
+    }
+    const d = new Date(dateStr);
+    return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+  };
 
   // Navigation Step: 'form' | 'result'
   const [step, setStep] = useState<'form' | 'result'>('form');
@@ -65,16 +77,18 @@ export default function WorkoutReportsPage() {
       if (res.success && res.data) {
         let items: PTRegistrationReportItem[] = res.data;
 
-        // Filter by Date Range (client-side safety check)
+        // Filter by Date Range (client-side safety check based on registration_date)
         if (startDate) {
-          const start = new Date(startDate);
-          start.setHours(0, 0, 0, 0);
-          items = items.filter(r => new Date(r.created_at) >= start);
+          items = items.filter(r => {
+            const txDate = r.registration_date ? r.registration_date.split('T')[0] : (r.created_at ? r.created_at.split('T')[0] : '');
+            return !txDate || txDate >= startDate;
+          });
         }
         if (endDate) {
-          const end = new Date(endDate);
-          end.setHours(23, 59, 59, 999);
-          items = items.filter(r => new Date(r.created_at) <= end);
+          items = items.filter(r => {
+            const txDate = r.registration_date ? r.registration_date.split('T')[0] : (r.created_at ? r.created_at.split('T')[0] : '');
+            return !txDate || txDate <= endDate;
+          });
         }
 
         // Filter by Jenis Transaksi (Payment Method)
@@ -311,7 +325,7 @@ export default function WorkoutReportsPage() {
                               {idx + 1}
                             </td>
                             <td className="py-2.5 px-3 border-r border-slate-100 font-mono">
-                              {formatDateLabel(r.created_at)}
+                              {formatDateLabel(r.registration_date || r.created_at)}
                             </td>
                             <td className="py-2.5 px-3 border-r border-slate-100 font-mono font-bold text-slate-800">
                               {r.transaction_number || `PRABU-PT-${r.id.substring(0, 7).toUpperCase()}`}
@@ -384,7 +398,7 @@ export default function WorkoutReportsPage() {
           onClose={() => setSelectedReceiptItem(null)}
           data={{
             transactionNumber: selectedReceiptItem.transaction_number || `PRABU-PT-${selectedReceiptItem.id.substring(0, 7).toUpperCase()}`,
-            transactionDate: selectedReceiptItem.created_at,
+            transactionDate: selectedReceiptItem.registration_date || selectedReceiptItem.created_at,
             memberUsername: selectedReceiptItem.member_username || '-',
             memberName: selectedReceiptItem.member_name,
             packageName: selectedReceiptItem.package_name,
