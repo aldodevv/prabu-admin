@@ -269,7 +269,7 @@ export default function MemberPaymentPage() {
     const discountInfo = discountAmount > 0
       ? ` - Diskon: ${discountType === 'percent' ? `${discountValue}%` : `Rp ${discountAmount.toLocaleString('id-ID')}`} (-Rp ${discountAmount.toLocaleString('id-ID')})`
       : '';
-    const txNotes = `Perpanjang Paket: ${selectedPackageName}${discountInfo} [Masa Aktif: ${newStartDate} s/d ${newEndDate}] - Metode: ${paymentMethod}.${notes ? ` Catatan: ${notes}` : ''}`;
+    const txNotes = `Perpanjang Paket: ${selectedPackageName}${discountInfo} - Metode: ${paymentMethod}.${notes ? ` Catatan: ${notes}` : ''}`;
     const txBody = {
       member_id: selectedMember.id,
       transaction_date: txDate ? new Date(txDate + 'T12:00:00+07:00').toISOString() : undefined,
