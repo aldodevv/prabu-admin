@@ -3,13 +3,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/context/AuthContext';
-import { membersApi, transactionsApi, packagesApi } from '@/core/api';
+import { membersApi, transactionsApi, packagesApi, ptRegistrationsApi } from '@/core/api';
 import { formatDateLabel, formatIDR, getMembershipTypeFromNotes, getPaymentMethodFromNotes, getPTDetailsFromNotes } from '@/core/constants';
-import { Member, Transaction, MembershipPackage, PTPackage } from '@/core/types';
+import { Member, Transaction, MembershipPackage, PTPackage, PTRegistration } from '@/core/types';
 import { PageHeader } from '@/components/core/PageHeader';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 import { DataTable, Column } from '@/components/core/DataTable';
-import { Search, Eye, Edit, Trash2, ArrowLeft, Save, Printer, FileText, FileSpreadsheet, RotateCcw, Download, CreditCard, X, AlertTriangle, UserX, Info } from 'lucide-react';
+import { Search, Eye, Edit, Trash2, ArrowLeft, Save, Printer, FileText, FileSpreadsheet, RotateCcw, Download, CreditCard, X, AlertTriangle, UserX, Info, Calendar } from 'lucide-react';
 import { exportToExcel } from '@/lib/excelExport';
 import { compressImage } from '@/utils/imageCompressor';
 import { uploadToCloudflare } from '@/lib/cloudflare';
@@ -148,6 +148,155 @@ function getTxMembershipPeriods(
   return result;
 }
 
+export interface LatihanRowData {
+  paymentDate: string;
+  transactionNumber: string;
+  packageName: string;
+  sessionCount: number;
+  startDate: string;
+  endDate: string;
+  rawStartDate: string;
+  rawEndDate: string;
+  totalAmount: number;
+  keterangan: string;
+  trainerName: string;
+  csName: string;
+}
+
+function getLatihanRowData(
+  tx: Transaction,
+  ptRegs: PTRegistration[],
+  member: Member | null
+): LatihanRowData {
+  const notes = tx.notes || '';
+
+  // 1. Matching PT Registration jika ada
+  const matchedReg = ptRegs.find(
+    r => (r.transaction_number && r.transaction_number === tx.transaction_number) ||
+         (r.registration_date && tx.transaction_date && r.registration_date === tx.transaction_date.split('T')[0])
+  );
+
+  // 2. Paket Latihan
+  let packageName = '';
+  if (matchedReg?.package_name) {
+    packageName = matchedReg.package_name;
+  } else {
+    const regMatch = notes.match(/Pendaftaran Personal Trainer:\s*([^\-]+)/i) ||
+                     notes.match(/Paket PT:\s*([^\-]+)/i) ||
+                     notes.match(/Paket Latihan:\s*([^\-]+)/i) ||
+                     notes.match(/Personal Trainer\s*-\s*([^|()]+)/i);
+    if (regMatch && regMatch[1]) {
+      packageName = regMatch[1].trim();
+    } else {
+      const ptDetails = getPTDetailsFromNotes(notes);
+      packageName = ptDetails.packageName;
+    }
+  }
+  if (/^\d+\s*Sesi/i.test(packageName)) {
+    packageName = `PT ${packageName}`;
+  }
+
+  // 3. Jumlah Sesi
+  let sessionCount = 1;
+  const sessMatch = packageName.match(/(\d+)\s*(?:sesi|session)/i) || notes.match(/(\d+)\s*(?:sesi|session)/i);
+  if (sessMatch && sessMatch[1]) {
+    sessionCount = parseInt(sessMatch[1], 10);
+  } else {
+    sessionCount = getPTDetailsFromNotes(notes).sessionCount || 1;
+  }
+
+  // 4. Masa Aktif (Start & End)
+  let rawStartDate = '';
+  let rawEndDate = '';
+  const masaMatch = notes.match(/\[Masa Aktif:\s*(\d{4}-\d{2}-\d{2})\s*s\/d\s*(\d{4}-\d{2}-\d{2})\]/i);
+  if (masaMatch) {
+    rawStartDate = masaMatch[1];
+    rawEndDate = masaMatch[2];
+  } else if (matchedReg?.registration_date) {
+    rawStartDate = matchedReg.registration_date;
+    const d = new Date(rawStartDate + 'T00:00:00');
+    d.setMonth(d.getMonth() + 1);
+    d.setDate(d.getDate() - 1);
+    rawEndDate = d.toISOString().split('T')[0];
+  } else {
+    rawStartDate = tx.transaction_date ? tx.transaction_date.split('T')[0] : (tx.created_at ? tx.created_at.split('T')[0] : '');
+    if (rawStartDate) {
+      const d = new Date(rawStartDate + 'T00:00:00');
+      d.setMonth(d.getMonth() + 1);
+      d.setDate(d.getDate() - 1);
+      rawEndDate = d.toISOString().split('T')[0];
+    }
+  }
+
+  // 5. Keterangan
+  let keterangan = '';
+  if (notes.includes('|')) {
+    const parts = notes.split('|').map(p => p.trim());
+    if (parts.length >= 3) {
+      keterangan = parts[2].replace(/\(CS:[^)]*\)/i, '').trim();
+    } else {
+      keterangan = parts[parts.length - 1].replace(/\(CS:[^)]*\)/i, '').trim();
+    }
+  } else {
+    const noteInParen = notes.match(/\(([^)]+)\)$/);
+    if (noteInParen && noteInParen[1] && !noteInParen[1].toLowerCase().startsWith('cs:')) {
+      keterangan = noteInParen[1].trim();
+    } else if (matchedReg?.notes) {
+      keterangan = matchedReg.notes;
+    } else {
+      keterangan = notes.replace(/\[Masa Aktif:[^\]]*\]/gi, '').replace(/\(CS:[^)]*\)/i, '').trim();
+    }
+  }
+  if (!keterangan) keterangan = '-';
+
+  // 6. Nama PT
+  let trainerName = '';
+  if (matchedReg?.trainer_name) {
+    trainerName = matchedReg.trainer_name;
+  } else {
+    const trMatch = notes.match(/(?:PT|Trainer|Pelatih)\s*:\s*([^|()]+)/i);
+    if (trMatch && trMatch[1]) {
+      trainerName = trMatch[1].trim();
+    } else {
+      const nUpper = notes.toUpperCase();
+      if (nUpper.includes('IIS ROSIANA')) trainerName = 'Iis Rosiana';
+      else if (nUpper.includes('TRI')) trainerName = 'Tri';
+      else if (nUpper.includes('IIS')) trainerName = 'Iis';
+      else {
+        const ptD = getPTDetailsFromNotes(notes);
+        if (ptD.trainerName && ptD.trainerName !== 'Pelatih PRABU GYM') {
+          trainerName = ptD.trainerName;
+        } else {
+          trainerName = '-';
+        }
+      }
+    }
+  }
+
+  // 7. Nama CS
+  let csName = tx.admin_name || '';
+  const csMatch = notes.match(/\(CS:\s*([^)]+)\)/i);
+  if (csMatch && csMatch[1]) {
+    csName = csMatch[1].trim();
+  }
+  if (!csName) csName = 'CS Gym';
+
+  return {
+    paymentDate: formatDateLabel(tx.transaction_date || tx.created_at),
+    transactionNumber: tx.transaction_number || '-',
+    packageName: packageName || 'PT Sesi',
+    sessionCount,
+    startDate: formatDateLabel(rawStartDate),
+    endDate: formatDateLabel(rawEndDate),
+    rawStartDate,
+    rawEndDate,
+    totalAmount: tx.total_amount,
+    keterangan,
+    trainerName,
+    csName,
+  };
+}
+
 export default function OneClubMembersPanel() {
   const { activeBranchID, user, branches, loading: authLoading } = useAuth();
 
@@ -246,6 +395,17 @@ export default function OneClubMembersPanel() {
   const [txToDelete, setTxToDelete] = useState<Transaction | null>(null);
   const [deletingTx, setDeletingTx] = useState(false);
   const [deleteTxError, setDeleteTxError] = useState('');
+
+  // PT Registrations for active member
+  const [memberPtRegistrations, setMemberPtRegistrations] = useState<PTRegistration[]>([]);
+
+  // Edit Masa Aktif Latihan Modal states
+  const [editingMasaAktifTx, setEditingMasaAktifTx] = useState<Transaction | null>(null);
+  const [editMasaAktifStart, setEditMasaAktifStart] = useState('');
+  const [editMasaAktifEnd, setEditMasaAktifEnd] = useState('');
+  const [savingMasaAktif, setSavingMasaAktif] = useState(false);
+  const [editMasaAktifError, setEditMasaAktifError] = useState('');
+  const [editMasaAktifSuccess, setEditMasaAktifSuccess] = useState('');
 
   const initialSearchHandledRef = useRef(false);
 
@@ -368,18 +528,27 @@ export default function OneClubMembersPanel() {
     setStep('detail');
     setLoadingTransactions(true);
     try {
-      const res = await transactionsApi.list({
-        branch_id: activeBranchID || undefined,
-        member_id: m.id,
-        per_page: 200
-      });
-      if (res.success && res.data) {
-        const filtered = res.data.filter(
+      const [txRes, ptRes] = await Promise.all([
+        transactionsApi.list({
+          branch_id: activeBranchID || undefined,
+          member_id: m.id,
+          per_page: 200
+        }),
+        ptRegistrationsApi.list(activeBranchID || '', m.id).catch(() => ({ success: false, data: [] }))
+      ]);
+
+      if (txRes.success && txRes.data) {
+        const filtered = txRes.data.filter(
           (tx: Transaction) =>
             tx.member_id === m.id ||
             (tx.notes && (tx.notes.toLowerCase().includes(m.full_name.toLowerCase()) || tx.notes.includes(m.username)))
         );
         setMemberTransactions(filtered);
+      }
+      if (ptRes && ptRes.success && Array.isArray(ptRes.data)) {
+        setMemberPtRegistrations(ptRes.data);
+      } else {
+        setMemberPtRegistrations([]);
       }
     } catch (err) {
       console.error(err);
@@ -564,6 +733,59 @@ export default function OneClubMembersPanel() {
       setEditTxError(err.message || 'Terjadi kesalahan pada sistem.');
     } finally {
       setSavingTx(false);
+    }
+  };
+
+  const handleOpenEditMasaAktif = (tx: Transaction) => {
+    setEditingMasaAktifTx(tx);
+    setEditMasaAktifError('');
+    setEditMasaAktifSuccess('');
+    const row = getLatihanRowData(tx, memberPtRegistrations, selectedMember);
+    setEditMasaAktifStart(row.rawStartDate || (tx.transaction_date ? tx.transaction_date.split('T')[0] : ''));
+    setEditMasaAktifEnd(row.rawEndDate || '');
+  };
+
+  const handleSaveEditMasaAktif = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMasaAktifTx) return;
+    setSavingMasaAktif(true);
+    setEditMasaAktifError('');
+    setEditMasaAktifSuccess('');
+
+    try {
+      const currentNotes = editingMasaAktifTx.notes || '';
+      const tag = `[Masa Aktif: ${editMasaAktifStart} s/d ${editMasaAktifEnd}]`;
+      let updatedNotes = currentNotes;
+      if (/\[Masa Aktif:[^\]]*\]/i.test(currentNotes)) {
+        updatedNotes = currentNotes.replace(/\[Masa Aktif:[^\]]*\]/gi, tag);
+      } else {
+        updatedNotes = currentNotes ? `${currentNotes} ${tag}` : tag;
+      }
+
+      const res = await transactionsApi.update(editingMasaAktifTx.id, {
+        notes: updatedNotes,
+      });
+
+      if (res.success) {
+        setEditMasaAktifSuccess('Masa aktif latihan berhasil diperbarui.');
+        setMemberTransactions(prev => prev.map(item => {
+          if (item.id === editingMasaAktifTx.id) {
+            return { ...item, notes: updatedNotes };
+          }
+          return item;
+        }));
+
+        setTimeout(() => {
+          setEditingMasaAktifTx(null);
+          setEditMasaAktifSuccess('');
+        }, 800);
+      } else {
+        setEditMasaAktifError(res.error || 'Gagal memperbarui masa aktif latihan.');
+      }
+    } catch (err: any) {
+      setEditMasaAktifError(err.message || 'Terjadi kesalahan pada sistem.');
+    } finally {
+      setSavingMasaAktif(false);
     }
   };
 
@@ -1180,73 +1402,89 @@ export default function OneClubMembersPanel() {
                 } else {
                   return (
                     <div className="overflow-x-auto custom-scrollbar pb-1">
-                      <table className="w-full text-left text-xs border border-slate-200 border-collapse min-w-[850px]">
-                        <thead className="bg-brand-cyan text-white text-[10px] font-bold uppercase tracking-wider">
+                      <table className="w-full text-left text-xs border border-slate-200 border-collapse min-w-[1050px]">
+                        <thead className="bg-[#4d7298] text-white text-[11px] font-bold tracking-wider">
                           <tr>
-                            <th className="py-2.5 px-3 border-r border-slate-200 w-10 text-center">No</th>
-                            <th className="py-2.5 px-3 border-r border-slate-200">Tanggal Pembayaran</th>
-                            <th className="py-2.5 px-3 border-r border-slate-200">Nomor Transaksi</th>
-                            <th className="py-2.5 px-3 border-r border-slate-200">Keterangan Latihan</th>
-                            <th className="py-2.5 px-3 border-r border-slate-200 text-right">Total Pembayaran</th>
-                            <th className="py-2.5 px-3 border-r border-slate-200">Nama CS</th>
-                            <th className="py-2.5 px-3 text-center no-print">Aksi</th>
+                            <th className="py-2.5 px-3 border-r border-slate-300/40 w-10 text-center">No</th>
+                            <th className="py-2.5 px-3 border-r border-slate-300/40 whitespace-nowrap">Tanggal Pembayaran</th>
+                            <th className="py-2.5 px-3 border-r border-slate-300/40 whitespace-nowrap">Nomor Transaksi</th>
+                            <th className="py-2.5 px-3 border-r border-slate-300/40 whitespace-nowrap">Paket Latihan</th>
+                            <th className="py-2.5 px-3 border-r border-slate-300/40 text-center whitespace-nowrap">Jumlah Sesi</th>
+                            <th className="py-2.5 px-3 border-r border-slate-300/40 text-center whitespace-nowrap">Masa Aktif</th>
+                            <th className="py-2.5 px-3 border-r border-slate-300/40 text-right whitespace-nowrap">Total Pembayaran</th>
+                            <th className="py-2.5 px-3 border-r border-slate-300/40 whitespace-nowrap">Keterangan</th>
+                            <th className="py-2.5 px-3 border-r border-slate-300/40 whitespace-nowrap">Nama PT</th>
+                            <th className="py-2.5 px-3 border-r border-slate-300/40 whitespace-nowrap">Nama CS</th>
+                            <th className="py-2.5 px-3 text-center no-print w-36 whitespace-nowrap">Aksi</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200 text-slate-700 font-semibold">
                           {latihanTxs.length > 0 ? (
-                            latihanTxs.map((tx, idx) => (
-                              <tr key={tx.id}>
-                                <td className="py-2.5 px-3 border-r border-slate-100 text-center">{idx + 1}</td>
-                                <td className="py-2.5 px-3 border-r border-slate-100 font-mono">{formatDateLabel(tx.transaction_date)}</td>
-                                <td className="py-2.5 px-3 border-r border-slate-100 font-mono font-bold text-slate-800">{tx.transaction_number}</td>
-                                <td className="py-2.5 px-3 border-r border-slate-100 font-normal leading-relaxed">{tx.notes || '-'}</td>
-                                <td className="py-2.5 px-3 border-r border-slate-100 text-right text-slate-800 font-black">{formatIDR(tx.total_amount)}</td>
-                                <td className="py-2.5 px-3 border-r border-slate-100 text-slate-600">{tx.admin_name}</td>
-                                <td className="py-2.5 px-3 text-center select-none no-print">
-                                  <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                                    <button
-                                      onClick={() => setThermalStrukTx(tx)}
-                                      title="Cetak Struk Thermal (POS)"
-                                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#007BFF] hover:bg-[#0069D9] text-white text-[10px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
-                                    >
-                                      <Printer className="w-3.5 h-3.5" />
-                                      <span>Struk</span>
-                                    </button>
-                                    <button
-                                      onClick={() => setReceiptTx(tx)}
-                                      title="Lihat Kwitansi Resmi (Official Receipt)"
-                                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#6C7A89] hover:bg-[#5a6673] text-white text-[10px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
-                                    >
-                                      <FileText className="w-3.5 h-3.5" />
-                                      <span>Receipt</span>
-                                    </button>
-                                    {canEditOrDeleteTx && (
-                                      <>
-                                        <button
-                                          onClick={() => handleOpenEditTx(tx, 'latihan')}
-                                          title="Ubah Data Transaksi Pembayaran"
-                                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
-                                        >
-                                          <Edit className="w-3.5 h-3.5" />
-                                          <span>Edit</span>
-                                        </button>
-                                        <button
-                                          onClick={() => { setTxToDelete(tx); setDeleteTxError(''); }}
-                                          title="Hapus Transaksi Pembayaran"
-                                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#DC3545] hover:bg-[#c82333] text-white text-[10px] font-bold uppercase rounded cursor-pointer transition-colors shadow-xs"
-                                        >
-                                          <Trash2 className="w-3.5 h-3.5" />
-                                          <span>Hapus</span>
-                                        </button>
-                                      </>
-                                    )}
-                                  </div>
-                                </td>
-                              </tr>
-                            ))
+                            latihanTxs.map((tx, idx) => {
+                              const row = getLatihanRowData(tx, memberPtRegistrations, selectedMember);
+                              return (
+                                <tr key={tx.id} className="hover:bg-slate-50/80 transition-colors">
+                                  <td className="py-2.5 px-3 border-r border-slate-100 text-center text-slate-500 font-medium">{idx + 1}</td>
+                                  <td className="py-2.5 px-3 border-r border-slate-100 font-mono text-slate-700 whitespace-nowrap">{row.paymentDate}</td>
+                                  <td className="py-2.5 px-3 border-r border-slate-100 font-mono font-bold text-slate-800 whitespace-nowrap">{row.transactionNumber}</td>
+                                  <td className="py-2.5 px-3 border-r border-slate-100 font-semibold text-slate-800 whitespace-nowrap">{row.packageName}</td>
+                                  <td className="py-2.5 px-3 border-r border-slate-100 text-center font-bold text-slate-700">{row.sessionCount}</td>
+                                  <td className="py-2.5 px-3 border-r border-slate-100 font-mono text-[11px] text-center whitespace-nowrap">
+                                    <div className="flex flex-col items-center justify-center leading-tight">
+                                      <span className="text-slate-800 font-medium">{row.startDate}</span>
+                                      <span className="text-slate-600 font-medium">{row.endDate}</span>
+                                    </div>
+                                  </td>
+                                  <td className="py-2.5 px-3 border-r border-slate-100 text-right text-slate-900 font-bold font-mono whitespace-nowrap">{Number(row.totalAmount || 0).toLocaleString('en-US')}</td>
+                                  <td className="py-2.5 px-3 border-r border-slate-100 text-slate-700 font-medium">{row.keterangan}</td>
+                                  <td className="py-2.5 px-3 border-r border-slate-100 text-slate-800 font-semibold whitespace-nowrap">{row.trainerName}</td>
+                                  <td className="py-2.5 px-3 border-r border-slate-100 text-slate-700 whitespace-nowrap">{row.csName}</td>
+                                  <td className="py-2.5 px-3 text-center select-none no-print">
+                                    <div className="flex flex-col gap-1 w-full max-w-[130px] mx-auto">
+                                      <button
+                                        onClick={() => setReceiptTx(tx)}
+                                        title="Cetak Kwitansi Transaksi Latihan"
+                                        className="inline-flex items-center justify-center gap-1.5 w-full py-1 px-2 bg-white hover:bg-emerald-50 text-emerald-600 border border-emerald-500 rounded text-[10px] font-bold uppercase transition-colors cursor-pointer shadow-2xs"
+                                      >
+                                        <Printer className="w-3 h-3 text-emerald-600 shrink-0" />
+                                        <span>Cetak</span>
+                                      </button>
+                                      {canEditOrDeleteTx && (
+                                        <>
+                                          <button
+                                            onClick={() => handleOpenEditTx(tx, 'latihan')}
+                                            title="Ubah Data Transaksi Pembayaran Latihan"
+                                            className="inline-flex items-center justify-center gap-1.5 w-full py-1 px-2 bg-white hover:bg-sky-50 text-sky-600 border border-sky-500 rounded text-[10px] font-bold uppercase transition-colors cursor-pointer shadow-2xs"
+                                          >
+                                            <Edit className="w-3 h-3 text-sky-600 shrink-0" />
+                                            <span>Ubah Transaksi</span>
+                                          </button>
+                                          <button
+                                            onClick={() => handleOpenEditMasaAktif(tx)}
+                                            title="Ubah Masa Aktif Sesi Latihan"
+                                            className="inline-flex items-center justify-center gap-1.5 w-full py-1 px-2 bg-white hover:bg-amber-50 text-amber-600 border border-amber-500 rounded text-[10px] font-bold uppercase transition-colors cursor-pointer shadow-2xs"
+                                          >
+                                            <Calendar className="w-3 h-3 text-amber-600 shrink-0" />
+                                            <span>Ubah Masa Aktif</span>
+                                          </button>
+                                          <button
+                                            onClick={() => { setTxToDelete(tx); setDeleteTxError(''); }}
+                                            title="Hapus Transaksi Pembayaran Latihan"
+                                            className="inline-flex items-center justify-center gap-1.5 w-full py-1 px-2 bg-white hover:bg-red-50 text-red-600 border border-red-500 rounded text-[10px] font-bold uppercase transition-colors cursor-pointer shadow-2xs"
+                                          >
+                                            <Trash2 className="w-3 h-3 text-red-600 shrink-0" />
+                                            <span>Hapus</span>
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })
                           ) : (
                             <tr>
-                              <td colSpan={7} className="py-6 text-center text-slate-400 font-bold select-none uppercase tracking-wider">
+                              <td colSpan={11} className="py-6 text-center text-slate-400 font-bold select-none uppercase tracking-wider">
                                 Belum ada transaksi pembayaran latihan harian untuk anggota ini.
                               </td>
                             </tr>
@@ -1445,22 +1683,27 @@ export default function OneClubMembersPanel() {
       {/* Reusable Print Official Receipt Overlay */}
       {receiptTx && selectedMember && (
         isPtTransaction(receiptTx) ? (
-          <OfficialPTReceiptTemplate
-            onClose={() => setReceiptTx(null)}
-            data={{
-              transactionNumber: receiptTx.transaction_number || '-',
-              transactionDate: receiptTx.transaction_date,
-              memberUsername: selectedMember.username,
-              memberName: selectedMember.full_name,
-              packageName: getPTDetailsFromNotes(receiptTx.notes || '').packageName || getMembershipTypeFromNotes(receiptTx.notes || '') || 'Personal Trainer',
-              sessionCount: getPTDetailsFromNotes(receiptTx.notes || '').sessionCount,
-              membershipEnd: selectedMember.membership_end,
-              paymentMethod: getPaymentMethodFromNotes(receiptTx.notes || ''),
-              price: receiptTx.total_amount,
-              trainerName: getPTDetailsFromNotes(receiptTx.notes || '').trainerName,
-              cashierName: receiptTx.admin_name || user?.full_name || 'Kasir PRABU GYM',
-            }}
-          />
+          (() => {
+            const ptRow = getLatihanRowData(receiptTx, memberPtRegistrations, selectedMember);
+            return (
+              <OfficialPTReceiptTemplate
+                onClose={() => setReceiptTx(null)}
+                data={{
+                  transactionNumber: ptRow.transactionNumber !== '-' ? ptRow.transactionNumber : (receiptTx.transaction_number || '-'),
+                  transactionDate: receiptTx.transaction_date,
+                  memberUsername: selectedMember.username,
+                  memberName: selectedMember.full_name,
+                  packageName: ptRow.packageName,
+                  sessionCount: ptRow.sessionCount,
+                  membershipEnd: selectedMember.membership_end,
+                  paymentMethod: getPaymentMethodFromNotes(receiptTx.notes || ''),
+                  price: receiptTx.total_amount,
+                  trainerName: ptRow.trainerName !== '-' ? ptRow.trainerName : 'Pelatih PRABU GYM',
+                  cashierName: ptRow.csName || receiptTx.admin_name || user?.full_name || 'Kasir PRABU GYM',
+                }}
+              />
+            );
+          })()
         ) : (
           <OfficialReceiptTemplate
             onClose={() => setReceiptTx(null)}
@@ -1673,6 +1916,117 @@ export default function OneClubMembersPanel() {
                     <>
                       <Save className="w-3.5 h-3.5" />
                       <span>Simpan Perubahan</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Masa Aktif Latihan Modal */}
+      {editingMasaAktifTx && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-visible border border-slate-200">
+            <div className="bg-amber-500 px-5 py-3.5 text-white flex items-center justify-between rounded-t-xl">
+              <div className="flex items-center gap-2 font-heading font-extrabold text-sm uppercase tracking-wider">
+                <Calendar className="w-4 h-4" />
+                <span>Ubah Masa Aktif Latihan</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingMasaAktifTx(null)}
+                className="text-white/80 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {editMasaAktifError && (
+              <div className="p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-bold uppercase tracking-wider">
+                {editMasaAktifError}
+              </div>
+            )}
+
+            {editMasaAktifSuccess && (
+              <div className="p-3 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-700 text-xs font-bold uppercase tracking-wider">
+                {editMasaAktifSuccess}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveEditMasaAktif} className="p-6 space-y-4 text-xs text-slate-700">
+              {/* Nomor Transaksi (Read-only) */}
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                  Nomor Transaksi
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  disabled
+                  value={editingMasaAktifTx.transaction_number || '-'}
+                  className="bg-slate-100 border border-slate-300 text-slate-500 px-3 py-2 text-xs rounded w-full font-mono font-bold"
+                />
+              </div>
+
+              {/* Tanggal Pembayaran (Read-only) */}
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                  Tanggal Pembayaran
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  disabled
+                  value={formatDateLabel(editingMasaAktifTx.transaction_date)}
+                  className="bg-slate-100 border border-slate-300 text-slate-500 px-3 py-2 text-xs rounded w-full font-mono font-bold"
+                />
+              </div>
+
+              {/* Masa Aktif Mulai & Selesai */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                    Masa Aktif Mulai
+                  </label>
+                  <DatePicker
+                    value={editMasaAktifStart}
+                    onChange={setEditMasaAktifStart}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                    Masa Aktif Selesai
+                  </label>
+                  <DatePicker
+                    value={editMasaAktifEnd}
+                    onChange={setEditMasaAktifEnd}
+                    align="right"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setEditingMasaAktifTx(null)}
+                  disabled={savingMasaAktif}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold uppercase transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingMasaAktif}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold uppercase shadow-sm transition-colors cursor-pointer flex items-center gap-2"
+                >
+                  {savingMasaAktif ? (
+                    <span>Menyimpan...</span>
+                  ) : (
+                    <>
+                      <Save className="w-3.5 h-3.5" />
+                      <span>Simpan Masa Aktif</span>
                     </>
                   )}
                 </button>

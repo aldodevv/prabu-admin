@@ -61,6 +61,8 @@ export interface PTRegistration {
   package_name: string;
   payment_method: string;
   total_amount: number;
+  transaction_number?: string;
+  session_count?: number;
   notes?: string;
   created_at: string;
 }

@@ -49,7 +49,12 @@ export const trainersApi = {
 };
 
 export const ptRegistrationsApi = {
-  list: (branchId: string) => api.get<PTRegistration[]>(`/admin/pt-registrations?branch_id=${branchId}`),
+  list: (branchId: string, memberId?: string) => {
+    const q = new URLSearchParams();
+    if (branchId) q.append('branch_id', branchId);
+    if (memberId) q.append('member_id', memberId);
+    return api.get<PTRegistration[]>(`/admin/pt-registrations?${q.toString()}`);
+  },
   create: (data: {
     member_id: string;
     trainer_id: string;
