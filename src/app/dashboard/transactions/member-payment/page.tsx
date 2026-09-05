@@ -855,7 +855,7 @@ export default function MemberPaymentPage() {
                       className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded"
                     >
                       <option value="">-Pilih-</option>
-                      <option value="Tunai">Tunai / Cash</option>
+                      <option value="Tunai">Tunai</option>
                       <option value="Transfer Bank">Transfer Bank</option>
                       <option value="QRIS">QRIS</option>
                       <option value="Debit">Debit</option>

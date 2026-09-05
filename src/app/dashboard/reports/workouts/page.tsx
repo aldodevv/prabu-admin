@@ -180,7 +180,7 @@ export default function WorkoutReportsPage() {
                       className="bg-slate-50 border border-slate-300 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-brand-cyan rounded w-full cursor-pointer font-medium"
                     >
                       <option value="Semua Transaksi">-Pilih-</option>
-                      <option value="Tunai">Tunai / Cash</option>
+                      <option value="Tunai">Tunai</option>
                       <option value="Transfer Bank">Transfer Bank</option>
                       <option value="BCA Transfer">BCA Transfer</option>
                       <option value="QRIS">QRIS</option>
