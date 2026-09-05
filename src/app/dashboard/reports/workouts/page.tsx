@@ -184,6 +184,7 @@ export default function WorkoutReportsPage() {
                       <option value="Transfer Bank">Transfer Bank</option>
                       <option value="BCA Transfer">BCA Transfer</option>
                       <option value="QRIS">QRIS</option>
+                      <option value="Debit">Debit</option>
                     </select>
                   </div>
 

@@ -775,9 +775,8 @@ export default function MemberPaymentPage() {
                             }
                           }}
                           placeholder={discountType === 'percent' ? 'Contoh: 10 (untuk diskon 10%)' : 'mis. 50.000 (untuk diskon Rp 50.000)'}
-                          className={`w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-mono font-semibold ${
-                            discountAmount > 0 ? 'pr-28' : ''
-                          }`}
+                          className={`w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded font-mono font-semibold ${discountAmount > 0 ? 'pr-28' : ''
+                            }`}
                         />
                         {discountAmount > 0 && (
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-emerald-600 pointer-events-none">
@@ -859,6 +858,7 @@ export default function MemberPaymentPage() {
                       <option value="Tunai">Tunai / Cash</option>
                       <option value="Transfer Bank">Transfer Bank</option>
                       <option value="QRIS">QRIS</option>
+                      <option value="Debit">Debit</option>
                     </select>
                   </div>
 
