@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { permissions } from '@/lib/permissions';
+import { ensureCookieSet, deleteCookie } from '@/lib/cookieUtils';
 
 export interface AdminUser {
   id: string;
@@ -98,7 +99,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const loggedUser = res.data.user;
         localStorage.setItem('prabu_admin_token', res.data.token);
         localStorage.setItem('prabu_admin_user', JSON.stringify(loggedUser));
-        document.cookie = `prabu_admin_token=${res.data.token}; path=/; max-age=${24 * 60 * 60}; SameSite=Lax`;
+
+        // Set cookie with verification before navigating
+        await ensureCookieSet('prabu_admin_token', res.data.token);
         
         setUser(loggedUser);
 
@@ -109,7 +112,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (!permissions.canSwitchBranch(loggedUser.role)) {
-          handleSelectBranch(loggedUser.branch_id);
+          // Set branch cookie with verification before navigating
+          const branchID = loggedUser.branch_id;
+          localStorage.setItem('prabu_admin_branch_id', branchID);
+          await ensureCookieSet('prabu_admin_branch_id', branchID);
+          setActiveBranchID(branchID);
           router.push('/dashboard');
         } else {
           // Owner/developer/admin needs to select a branch first
@@ -128,8 +135,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('prabu_admin_token');
     localStorage.removeItem('prabu_admin_user');
     localStorage.removeItem('prabu_admin_branch_id');
-    document.cookie = 'prabu_admin_token=; path=/; max-age=0; SameSite=Lax';
-    document.cookie = 'prabu_admin_branch_id=; path=/; max-age=0; SameSite=Lax';
+    deleteCookie('prabu_admin_token');
+    deleteCookie('prabu_admin_branch_id');
     
     setUser(null);
     setActiveBranchID(null);
@@ -153,7 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
     localStorage.setItem('prabu_admin_branch_id', branchID);
-    document.cookie = `prabu_admin_branch_id=${branchID}; path=/; max-age=${24 * 60 * 60}; SameSite=Lax`;
+    ensureCookieSet('prabu_admin_branch_id', branchID);
     setActiveBranchID(branchID);
   };
 

@@ -1,4 +1,5 @@
 import { translateRC } from './rcMapper';
+import { deleteCookie } from './cookieUtils';
 
 export const getBaseUrl = (): string => {
   if (process.env.NEXT_PUBLIC_API_URL) {
@@ -98,11 +99,29 @@ class ApiClient {
     return headers;
   }
 
+  /**
+   * Clear all auth state when receiving a 401 Unauthorized response.
+   * This prevents zombie sessions where localStorage has a token
+   * but it's actually expired/invalid on the backend.
+   */
+  private clearAuthState(): void {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem('prabu_admin_token');
+    localStorage.removeItem('prabu_admin_user');
+    localStorage.removeItem('prabu_admin_branch_id');
+    deleteCookie('prabu_admin_token');
+    deleteCookie('prabu_admin_branch_id');
+  }
+
   private async handleResponse<T>(res: Response): Promise<ApiResponse<T>> {
     const contentType = res.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
       const data = await res.json();
       if (!res.ok) {
+        // Auto-clear auth state on 401 to prevent zombie sessions
+        if (res.status === 401) {
+          this.clearAuthState();
+        }
         const mappedError = translateRC(data.rc, data.error || 'Terjadi kesalahan pada server');
         return {
           success: false,
@@ -115,6 +134,10 @@ class ApiClient {
     }
 
     if (!res.ok) {
+      // Auto-clear auth state on 401 to prevent zombie sessions
+      if (res.status === 401) {
+        this.clearAuthState();
+      }
       return {
         success: false,
         rc: 'SYS99',

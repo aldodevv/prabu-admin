@@ -1,9 +1,25 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+/**
+ * Safely read and decode a cookie value.
+ * Cookies are set with encodeURIComponent in cookieUtils.ts,
+ * so we need to decode them here.
+ */
+function getDecodedCookie(request: NextRequest, name: string): string | undefined {
+  const raw = request.cookies.get(name)?.value;
+  if (!raw) return undefined;
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    // If decoding fails, try the raw value (backward compatibility)
+    return raw;
+  }
+}
+
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get('prabu_admin_token')?.value;
-  const branchID = request.cookies.get('prabu_admin_branch_id')?.value;
+  const token = getDecodedCookie(request, 'prabu_admin_token');
+  const branchID = getDecodedCookie(request, 'prabu_admin_branch_id');
   const { pathname } = request.nextUrl;
 
   // Protected paths
@@ -48,3 +64,4 @@ export const config = {
   matcher: ['/dashboard/:path*', '/branch-select', '/login', '/'],
 };
 export default middleware;
+
