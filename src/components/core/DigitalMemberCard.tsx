@@ -107,6 +107,7 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName, branch
       const logoUrl = `${origin}/logo-transparent.png`;
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${member.username}`;
 
+      // Resolve base64 data URLs for both images
       const [b64Logo, b64Qr] = await Promise.all([
         logoDataUrl ? Promise.resolve(logoDataUrl) : toDataURL(logoUrl),
         qrDataUrl ? Promise.resolve(qrDataUrl) : toDataURL(qrUrl),
@@ -115,23 +116,85 @@ export function DigitalMemberCard({ member, branchCodeOrName, branchName, branch
       if (b64Logo && b64Logo.startsWith('data:')) setLogoDataUrl(b64Logo);
       if (b64Qr && b64Qr.startsWith('data:')) setQrDataUrl(b64Qr);
 
-      await new Promise((r) => setTimeout(r, 150));
-
-      const dataUrl = await toPng(cardRef.current, {
-        cacheBust: true,
-        pixelRatio: 3,
-        backgroundColor: '#EBEBEB',
-        width: 360,
-        height: 700,
-        style: {
-          margin: '0',
-          transform: 'none',
-        },
+      // Directly inject base64 src into DOM img elements BEFORE toPng clones the DOM.
+      // This bypasses the React state update timing issue where the <img> still has the
+      // old src when html-to-image snapshots the DOM tree.
+      const imgs = cardRef.current.querySelectorAll('img');
+      const originalSrcs: { el: HTMLImageElement; src: string }[] = [];
+      imgs.forEach((img) => {
+        originalSrcs.push({ el: img, src: img.src });
+        if (img.alt === 'PRABU GYM Logo' && b64Logo && b64Logo.startsWith('data:')) {
+          img.src = b64Logo;
+        }
+        if (img.alt?.startsWith('QR Code') && b64Qr && b64Qr.startsWith('data:')) {
+          img.src = b64Qr;
+        }
       });
-      const link = document.createElement('a');
-      link.href = dataUrl;
-      link.download = `Kartu_Member_${member.full_name.replace(/\s+/g, '_')}_${member.username}.png`;
-      link.click();
+
+      // Small delay to let the browser paint the updated src attributes
+      await new Promise((r) => setTimeout(r, 200));
+
+      // Render to PNG with retries for resilience (html-to-image can be flaky)
+      let dataUrl = '';
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          dataUrl = await toPng(cardRef.current, {
+            cacheBust: true,
+            pixelRatio: 3,
+            backgroundColor: '#EBEBEB',
+            width: 360,
+            height: 700,
+            style: {
+              margin: '0',
+              transform: 'none',
+            },
+          });
+          if (dataUrl && dataUrl.startsWith('data:image')) break;
+        } catch {
+          if (attempt < 2) await new Promise((r) => setTimeout(r, 300));
+          else throw new Error('toPng gagal setelah 3 percobaan');
+        }
+      }
+
+      // Restore original src attributes so React state stays in sync
+      originalSrcs.forEach(({ el, src }) => {
+        el.src = src;
+      });
+
+      // Download using Blob + object URL (Safari compatible).
+      // Safari blocks programmatic link.click() with large data: URIs,
+      // so we must convert to Blob and use createObjectURL.
+      const fileName = `Kartu_Member_${member.full_name.replace(/\s+/g, '_')}_${member.username}.png`;
+      const byteString = atob(dataUrl.split(',')[1]);
+      const mimeType = dataUrl.split(',')[0].split(':')[1].split(';')[0];
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      const blob = new Blob([ab], { type: mimeType });
+      const blobUrl = URL.createObjectURL(blob);
+
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      if (isSafari) {
+        // Safari: open blob URL in new tab (triggers native Save Image flow)
+        const win = window.open(blobUrl, '_blank');
+        if (!win) {
+          // Popup blocked — fallback to direct navigation
+          window.location.href = blobUrl;
+        }
+        // Revoke after a generous delay so Safari can finish loading
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+      } else {
+        // Chrome / Firefox / Edge: use anchor download
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+      }
     } catch (err) {
       console.error('Gagal mengunduh kartu member:', err);
     } finally {
