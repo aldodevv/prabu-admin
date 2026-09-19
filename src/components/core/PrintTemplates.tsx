@@ -1,6 +1,7 @@
 import React from 'react';
 import { Printer, X } from 'lucide-react';
 import { formatDateLabel, formatIDR } from '@/core/constants';
+import { PAYMENT_METHODS } from '@/constants/payments';
 
 interface PrintContainerProps {
   onClose: () => void;
@@ -1085,7 +1086,7 @@ export const ThermalReceiptTemplate: React.FC<ThermalReceiptProps> = ({ onClose,
           </div>
           <div className="flex justify-between text-[10px]">
             <span className="text-slate-700">Metode Bayar</span>
-            <span className="uppercase">{data.paymentMethod || 'Tunai'}</span>
+            <span className="uppercase">{data.paymentMethod || PAYMENT_METHODS.TUNAI}</span>
           </div>
           <div className="flex justify-between text-[10px]">
             <span className="text-slate-700">Status</span>

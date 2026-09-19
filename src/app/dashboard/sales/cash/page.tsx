@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { ShoppingBag, CreditCard, Trash2, Check, Plus, Printer, X } from 'lucide-react';
 import { formatInvoiceNumber, getBranchAddress } from '@/utils';
+import { PAYMENT_METHODS, PAYMENT_METHOD_OPTIONS } from '@/constants/payments';
 
 interface Product {
   id: string;
@@ -397,10 +398,11 @@ export default function TransaksiTunaiPage() {
                     className="w-full bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 text-xs focus:outline-none focus:border-brand-cyan rounded h-10 cursor-pointer"
                   >
                     <option value="">-Pilih-</option>
-                    <option value="Tunai">Tunai</option>
-                    <option value="Transfer">Transfer</option>
-                    <option value="QRIS">QRIS</option>
-                    <option value="Debit Card">Debit Card</option>
+                    {PAYMENT_METHOD_OPTIONS.map((method) => (
+                      <option key={method} value={method}>
+                        {method}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -517,7 +519,7 @@ export default function TransaksiTunaiPage() {
                   <span>Bayar ({completedTx.payment_method})</span>
                   <span>{completedTx.payment_amount.toLocaleString('id-ID')}</span>
                 </div>
-                {completedTx.payment_method === 'Tunai' && (
+                {completedTx.payment_method === PAYMENT_METHODS.TUNAI && (
                   <div className="flex justify-between">
                     <span>Kembalian</span>
                     <span>{completedTx.change_amount.toLocaleString('id-ID')}</span>
@@ -614,7 +616,7 @@ export default function TransaksiTunaiPage() {
                 <span>Bayar</span>
                 <span>{completedTx.payment_amount.toLocaleString('id-ID')}</span>
               </div>
-              {completedTx.payment_method === 'Tunai' && (
+              {completedTx.payment_method === PAYMENT_METHODS.TUNAI && (
                 <div className="flex justify-between font-bold">
                   <span>Kembalian</span>
                   <span>{completedTx.change_amount.toLocaleString('id-ID')}</span>

@@ -7,6 +7,7 @@ import api from '@/lib/api';
 import { Save, Printer, ArrowLeft, UserCheck, Search, Check, X, Phone, AlertCircle } from 'lucide-react';
 
 import { packagesApi } from '@/core/api';
+import { PAYMENT_METHODS, PAYMENT_METHOD_OPTIONS } from '@/constants/payments';
 import { useDebounce } from '@/hooks/useDebounce';
 import { DatePicker } from '@/components/core/DatePicker';
 import { OfficialPTReceiptTemplate } from '@/components/core/PrintTemplates';
@@ -594,10 +595,11 @@ export default function PTRegistrationPage() {
                     className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded w-full"
                   >
                     <option value="">-Pilih-</option>
-                    <option value="Tunai">Tunai</option>
-                    <option value="Transfer">Transfer</option>
-                    <option value="QRIS">QRIS</option>
-                    <option value="Debit Card">Debit Card</option>
+                    {PAYMENT_METHOD_OPTIONS.map((method) => (
+                      <option key={method} value={method}>
+                        {method}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

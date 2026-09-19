@@ -1,4 +1,5 @@
 import { getBranchCode } from './branch';
+import { PAYMENT_METHODS } from '@/constants/payments';
 
 export interface GymPackage {
   name: string;
@@ -145,11 +146,13 @@ export function formatInvoiceNumber(txNumber: any, dateStr?: string, branchNameO
  * Parse payment method from transaction notes
  */
 export function getPaymentMethodFromNotes(notes: string = ''): string {
+  if (!notes) return '';
   const n = notes.toLowerCase();
-  if (n.includes('tunai') || n.includes('cash')) return 'Tunai';
-  if (n.includes('bca') || n.includes('transfer')) return 'BCA Transfer';
-  if (n.includes('qris')) return 'QRIS';
-  return 'Tunai';
+  if (n.includes('debit')) return PAYMENT_METHODS.DEBIT;
+  if (n.includes('qris')) return PAYMENT_METHODS.QRIS;
+  if (n.includes('bca') || n.includes('transfer')) return PAYMENT_METHODS.BCA_TRANSFER;
+  if (n.includes('tunai') || n.includes('cash')) return PAYMENT_METHODS.TUNAI;
+  return '';
 }
 
 /**

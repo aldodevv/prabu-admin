@@ -13,6 +13,7 @@ import { exportToExcel } from '@/lib/excelExport';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 import { DataTable, Column } from '@/components/core/DataTable';
 import { DatePicker } from '@/components/core/DatePicker';
+import { PAYMENT_METHODS, PAYMENT_METHOD_OPTIONS } from '@/constants/payments';
 
 interface Transaction {
   id: string;
@@ -275,7 +276,7 @@ export default function MemberPaymentPage() {
       transaction_date: txDate ? new Date(txDate + 'T12:00:00+07:00').toISOString() : undefined,
       notes: txNotes.trim(),
       total_amount: totalPrice,
-      payment_method: paymentMethod || 'Tunai',
+      payment_method: paymentMethod || PAYMENT_METHODS.TUNAI,
       payment_amount: totalPrice,
       change_amount: 0,
       items: [],
@@ -855,10 +856,11 @@ export default function MemberPaymentPage() {
                       className="w-full bg-slate-50 border border-slate-300 focus:border-brand-cyan text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none rounded"
                     >
                       <option value="">-Pilih-</option>
-                      <option value="Tunai">Tunai</option>
-                      <option value="Transfer Bank">Transfer Bank</option>
-                      <option value="QRIS">QRIS</option>
-                      <option value="Debit">Debit</option>
+                      {PAYMENT_METHOD_OPTIONS.map((method) => (
+                        <option key={method} value={method}>
+                          {method}
+                        </option>
+                      ))}
                     </select>
                   </div>
 

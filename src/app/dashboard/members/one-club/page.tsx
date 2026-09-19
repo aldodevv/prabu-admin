@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { useAuth } from '@/context/AuthContext';
 import { membersApi, transactionsApi, packagesApi, ptRegistrationsApi } from '@/core/api';
 import { formatDateLabel, formatIDR, getMembershipTypeFromNotes, getPaymentMethodFromNotes, getPTDetailsFromNotes } from '@/core/constants';
+import { PAYMENT_METHODS } from '@/constants/payments';
 import { Member, Transaction, MembershipPackage, PTPackage, PTRegistration } from '@/core/types';
 import { PageHeader } from '@/components/core/PageHeader';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
@@ -1696,7 +1697,7 @@ export default function OneClubMembersPanel() {
                   packageName: ptRow.packageName,
                   sessionCount: ptRow.sessionCount,
                   membershipEnd: selectedMember.membership_end,
-                  paymentMethod: getPaymentMethodFromNotes(receiptTx.notes || ''),
+                  paymentMethod: getPaymentMethodFromNotes(receiptTx.notes || '') || receiptTx.payment_method || PAYMENT_METHODS.TUNAI,
                   price: receiptTx.total_amount,
                   trainerName: ptRow.trainerName !== '-' ? ptRow.trainerName : 'Pelatih PRABU GYM',
                   cashierName: ptRow.csName || receiptTx.admin_name || user?.full_name || 'Kasir PRABU GYM',
@@ -1715,7 +1716,7 @@ export default function OneClubMembersPanel() {
               packageName: getMembershipTypeFromNotes(receiptTx.notes || ''),
               membershipStart: selectedMember.membership_start,
               membershipEnd: selectedMember.membership_end,
-              paymentMethod: getPaymentMethodFromNotes(receiptTx.notes || ''),
+              paymentMethod: getPaymentMethodFromNotes(receiptTx.notes || '') || receiptTx.payment_method || PAYMENT_METHODS.TUNAI,
               price: receiptTx.total_amount,
               cashierName: receiptTx.admin_name || user?.full_name || 'Kasir PRABU GYM'
             }}
@@ -1733,7 +1734,7 @@ export default function OneClubMembersPanel() {
             memberUsername: selectedMember.username,
             memberName: selectedMember.full_name,
             packageName: getMembershipTypeFromNotes(thermalStrukTx.notes || '') || 'Paket Keanggotaan',
-            paymentMethod: getPaymentMethodFromNotes(thermalStrukTx.notes || '') || thermalStrukTx.payment_method || 'Tunai',
+            paymentMethod: getPaymentMethodFromNotes(thermalStrukTx.notes || '') || thermalStrukTx.payment_method || PAYMENT_METHODS.TUNAI,
             totalAmount: thermalStrukTx.total_amount,
             cashierName: thermalStrukTx.admin_name || user?.full_name || 'Kasir PRABU GYM',
             branchName: branches.find(b => b.id === activeBranchID)?.name || 'PRABU GYM & Fitness Center',

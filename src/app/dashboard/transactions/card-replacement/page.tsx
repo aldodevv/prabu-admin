@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { permissions } from '@/lib/permissions';
 import { membersApi, transactionsApi } from '@/core/api';
 import { formatDateLabel, formatIDR } from '@/core/constants';
+import { PAYMENT_METHODS } from '@/constants/payments';
 import { Member, CardReplacementLog, Transaction } from '@/core/types';
 import { PageHeader } from '@/components/core/PageHeader';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
@@ -47,7 +48,7 @@ export default function CardReplacementPage() {
 
   const [replacementFee, setReplacementFee] = useState<number>(50000);
   const [notes, setNotes] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [paymentMethod, setPaymentMethod] = useState<string>(PAYMENT_METHODS.TUNAI);
   const [submitting, setSubmitting] = useState(false);
 
   const [logs, setLogs] = useState<CardReplacementLog[]>([]);
@@ -559,7 +560,7 @@ export default function CardReplacementPage() {
             packageName: `Pergantian Cabang (${printLog.reason})`,
             membershipStart: printLog.date,
             membershipEnd: printLog.date,
-            paymentMethod: 'Tunai',
+            paymentMethod: PAYMENT_METHODS.TUNAI,
             price: printLog.fee,
             cashierName: printLog.admin_name
           }}

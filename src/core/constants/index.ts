@@ -1,3 +1,5 @@
+export * from '@/constants/payments';
+
 export {
   formatIDR,
   formatDateLabel,

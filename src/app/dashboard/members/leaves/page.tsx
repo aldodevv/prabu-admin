@@ -23,6 +23,7 @@ import { exportToExcel } from '@/lib/excelExport';
 import { formatIDR } from '@/utils';
 import { permissions } from '@/lib/permissions';
 import { MemberLeaveReceiptTemplate } from '@/components/core/PrintTemplates';
+import { PAYMENT_METHODS, PAYMENT_METHOD_OPTIONS } from '@/constants/payments';
 import { CurrencyInput } from '@/components/core/CurrencyInput';
 
 export default function MemberLeavesPage() {
@@ -50,7 +51,7 @@ export default function MemberLeavesPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [feeAmount, setFeeAmount] = useState<number | string>('');
-  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [paymentMethod, setPaymentMethod] = useState<string>(PAYMENT_METHODS.TUNAI);
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
@@ -134,7 +135,7 @@ export default function MemberLeavesPage() {
     setStartDate(new Date().toISOString().split('T')[0]);
     setEndDate('');
     setFeeAmount('');
-    setPaymentMethod('cash');
+    setPaymentMethod(PAYMENT_METHODS.TUNAI);
     setNotes('Cuti Anggota');
     setFormError('');
     setStep('create');
@@ -222,7 +223,7 @@ export default function MemberLeavesPage() {
       l.end_date,
       l.status.toUpperCase(),
       l.fee_amount,
-      l.payment_method.toUpperCase(),
+      (l.payment_method || PAYMENT_METHODS.TUNAI).toUpperCase(),
       l.notes || '-',
       l.created_by_name || '-',
       new Date(l.created_at).toLocaleDateString('id-ID'),
@@ -585,9 +586,11 @@ export default function MemberLeavesPage() {
                     onChange={(e) => setPaymentMethod(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-300 p-2.5 rounded font-bold text-slate-800 focus:outline-none focus:border-brand-cyan"
                   >
-                    <option value="cash">Tunai (Cash)</option>
-                    <option value="transfer">Bank Transfer</option>
-                    <option value="qris">QRIS</option>
+                    {PAYMENT_METHOD_OPTIONS.map((method) => (
+                      <option key={method} value={method}>
+                        {method}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -650,7 +653,7 @@ export default function MemberLeavesPage() {
             startDate: printLeave.start_date,
             endDate: printLeave.end_date,
             status: printLeave.status,
-            paymentMethod: printLeave.payment_method,
+            paymentMethod: printLeave.payment_method || PAYMENT_METHODS.TUNAI,
             feeAmount: printLeave.fee_amount,
             notes: printLeave.notes,
             cashierName: printLeave.created_by_name || user?.full_name || 'Admin',

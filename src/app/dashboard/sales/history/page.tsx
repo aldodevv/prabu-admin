@@ -9,6 +9,7 @@ import { exportToExcel } from '@/lib/excelExport';
 import { SearchFilterBar } from '@/components/core/SearchFilterBar';
 import { FetchErrorAlert } from '@/components/core/FetchErrorAlert';
 import { formatInvoiceNumber, formatDateLabel, formatIDR, BRANCH_ADDRESSES } from '@/utils';
+import { PAYMENT_METHODS, PAYMENT_METHOD_OPTIONS } from '@/constants/payments';
 
 interface TransactionItem {
   id: string;
@@ -149,7 +150,7 @@ export default function TransactionHistoryPage() {
       index + 1,
       formatDateLabel(tx.transaction_date),
       formatInvoiceNumber(tx.transaction_number, tx.transaction_date),
-      tx.payment_method || 'Tunai',
+      tx.payment_method || PAYMENT_METHODS.TUNAI,
       tx.total_amount || 0,
       tx.payment_amount || 0,
       tx.change_amount || 0,
@@ -288,11 +289,11 @@ export default function TransactionHistoryPage() {
               className="bg-slate-50 border border-slate-300 text-slate-800 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#17A2B8] rounded font-medium cursor-pointer"
             >
               <option value="">Metode Pembayaran: Semua</option>
-              <option value="Tunai">Tunai</option>
-              <option value="Transfer">Transfer</option>
-              <option value="QRIS">QRIS</option>
-              <option value="Debit Card">Debit Card</option>
-              <option value="Credit Card">Credit Card</option>
+              {PAYMENT_METHOD_OPTIONS.map((method) => (
+                <option key={method} value={method}>
+                  {method}
+                </option>
+              ))}
             </select>
           </SearchFilterBar>
 
@@ -336,7 +337,7 @@ export default function TransactionHistoryPage() {
                               {formatInvoiceNumber(tx.transaction_number, tx.transaction_date)}
                             </td>
                             <td className="py-2.5 px-4 border-r border-slate-100 font-semibold">
-                              {tx.payment_method || 'Tunai'}
+                              {tx.payment_method || PAYMENT_METHODS.TUNAI}
                             </td>
                             <td className="py-2.5 px-4 border-r border-slate-100">
                               <div className="flex justify-between font-mono font-bold text-slate-900">
@@ -604,7 +605,7 @@ export default function TransactionHistoryPage() {
                 <span>Bayar</span>
                 <span>{selectedTx.payment_amount.toLocaleString('id-ID')}</span>
               </div>
-              {selectedTx.payment_method === 'Tunai' && (
+              {selectedTx.payment_method === PAYMENT_METHODS.TUNAI && (
                 <div className="flex justify-between font-bold">
                   <span>Kembalian</span>
                   <span>{selectedTx.change_amount.toLocaleString('id-ID')}</span>

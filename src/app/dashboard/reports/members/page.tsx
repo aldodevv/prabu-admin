@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { transactionsApi } from '@/core/api';
 import { getPaymentMethodFromNotes, getMembershipTypeFromNotes, formatDateLabel, formatIDR } from '@/core/constants';
+import { PAYMENT_METHODS, PAYMENT_METHOD_OPTIONS } from '@/constants/payments';
 import { Transaction } from '@/core/types';
 import { ReportTemplate, OfficialReceiptTemplate } from '@/components/core/PrintTemplates';
 import { FileText, ArrowLeft, Printer, List } from 'lucide-react';
@@ -99,7 +100,7 @@ export default function MemberReportsPage() {
       const selectedType = transactionType === 'manual' ? manualTxType : transactionType;
       if (selectedType !== 'Semua Transaksi') {
         filtered = filtered.filter(tx => {
-          const method = getPaymentMethodFromNotes(tx.notes || '');
+          const method = getPaymentMethodFromNotes(tx.notes || '') || tx.payment_method || PAYMENT_METHODS.TUNAI;
           return method.toLowerCase() === selectedType.toLowerCase();
         });
       }
@@ -215,8 +216,11 @@ export default function MemberReportsPage() {
                       className="w-full border border-slate-200 rounded-md px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#17A2B8]/20 focus:border-brand-cyan transition-all bg-white cursor-pointer"
                     >
                       <option value="Semua Transaksi">Semua Transaksi</option>
-                      <option value="Tunai">Tunai</option>
-                      <option value="BCA Transfer">BCA Transfer</option>
+                      {PAYMENT_METHOD_OPTIONS.map((method) => (
+                        <option key={method} value={method}>
+                          {method}
+                        </option>
+                      ))}
                       <option value="manual">Input Manual...</option>
                     </select>
                     {transactionType === 'manual' && (
@@ -446,7 +450,7 @@ export default function MemberReportsPage() {
             packageName: getMembershipTypeFromNotes(selectedReceiptTx.notes || '') || 'Paket Anggota',
             membershipStart: selectedReceiptTx.transaction_date,
             membershipEnd: selectedReceiptTx.transaction_date,
-            paymentMethod: getPaymentMethodFromNotes(selectedReceiptTx.notes || '') || selectedReceiptTx.payment_method || 'Tunai',
+            paymentMethod: getPaymentMethodFromNotes(selectedReceiptTx.notes || '') || selectedReceiptTx.payment_method || PAYMENT_METHODS.TUNAI,
             price: selectedReceiptTx.total_amount,
             cashierName: selectedReceiptTx.admin_name || user?.full_name || 'Kasir PRABU GYM'
           }}

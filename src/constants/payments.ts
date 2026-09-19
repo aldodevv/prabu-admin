@@ -6,12 +6,14 @@ export const PAYMENT_METHODS = {
   TUNAI: 'Tunai',
   BCA_TRANSFER: 'BCA Transfer',
   QRIS: 'QRIS',
+  DEBIT: 'Debit',
 } as const;
 
 export const PAYMENT_METHOD_OPTIONS = [
   PAYMENT_METHODS.TUNAI,
   PAYMENT_METHODS.BCA_TRANSFER,
   PAYMENT_METHODS.QRIS,
+  PAYMENT_METHODS.DEBIT,
 ] as const;
 
 export type PaymentMethod = typeof PAYMENT_METHODS[keyof typeof PAYMENT_METHODS];

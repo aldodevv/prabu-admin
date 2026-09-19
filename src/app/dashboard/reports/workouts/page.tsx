@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import { FetchErrorAlert } from '@/components/core/FetchErrorAlert';
 import { WorkoutRegistrationReportPrintTemplate, OfficialPTReceiptTemplate } from '@/components/core/PrintTemplates';
 import { formatDateLabel, formatIDR } from '@/core/constants';
+import { PAYMENT_METHODS, PAYMENT_METHOD_OPTIONS } from '@/constants/payments';
 import { Printer, FileText, ArrowLeft } from 'lucide-react';
 import { DatePicker } from '@/components/core/DatePicker';
 
@@ -180,11 +181,11 @@ export default function WorkoutReportsPage() {
                       className="bg-slate-50 border border-slate-300 text-slate-700 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-brand-cyan rounded w-full cursor-pointer font-medium"
                     >
                       <option value="Semua Transaksi">-Pilih-</option>
-                      <option value="Tunai">Tunai</option>
-                      <option value="Transfer Bank">Transfer Bank</option>
-                      <option value="BCA Transfer">BCA Transfer</option>
-                      <option value="QRIS">QRIS</option>
-                      <option value="Debit">Debit</option>
+                      {PAYMENT_METHOD_OPTIONS.map((method) => (
+                        <option key={method} value={method}>
+                          {method}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
@@ -405,7 +406,7 @@ export default function WorkoutReportsPage() {
             packageName: selectedReceiptItem.package_name,
             sessionCount: selectedReceiptItem.sessions_count || 10,
             membershipEnd: selectedReceiptItem.created_at,
-            paymentMethod: selectedReceiptItem.payment_method,
+            paymentMethod: selectedReceiptItem.payment_method || PAYMENT_METHODS.TUNAI,
             price: selectedReceiptItem.total_amount,
             trainerName: selectedReceiptItem.trainer_name,
             cashierName: selectedReceiptItem.admin_name || user?.full_name || 'Staff PRABU GYM'
