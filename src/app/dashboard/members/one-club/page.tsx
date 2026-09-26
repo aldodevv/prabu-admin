@@ -38,6 +38,13 @@ const isPtTransaction = (tx: Transaction) => {
   );
 };
 
+function formatLocalDateIso(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 function calculateEndDateFromPackage(startDateStr: string, pkgName: string, packagesList: MembershipPackage[]): string {
   if (!startDateStr || !pkgName) return '';
   const d = new Date(startDateStr + 'T00:00:00');
@@ -65,7 +72,7 @@ function calculateEndDateFromPackage(startDateStr: string, pkgName: string, pack
     d.setDate(d.getDate() - 1);
   }
 
-  return d.toISOString().split('T')[0];
+  return formatLocalDateIso(d);
 }
 
 function addDays(dateStr: string, days: number): string {
@@ -73,7 +80,7 @@ function addDays(dateStr: string, days: number): string {
   const d = new Date(dateStr + 'T00:00:00');
   if (isNaN(d.getTime())) return '';
   d.setDate(d.getDate() + days);
-  return d.toISOString().split('T')[0];
+  return formatLocalDateIso(d);
 }
 
 function getTxMembershipPeriods(
@@ -98,12 +105,11 @@ function getTxMembershipPeriods(
     }
 
     const pkg = getMembershipTypeFromNotes(tx.notes || '');
+    const txDate = tx.transaction_date ? tx.transaction_date.split('T')[0] : '';
 
     // Kasus hanya 1 transaksi
     if (txs.length === 1) {
-      const start = member?.membership_start
-        ? member.membership_start.split('T')[0]
-        : (tx.transaction_date ? tx.transaction_date.split('T')[0] : '');
+      const start = txDate || (member?.membership_start ? member.membership_start.split('T')[0] : '');
       const end = member?.membership_end
         ? member.membership_end.split('T')[0]
         : calculateEndDateFromPackage(start, pkg, packagesList);
@@ -116,17 +122,16 @@ function getTxMembershipPeriods(
     let end = '';
 
     if (idx === 0) {
-      // Transaksi pertama (paling lama): mulai dari created_at atau transaction_date
-      start = member?.created_at
-        ? member.created_at.split('T')[0]
-        : (tx.transaction_date ? tx.transaction_date.split('T')[0] : (member?.membership_start ? member.membership_start.split('T')[0] : ''));
+      // Transaksi pertama (paling lama): gunakan transaction_date asli
+      start = txDate || (member?.membership_start ? member.membership_start.split('T')[0] : (member?.created_at ? member.created_at.split('T')[0] : ''));
       end = calculateEndDateFromPackage(start, pkg, packagesList);
     } else {
-      // Transaksi perpanjangan berikutnya: mulai 1 hari setelah transaksi sebelumnya berakhir
-      if (prevEnd) {
+      // Transaksi perpanjangan berikutnya:
+      // Hanya disambung jika transaksi perpanjangan dilakukan saat transaksi sebelumnya masih aktif atau tepat bersambung
+      if (prevEnd && txDate && prevEnd >= txDate) {
         start = addDays(prevEnd, 1);
       } else {
-        start = tx.transaction_date ? tx.transaction_date.split('T')[0] : '';
+        start = txDate || (prevEnd ? addDays(prevEnd, 1) : '');
       }
 
       // Jika baris terakhir (paling baru) dan membership_end anggota diketahui dan setelah start
@@ -218,14 +223,14 @@ function getLatihanRowData(
     const d = new Date(rawStartDate + 'T00:00:00');
     d.setMonth(d.getMonth() + 1);
     d.setDate(d.getDate() - 1);
-    rawEndDate = d.toISOString().split('T')[0];
+    rawEndDate = formatLocalDateIso(d);
   } else {
     rawStartDate = tx.transaction_date ? tx.transaction_date.split('T')[0] : (tx.created_at ? tx.created_at.split('T')[0] : '');
     if (rawStartDate) {
       const d = new Date(rawStartDate + 'T00:00:00');
       d.setMonth(d.getMonth() + 1);
       d.setDate(d.getDate() - 1);
-      rawEndDate = d.toISOString().split('T')[0];
+      rawEndDate = formatLocalDateIso(d);
     }
   }
 
@@ -608,7 +613,8 @@ export default function OneClubMembersPanel() {
         setEditTxTotalAmount(Number(matchedPt.price) || 0);
       }
     }
-    setEditTxNotes(tx.notes || '');
+    const cleanNotes = (tx.notes || '').replace(/\[Masa Aktif:[^\]]*\]/gi, '').trim();
+    setEditTxNotes(cleanNotes);
     setEditTxError('');
     setEditTxSuccess('');
   };
@@ -620,7 +626,7 @@ export default function OneClubMembersPanel() {
       const matched = membershipPackages.find(p => p.name.toLowerCase().trim() === newPkgName.toLowerCase().trim());
       if (matched) {
         setEditTxTotalAmount(Number(matched.price) || 0);
-        const start = editTxStartDate || editTxDate || new Date().toISOString().split('T')[0];
+        const start = editTxStartDate || editTxDate || formatLocalDateIso(new Date());
         const newEnd = calculateEndDateFromPackage(start, newPkgName, membershipPackages);
         if (newEnd) {
           setEditTxEndDate(newEnd);
@@ -662,6 +668,16 @@ export default function OneClubMembersPanel() {
     setEditTxSuccess('');
 
     try {
+      let finalNotes = editTxNotes || '';
+      if (editingTxType === 'anggota' && editTxStartDate && editTxEndDate) {
+        const tag = `[Masa Aktif: ${editTxStartDate} s/d ${editTxEndDate}]`;
+        if (/\[Masa Aktif:[^\]]*\]/i.test(finalNotes)) {
+          finalNotes = finalNotes.replace(/\[Masa Aktif:[^\]]*\]/gi, tag);
+        } else {
+          finalNotes = finalNotes ? `${finalNotes} ${tag}` : tag;
+        }
+      }
+
       const payload: {
         transaction_date?: string;
         package_name?: string;
@@ -672,7 +688,7 @@ export default function OneClubMembersPanel() {
       } = {
         transaction_date: editTxDate,
         total_amount: editTxTotalAmount,
-        notes: editTxNotes,
+        notes: finalNotes,
       };
 
       if (editingTxType === 'anggota') {
@@ -695,7 +711,7 @@ export default function OneClubMembersPanel() {
               transaction_date: editTxDate,
               total_amount: editTxTotalAmount,
               payment_amount: editTxTotalAmount,
-              notes: editTxNotes,
+              notes: finalNotes,
             };
           }
           return item;

@@ -205,9 +205,12 @@ export default function MemberPaymentPage() {
     const pkg = packages.find(p => p.name === selectedPackageName);
     if (!pkg) return;
 
-    const d = new Date(newStartDate);
+    const d = new Date(newStartDate + 'T00:00:00');
     d.setDate(d.getDate() + pkg.days);
-    setNewEndDate(d.toISOString().split('T')[0]);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    setNewEndDate(`${y}-${m}-${day}`);
   }, [selectedPackageName, newStartDate, packages]);
 
   const calculateDaysDiffLabel = (dateStr?: string) => {
@@ -270,7 +273,8 @@ export default function MemberPaymentPage() {
     const discountInfo = discountAmount > 0
       ? ` - Diskon: ${discountType === 'percent' ? `${discountValue}%` : `Rp ${discountAmount.toLocaleString('id-ID')}`} (-Rp ${discountAmount.toLocaleString('id-ID')})`
       : '';
-    const txNotes = `Perpanjang Paket: ${selectedPackageName}${discountInfo} - Metode: ${paymentMethod}.${notes ? ` Catatan: ${notes}` : ''}`;
+    const masaAktifTag = (newStartDate && newEndDate) ? ` [Masa Aktif: ${newStartDate} s/d ${newEndDate}]` : '';
+    const txNotes = `Perpanjang Paket: ${selectedPackageName}${discountInfo} - Metode: ${paymentMethod}.${notes ? ` Catatan: ${notes}` : ''}${masaAktifTag}`;
     const txBody = {
       member_id: selectedMember.id,
       transaction_date: txDate ? new Date(txDate + 'T12:00:00+07:00').toISOString() : undefined,

@@ -71,6 +71,13 @@ export function formatDateLong(dateStr?: string): string {
   });
 }
 
+export function formatLocalDateIso(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 /**
  * Calculates membership end date (typically 1 month/days minus 1 day).
  */
@@ -88,7 +95,7 @@ export function calculateExpiryDate(startDateStr: string, packageName?: string):
   }
 
   d.setDate(d.getDate() + days - 1);
-  return d.toISOString().split('T')[0];
+  return formatLocalDateIso(d);
 }
 
 /**
